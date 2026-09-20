@@ -1211,6 +1211,63 @@
   }
 
   /* ---- Encabezados y acciones dentro de las hojas modales nuevas ---- */
+  /* =====================================================
+     USUARIOS Y PERMISOS (opcional)
+     Estilos nuevos que solo se usan cuando el Dueño decide
+     agregar a alguien más. No tocan nada de lo anterior.
+  ===================================================== */
+  .user-pick-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
+  .user-pick{
+    background:var(--surface); border:1.5px solid var(--border); border-radius:18px;
+    padding:18px 12px; display:flex; flex-direction:column; align-items:center; gap:9px;
+    box-shadow:var(--shadow-card); color:var(--ink);
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .user-pick:active{ transform:scale(.96); border-color:var(--accent-strong); }
+  .up-avatar{
+    width:56px; height:56px; border-radius:50%; background:var(--ink); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800;
+  }
+  .up-avatar svg{ width:24px; height:24px; }
+  .up-name{
+    font-size:14.5px; font-weight:800; max-width:100%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .role-chip{
+    display:inline-block; font-size:10.5px; font-weight:800;
+    padding:3px 9px; border-radius:999px;
+    background:var(--surface-alt); color:var(--ink-soft);
+  }
+  .role-chip.dueno{ background:var(--accent-soft); color:#8A6A18; }
+  .role-chip.admin{ background:var(--sec-history-soft); color:var(--sec-history-ink); }
+  .role-chip.empleado{ background:var(--sec-home-soft); color:var(--sec-home-ink); }
+  .acc-ico .ini{ font-size:14px; font-weight:800; }
+  .profile-role{
+    display:inline-block; margin-top:9px; background:rgba(255,255,255,.14);
+    border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:800; color:#fff;
+  }
+  .shift-row{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 0; border-bottom:1px solid var(--border);
+  }
+  .shift-row:last-child{ border-bottom:none; }
+  .shift-main{ flex:1; min-width:0; }
+  .shift-name{ font-size:14.5px; font-weight:800; color:var(--ink); }
+  .shift-meta{ font-size:12px; font-weight:600; color:var(--ink-soft); margin-top:3px; }
+  .shift-right{ text-align:right; flex-shrink:0; }
+  .shift-total{ font-size:14.5px; font-weight:800; color:var(--ink); }
+  .shift-open{
+    display:inline-block; margin-top:3px; font-size:10px; font-weight:800;
+    color:var(--sec-home-ink); background:var(--sec-home-soft);
+    padding:2px 8px; border-radius:999px;
+  }
+  .recover-code{
+    font-family:var(--mono); font-size:25px; font-weight:800; letter-spacing:6px;
+    text-align:center; background:var(--surface-alt); color:var(--ink);
+    border-radius:14px; padding:15px 10px; margin:0 0 10px;
+  }
+  .sale-row-who{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:2px; }
+
   .sheet-title{ font-size:18.5px; font-weight:800; color:var(--ink); margin:0 0 8px; letter-spacing:-.2px; }
   .sheet-text{ font-size:14px; font-weight:500; color:var(--ink-soft); line-height:1.6; margin:0 0 18px; }
   .sheet-actions{ display:flex; gap:10px; margin-top:20px; }
@@ -1612,7 +1669,20 @@ const DB = {
     try{ return JSON.parse(localStorage.getItem('mesa_todos') || '[]'); }
     catch(e){ return []; }
   },
-  saveTodos(list){ localStorage.setItem('mesa_todos', JSON.stringify(list)); }
+  saveTodos(list){ localStorage.setItem('mesa_todos', JSON.stringify(list)); },
+
+  /* Usuarios del negocio (opcional) y turnos. Viven en el mismo
+     almacenamiento que los productos y las ventas. */
+  getUsers(){
+    try{ return JSON.parse(localStorage.getItem('mesa_users') || '[]'); }
+    catch(e){ return []; }
+  },
+  saveUsers(list){ localStorage.setItem('mesa_users', JSON.stringify(list)); },
+  getShifts(){
+    try{ return JSON.parse(localStorage.getItem('mesa_shifts') || '[]'); }
+    catch(e){ return []; }
+  },
+  saveShifts(list){ localStorage.setItem('mesa_shifts', JSON.stringify(list)); }
 };
 
 function initDB(){
@@ -1786,14 +1856,14 @@ function render(){
    VISTA: INICIO
 ========================================================= */
 function renderHome(){
-  const sales = DB.getSales().filter(s => !s.cancelled);
+  const sales = visibleSales().filter(s => !s.cancelled);
   const now = new Date();
   const today = sales.filter(s => isSameDay(new Date(s.date), now));
   const totalHoy = today.reduce((a,s)=>a+s.total,0);
   const pedidosHoy = today.length;
   const ticketProm = pedidosHoy ? totalHoy/pedidosHoy : 0;
 
-  const recientes = DB.getSales().slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,3);
+  const recientes = visibleSales().slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,3);
 
   const saludo = now.getHours() < 12 ? 'Buenos días' : (now.getHours() < 19 ? 'Buenas tardes' : 'Buenas noches');
 
@@ -2378,6 +2448,20 @@ function confirmarCobro(){
     cancelled: false
   };
 
+  /* Si el negocio tiene varios usuarios, la venta queda a nombre de
+     quien la cobró y dentro de su turno. Con un solo usuario la venta
+     se guarda igual que siempre. */
+  if(typeof multiUser === 'function' && multiUser()){
+    const me = activeUser();
+    const sh = currentShift();
+    if(me){
+      sale.userId = me.id;
+      sale.userName = me.name;
+      sale.userRole = me.role;
+    }
+    if(sh) sale.shiftId = sh.id;
+  }
+
   const sales = DB.getSales();
   sales.push(sale);
   DB.saveSales(sales);
@@ -2625,6 +2709,7 @@ function ticketHTML(sale){
       ${ticketBusiness().address ? `<div class="ticket-meta">${ticketBusiness().address}</div>` : ''}
       <div class="ticket-meta">Pedido ${orderNumberLabel(sale.number)}</div>
       <div class="ticket-meta">${formatDateTime(sale.date)}</div>
+      ${sale.userName ? `<div class="ticket-meta">Atendió: ${escapeHtml(sale.userName)}</div>` : ''}
       <hr>
       <div style="text-align:left;">
         ${sale.items.map(it => `
@@ -2702,6 +2787,7 @@ function renderSaleRow(sale){
       <div class="sale-row-main">
         <div class="sale-row-num">${orderNumberLabel(sale.number)}</div>
         <div class="sale-row-meta">${formatDateTime(sale.date)} · ${payment.name}</div>
+        ${saleWho(sale) ? `<div class="sale-row-who">Cobró: ${escapeHtml(saleWho(sale))}</div>` : ''}
         ${sale.cancelled ? `<span class="tag cancel">Cancelada</span>` : ''}
       </div>
       <div class="sale-row-right">
@@ -2715,7 +2801,7 @@ function renderHistoryShell(){
   const activeCount = ['period','status','service','payment'].filter(k => historyFilters[k] !== 'all').length;
   return `
     <h1 class="page-title">Historial</h1>
-    <p class="page-sub">Todas las ventas registradas</p>
+    <p class="page-sub">${can('verTodasVentas') ? 'Todas las ventas registradas' : 'Tus ventas registradas'}</p>
 
     <div class="search-box">
       <span>${icon('search')}</span>
@@ -2821,7 +2907,7 @@ function matchesHistoryFilters(sale){
 function renderHistoryList(){
   const container = document.getElementById('historyList');
   if(!container) return;
-  const allSales = DB.getSales();
+  const allSales = visibleSales();
   const sales = allSales.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).filter(matchesHistoryFilters);
   container.innerHTML = sales.length === 0 ? (
     allSales.length === 0 ? `
@@ -2897,6 +2983,7 @@ function setHistoryFilter(key, val){
 function openSaleDetail(saleId){
   const sale = DB.getSales().find(s => s.id === saleId);
   if(!sale) return;
+  if(!canSeeSale(sale)){ toast('Esta venta es de otro usuario', { variant:'toast-danger', icon:icon('close') }); return; }
   lastTicketSale = sale;
   const html = `
     <div class="sheet-header no-print">
@@ -2906,13 +2993,14 @@ function openSaleDetail(saleId){
     <div id="ticket-print">${ticketHTML(sale)}</div>
     <div style="display:flex; gap:10px; margin-top:16px;" class="no-print">
       <button class="btn ghost" onclick="printTicket('${sale.id}')">${icon('print')} Imprimir</button>
-      ${!sale.cancelled ? `<button class="btn danger block" onclick="cancelSale('${sale.id}')">Cancelar venta</button>` : `<button class="btn dark block" onclick="closeModal()">Cerrar</button>`}
+      ${(!sale.cancelled && can('cancelarVentas')) ? `<button class="btn danger block" onclick="cancelSale('${sale.id}')">Cancelar venta</button>` : `<button class="btn dark block" onclick="closeModal()">Cerrar</button>`}
     </div>
   `;
   openModal(html, { dismissible:true });
 }
 
 function cancelSale(saleId){
+  if(!requirePerm('cancelarVentas', 'No tienes permiso para cancelar ventas')) return;
   const ok = window.confirm('¿Cancelar esta venta? Se mantendrá en el historial pero dejará de contar en las estadísticas.');
   if(!ok) return;
   const sales = DB.getSales();
@@ -2929,7 +3017,7 @@ function cancelSale(saleId){
    VISTA: VENTAS (dashboard)
 ========================================================= */
 function renderStats(){
-  const all = DB.getSales();
+  const all = visibleSales();
   const active = all.filter(s => !s.cancelled);
   const now = new Date();
 
@@ -2976,7 +3064,7 @@ function renderStats(){
 
   return `
     <h1 class="page-title">Ventas</h1>
-    <p class="page-sub">Estadísticas calculadas a partir de tus ventas reales</p>
+    <p class="page-sub">${can('verTodasVentas') ? 'Estadísticas calculadas a partir de tus ventas reales' : 'Estadísticas de las ventas que tú cobraste'}</p>
 
     <div class="stat-grid">
       <div class="stat-card">
@@ -2999,6 +3087,7 @@ function renderStats(){
         <div class="stat-value">${formatMoney(ticketProm)}</div>
         <div class="stat-label" style="margin-top:4px;">${active.length} pedidos en total</div>
       </div>
+      ${can('verGanancias') ? `
       <div class="stat-card wide">
         <div class="stat-card-row">
           <div class="stat-icon">${icon('chart')}</div>
@@ -3009,7 +3098,7 @@ function renderStats(){
             ${gan.missing > 0 ? `<div class="stat-label" style="margin-top:2px; color:var(--accent-2);">${gan.missing} artículo${gan.missing === 1 ? '' : 's'} sin precio de producción no ${gan.missing === 1 ? 'se cuenta' : 'se cuentan'}</div>` : ''}
           </div>
         </div>
-      </div>
+      </div>` : ''}
     </div>
 
     <div class="section-title">Gráficas</div>
@@ -3114,7 +3203,7 @@ function buildStatsBuckets(sales, period){
 }
 
 function statsChartsHTML(){
-  const rows = buildStatsBuckets(DB.getSales().filter(s => !s.cancelled), statsPeriod);
+  const rows = buildStatsBuckets(visibleSales().filter(s => !s.cancelled), statsPeriod);
   const n = rows.length;
   const sel = (statsSel !== null && statsSel < n) ? statsSel : n - 1;
   const cur = rows[sel];
@@ -3176,11 +3265,12 @@ function selectStatsBucket(i){ statsSel = i; vibrate(8); refreshStatsCharts(); }
 function renderProducts(){
   const products = DB.getProducts();
   const categories = DB.getCategories();
+  const puedeEditar = can('gestionarProductos');
   return `
     <h1 class="page-title">Productos</h1>
-    <p class="page-sub">Administra tu catálogo y tus existencias</p>
+    <p class="page-sub">${puedeEditar ? 'Administra tu catálogo y tus existencias' : 'Consulta el catálogo y las existencias'}</p>
 
-    ${demoHintVisible() ? `
+    ${(demoHintVisible() && puedeEditar) ? `
       <div class="alert-card" style="margin-top:14px;">
         <span class="alert-ico">${icon('alert')}</span>
         <span class="alert-txt">
@@ -3192,10 +3282,20 @@ function renderProducts(){
 
     ${stockWarningCardHTML()}
 
-    <div class="fab-row" style="gap:8px; margin-top:16px;">
-      <button class="btn ghost" onclick="openCategoryManager()">${icon('tag')} Categorías</button>
-      <button class="btn primary" onclick="openProductForm()">${icon('plus')} Nuevo producto</button>
-    </div>
+    ${puedeEditar ? `
+      <div class="fab-row" style="gap:8px; margin-top:16px;">
+        <button class="btn ghost" onclick="openCategoryManager()">${icon('tag')} Categorías</button>
+        <button class="btn primary" onclick="openProductForm()">${icon('plus')} Nuevo producto</button>
+      </div>
+    ` : `
+      <div class="alert-card" style="margin-top:16px;">
+        <span class="alert-ico">${icon('key')}</span>
+        <span class="alert-txt">
+          <span class="alert-title">Solo puedes consultar</span>
+          <span class="alert-sub">Los productos y las existencias los administran el Dueño y el Administrador.</span>
+        </span>
+      </div>
+    `}
 
     ${products.length === 0 ? `
       <div class="empty-state">
@@ -3234,6 +3334,7 @@ function renderProducts(){
 
 function renderProdRow(p, cat){
   const st = stockInfo(p);
+  const puedeEditar = can('gestionarProductos');
   return `
     <div class="prod-row">
       <div class="pr-photo">
@@ -3241,24 +3342,29 @@ function renderProdRow(p, cat){
       </div>
       <div class="pr-info">
         <div class="pr-name">${escapeHtml(p.name)}</div>
-        <div class="pr-price">${formatMoney(p.price)}${p.cost != null ? ' · producción ' + formatMoney(p.cost) : ''}</div>
+        <div class="pr-price">${formatMoney(p.price)}${(p.cost != null && can('verGanancias')) ? ' · producción ' + formatMoney(p.cost) : ''}</div>
         ${st.control ? `<div class="pr-stock">${stockBadge(p)}</div>` : ''}
       </div>
-      <label class="switch">
-        <input type="checkbox" ${p.active?'checked':''} onchange="toggleProductActive('${p.id}', this.checked)">
-        <span class="track"></span>
-      </label>
-      <div class="pr-actions">
-        ${st.control ? `<button class="icon-btn" title="Agregar existencias" onclick="openStockForm('${p.id}')">${icon('boxes')}</button>` : ''}
-        <button class="icon-btn" onclick="openProductForm('${p.id}')">${icon('edit')}</button>
-        <button class="icon-btn" onclick="deleteProduct('${p.id}')">${icon('trash')}</button>
-      </div>
+      ${puedeEditar ? `
+        <label class="switch">
+          <input type="checkbox" ${p.active?'checked':''} onchange="toggleProductActive('${p.id}', this.checked)">
+          <span class="track"></span>
+        </label>
+        <div class="pr-actions">
+          ${st.control ? `<button class="icon-btn" title="Agregar existencias" onclick="openStockForm('${p.id}')">${icon('boxes')}</button>` : ''}
+          <button class="icon-btn" onclick="openProductForm('${p.id}')">${icon('edit')}</button>
+          <button class="icon-btn" onclick="deleteProduct('${p.id}')">${icon('trash')}</button>
+        </div>
+      ` : `
+        ${p.active ? '' : '<span class="tag cancel">Inactivo</span>'}
+      `}
     </div>
   `;
 }
 
 /* ---------- Agregar existencias rápido (sin abrir todo el formulario) ---------- */
 function openStockForm(productId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const p = DB.getProducts().find(x => x.id === productId);
   if(!p) return;
   const st = stockInfo(p);
@@ -3294,6 +3400,7 @@ function sumarStock(n){
 }
 
 function saveStockForm(productId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const stock = parseInt(document.getElementById('sfStock').value, 10);
   let min = parseInt(document.getElementById('sfMin').value, 10);
   if(isNaN(stock) || stock < 0){ toast('Escribe cuántas piezas tienes'); return; }
@@ -3311,6 +3418,7 @@ function saveStockForm(productId){
 }
 
 function toggleProductActive(id, active){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const products = DB.getProducts();
   const p = products.find(x => x.id === id);
   if(!p) return;
@@ -3320,6 +3428,7 @@ function toggleProductActive(id, active){
 }
 
 function deleteProduct(productId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const products = DB.getProducts();
   const p = products.find(x => x.id === productId);
   if(!p) return;
@@ -3338,6 +3447,7 @@ function deleteProduct(productId){
    GESTIÓN DE CATEGORÍAS
 ========================================================= */
 function openCategoryManager(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const categories = DB.getCategories();
   const products = DB.getProducts();
   const html = `
@@ -3370,6 +3480,7 @@ function openCategoryManager(){
 }
 
 function openCategoryForm(categoryId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const categories = DB.getCategories();
   const editing = categoryId ? categories.find(c => c.id === categoryId) : null;
   const html = `
@@ -3395,6 +3506,7 @@ function openCategoryForm(categoryId){
 }
 
 function saveCategoryForm(categoryId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const name = document.getElementById('cfName').value.trim();
   const emoji = document.getElementById('cfEmoji').value.trim() || '🍽️';
   const color = document.getElementById('cfColor').value || '#F5BF3C';
@@ -3414,6 +3526,7 @@ function saveCategoryForm(categoryId){
 }
 
 function deleteCategory(categoryId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const categories = DB.getCategories();
   const cat = categories.find(c => c.id === categoryId);
   if(!cat) return;
@@ -3443,6 +3556,7 @@ function renderBackgroundIfProducts(){ if(currentView === 'products') render(); 
 
 
 function openProductForm(productId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const products = DB.getProducts();
   const categories = DB.getCategories();
   const editing = productId ? products.find(p => p.id === productId) : null;
@@ -3585,6 +3699,7 @@ function toggleStockFields(on){
 }
 
 function saveProductForm(productId){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const name = document.getElementById('pfName').value.trim();
   const price = parseFloat(document.getElementById('pfPrice').value);
   const category = document.getElementById('pfCategory').value;
@@ -3642,12 +3757,15 @@ function paintChrome(){
   });
   const av = document.getElementById('avatarBtn');
   const u = (typeof currentUser === 'function') ? currentUser() : null;
+  /* Con varios usuarios, arriba se ve quién está usando Mesa. */
+  const mu = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
   if(av){
-    av.innerHTML = (u && u.photo) ? `<img src="${u.photo}" alt="">` : `<span class="ini">${initials()}</span>`;
+    av.innerHTML = (!mu && u && u.photo) ? `<img src="${u.photo}" alt="">`
+                 : `<span class="ini">${mu ? userInitials(mu) : initials()}</span>`;
   }
   const chip = document.getElementById('chipName');
   if(chip){
-    const n = (u && u.name || '').trim();
+    const n = (mu ? (mu.name || '') : (u && u.name || '')).trim();
     chip.textContent = n ? n.split(/\s+/)[0] : 'Mi cuenta';
   }
 }
@@ -3857,7 +3975,8 @@ let authState = {
   terms: false,
   code: '',            // código simulado de 6 dígitos
   resendIn: 0,
-  pinBuffer: ''
+  pinBuffer: '',
+  pickedUser: null     // usuario elegido en la pantalla de selección
 };
 /* ¿El envío real de SMS ya está conectado?
    false = modo actual: se entra sin código (la pantalla de código existe
@@ -3895,7 +4014,14 @@ function renderAuth(){
   else if(s === 'otp') html = authOtpHTML();
   else if(s === 'name') html = authNameHTML();
   else if(s === 'lock') html = authLockHTML();
+  else if(s === 'users') html = authUsersHTML();          // selección de usuario
+  else if(s === 'userpin') html = authUserPinHTML();      // NIP de ese usuario
   layer.innerHTML = `<div class="auth-screen" key="${s}">${html}</div>`;
+
+  if(s === 'userpin'){
+    const pin = document.getElementById('userPinInput');
+    if(pin) setTimeout(() => pin.focus(), 180);
+  }
 
   if(s === 'signup' || s === 'login'){
     const inp = document.getElementById('authPhone');
@@ -4241,10 +4367,20 @@ function saveRegistrationName(){
   u.name = name;
   u.business = Object.assign({ name:'', type:'', address:'', phone:'' }, u.business, { name:biz });
   AUTH.saveUser(u);
+  ensureOwnerUser();
+  syncOwnerName();
   finishAuth('¡Tu cuenta está lista, ' + name.split(' ')[0] + '!');
 }
 
 function finishAuth(msg){
+  ensureOwnerUser();
+  syncOwnerName();
+  if(multiUser()){
+    /* El negocio tiene varios usuarios: hay que elegir quién entra. */
+    authState.pickedUser = null;
+    showAuth('users');
+    return;
+  }
   hideAuth();
   paintChrome();
   goTo('home');
@@ -4336,39 +4472,54 @@ function renderAccount(){
   const prefs = userPrefs();
   const biz = u.business || {};
   const notifOn = [prefs.notifSales, prefs.notifStock, prefs.notifDaily].filter(Boolean).length;
+  /* Con varios usuarios, esta vista es la del usuario que entró.
+     Con un solo usuario todo queda exactamente como antes. */
+  const me = multiUser() ? activeUser() : null;
+  const soyDueno = isOwner();
 
   return `
     <h1 class="page-title">Mi cuenta</h1>
-    <p class="page-sub">Tus datos, tu negocio y la configuración de la app.</p>
+    <p class="page-sub">${soyDueno ? 'Tus datos, tu negocio y la configuración de la app.' : 'Tu usuario y la configuración de la app.'}</p>
 
     <div class="profile-hero">
-      <div class="profile-avatar">${u.photo ? `<img src="${u.photo}" alt="">` : initials()}</div>
+      <div class="profile-avatar">${(!me && u.photo) ? `<img src="${u.photo}" alt="">` : (me ? userInitials(me) : initials())}</div>
       <div class="profile-meta">
-        <div class="profile-name">${escapeHtml(displayName())}</div>
-        <div class="profile-phone">${escapeHtml(fullPhone(u))}</div>
-        ${biz.name ? `<span class="profile-biz">${icon('store')} ${escapeHtml(biz.name)}</span>` : ''}
+        <div class="profile-name">${escapeHtml(me ? me.name : displayName())}</div>
+        <div class="profile-phone">${escapeHtml(me ? (me.phone ? formatPhone(me.phone, me.country || 'MX') : roleOf(me.role).name) : fullPhone(u))}</div>
+        ${me ? `<span class="profile-role">${roleOf(me.role).name}</span>`
+             : (biz.name ? `<span class="profile-biz">${icon('store')} ${escapeHtml(biz.name)}</span>` : '')}
       </div>
     </div>
 
-    <button class="btn primary block" style="margin-top:14px;" onclick="openEditProfile()">
-      ${icon('edit')} Editar perfil
-    </button>
+    ${soyDueno ? `
+      <button class="btn primary block" style="margin-top:14px;" onclick="openEditProfile()">
+        ${icon('edit')} Editar perfil
+      </button>` : ''}
 
-    <div class="section-title">Mi negocio</div>
+    <div class="section-title">${soyDueno ? 'Mi negocio' : 'El negocio'}</div>
     <div class="acc-list">
-      <button class="acc-row" onclick="openBusinessForm()">
-        <span class="acc-ico gold">${icon('store')}</span>
-        <span class="acc-txt">
-          <span class="acc-label">Información de mi negocio</span>
-          <span class="acc-sub">${biz.name ? escapeHtml(biz.name + (biz.type ? ' · ' + biz.type : '')) : 'Agrega el nombre y la dirección'}</span>
-        </span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
+      ${soyDueno ? `
+        <button class="acc-row" onclick="openBusinessForm()">
+          <span class="acc-ico gold">${icon('store')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Información de mi negocio</span>
+            <span class="acc-sub">${biz.name ? escapeHtml(biz.name + (biz.type ? ' · ' + biz.type : '')) : 'Agrega el nombre y la dirección'}</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>` : ''}
       <button class="acc-row" onclick="goTo('products')">
         <span class="acc-ico green">${icon('box')}</span>
         <span class="acc-txt">
           <span class="acc-label">Productos y categorías</span>
           <span class="acc-sub">${DB.getProducts().length} productos registrados</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
+      <button class="acc-row" onclick="openUsersSheet()">
+        <span class="acc-ico violet">${icon('users')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">${(soyDueno || can('verTodasVentas')) ? 'Usuarios' : 'Mi usuario'}</span>
+          <span class="acc-sub">${usersSubtitle()}</span>
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
@@ -4400,34 +4551,45 @@ function renderAccount(){
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
-      <button class="acc-row" onclick="openSecurity()">
-        <span class="acc-ico gold">${icon('shield')}</span>
-        <span class="acc-txt">
-          <span class="acc-label">Seguridad</span>
-          <span class="acc-sub">${u.pin ? 'PIN activado' : 'Sin PIN de bloqueo'}</span>
-        </span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
+      ${soyDueno ? `
+        <button class="acc-row" onclick="openSecurity()">
+          <span class="acc-ico gold">${icon('shield')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Seguridad</span>
+            <span class="acc-sub">${u.pin ? 'PIN activado' : 'Sin PIN de bloqueo'}</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>` : ''}
     </div>
 
     <div class="section-title">Sesión</div>
     <div class="acc-list">
-      <button class="acc-row" onclick="confirmLogout()">
-        <span class="acc-ico">${icon('logout')}</span>
-        <span class="acc-txt">
-          <span class="acc-label">Cerrar sesión</span>
-          <span class="acc-sub">Tus ventas y productos se quedan guardados</span>
-        </span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
-      <button class="acc-row danger" onclick="confirmDeleteAccount()">
-        <span class="acc-ico red">${icon('trash')}</span>
-        <span class="acc-txt">
-          <span class="acc-label">Eliminar cuenta</span>
-          <span class="acc-sub">Borra tu perfil de este dispositivo</span>
-        </span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
+      ${me ? `
+        <button class="acc-row" onclick="switchUser()">
+          <span class="acc-ico">${icon('swap')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Cambiar de usuario</span>
+            <span class="acc-sub">Cierra tu turno y vuelve a la selección</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>` : ''}
+      ${soyDueno ? `
+        <button class="acc-row" onclick="confirmLogout()">
+          <span class="acc-ico">${icon('logout')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Cerrar sesión</span>
+            <span class="acc-sub">Tus ventas y productos se quedan guardados</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>
+        <button class="acc-row danger" onclick="confirmDeleteAccount()">
+          <span class="acc-ico red">${icon('trash')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Eliminar cuenta</span>
+            <span class="acc-sub">Borra tu perfil de este dispositivo</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>` : ''}
     </div>
 
     <p style="font-size:12px; color:var(--ink-faint); font-weight:600; text-align:center; margin:22px 0 4px;">
@@ -4510,6 +4672,7 @@ function saveProfile(){
   const name = document.getElementById('epName').value.trim();
   if(name.length < 2){ toast('Escribe tu nombre'); return; }
   updateUser({ name: name, photo: accountFormPhoto });
+  syncOwnerName();          // el usuario Dueño usa el mismo nombre
   closeModal();
   paintChrome();
   render();
@@ -4864,6 +5027,8 @@ function confirmLogout(){
 }
 function doLogout(){
   AUTH.closeSession();
+  closeOpenShifts();
+  closeUserSession();
   currentView = 'home';
   authState = Object.assign(authState, { screen:'welcome', mode:'login', phone:'', terms:false, code:'' });
   showAuth('welcome');
@@ -4897,8 +5062,14 @@ function doDeleteAccount(){
   const wipeAll = document.getElementById('wipeRow').classList.contains('checked');
   AUTH.eraseAccount();
   if(wipeAll){
-    ['mesa_products','mesa_categories','mesa_sales','mesa_counter','mesa_todos','mesa_todos_seed','mesa_demo_hint_off'].forEach(k => localStorage.removeItem(k));
+    ['mesa_products','mesa_categories','mesa_sales','mesa_counter','mesa_todos','mesa_todos_seed','mesa_demo_hint_off',
+     'mesa_users','mesa_active_user','mesa_user_session','mesa_shifts'].forEach(k => localStorage.removeItem(k));
     initDB();
+  }else{
+    /* Se borra el perfil, pero los usuarios del negocio dejan de tener
+       dueño con nombre: se limpian para que Mesa vuelva a empezar
+       como POS de un solo usuario. */
+    ['mesa_users','mesa_active_user','mesa_user_session','mesa_shifts'].forEach(k => localStorage.removeItem(k));
   }
   closeModal();
   currentView = 'home';
@@ -4908,9 +5079,991 @@ function doDeleteAccount(){
   toast('Cuenta eliminada');
 }
 
+/* =========================================================
+   USUARIOS Y PERMISOS  —  función OPCIONAL de Mesa
+   ---------------------------------------------------------
+   Mesa arranca como siempre: un solo usuario (el Dueño), sin
+   NIP y sin pantallas nuevas. Todo esto solo "despierta"
+   cuando el Dueño agrega a alguien más desde
+   Configuración → Usuarios.
+
+   Se guarda igual que el resto de la app (localStorage):
+     mesa_users        -> usuarios, roles, NIP y permisos
+     mesa_active_user  -> quién está usando Mesa ahora
+     mesa_shifts       -> turnos (entrada y salida)
+   Las ventas guardan quién las cobró (userId / userName).
+========================================================= */
+
+/* ---------- Íconos que solo usa esta función ---------- */
+Object.assign(ICONS, {
+  users: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9.2" cy="8" r="3.4" stroke="currentColor" stroke-width="1.9"/><path d="M3 20c0-3.4 2.8-5.8 6.2-5.8S15.4 16.6 15.4 20" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M16.4 5.2a3.2 3.2 0 0 1 0 6.2M18.2 13.9c1.9.8 3.1 2.4 3.1 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+  swap: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.5h14l-3.6-3.8M20 15.5H6l3.6 3.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.2V12l3.1 2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+});
+
+/* ---------- Roles y permisos ---------- */
+const ROLES = [
+  { id:'dueno',    name:'Dueño',         sub:'Control total. Solo él administra usuarios.' },
+  { id:'admin',    name:'Administrador', sub:'Ve todas las ventas y administra productos.' },
+  { id:'empleado', name:'Empleado',      sub:'Cobra y ve solo sus propias ventas y turnos.' }
+];
+function roleOf(id){ return ROLES.find(r => r.id === id) || ROLES[2]; }
+
+const PERMS = [
+  { id:'verTodasVentas',     label:'Ver todas las ventas',   sub:'Historial y estadísticas de todo el negocio.' },
+  { id:'gestionarProductos', label:'Administrar productos',  sub:'Agregar, modificar o eliminar productos y existencias.' },
+  { id:'cancelarVentas',     label:'Cancelar ventas',        sub:'Marcar una venta como cancelada.' },
+  { id:'verGanancias',       label:'Ver ganancias y costos', sub:'Precio de producción y ganancia neta.' }
+];
+
+function defaultPerms(role){
+  if(role === 'empleado'){
+    return { verTodasVentas:false, gestionarProductos:false, cancelarVentas:false, verGanancias:false };
+  }
+  return { verTodasVentas:true, gestionarProductos:true, cancelarVentas:true, verGanancias:true };
+}
+
+/* ---------- Lectura de usuarios ---------- */
+function ensureOwnerUser(){
+  const list = DB.getUsers();
+  if(list.length === 0){
+    const acc = (typeof currentUser === 'function' ? currentUser() : null) || {};
+    DB.saveUsers([{
+      id: 'u_owner',
+      name: (acc.name && acc.name.trim()) ? acc.name.trim() : 'Dueño',
+      role: 'dueno',
+      pin: null,
+      phone: acc.phone || '',
+      country: acc.country || 'MX',
+      perms: defaultPerms('dueno'),
+      createdAt: new Date().toISOString()
+    }]);
+    return;
+  }
+  let changed = false;
+  list.forEach(u => { if(!u.perms){ u.perms = defaultPerms(u.role); changed = true; } });
+  if(!list.some(u => u.role === 'dueno')){
+    list[0].role = 'dueno';
+    list[0].perms = defaultPerms('dueno');
+    changed = true;
+  }
+  if(changed) DB.saveUsers(list);
+}
+
+function userById(id){ return DB.getUsers().find(u => u.id === id) || null; }
+function ownerUser(){ return DB.getUsers().find(u => u.role === 'dueno') || null; }
+/** ¿Ya hay más de un usuario? Si no, Mesa se comporta como POS de un solo usuario. */
+function multiUser(){ return DB.getUsers().length > 1; }
+
+function activeUser(){
+  const list = DB.getUsers();
+  if(!list.length) return null;
+  const id = localStorage.getItem('mesa_active_user') || '';
+  return list.find(u => u.id === id) || list.find(u => u.role === 'dueno') || list[0];
+}
+function setActiveUser(id){
+  if(id) localStorage.setItem('mesa_active_user', id);
+  else localStorage.removeItem('mesa_active_user');
+}
+/* Sesión del usuario: mientras esté abierta, Mesa NO vuelve a pedir el
+   NIP aunque se recargue o se cierre la página. Solo se cierra cuando
+   alguien le da a "Cambiar de usuario" (o se cierra la cuenta). */
+function openUserSession(){ localStorage.setItem('mesa_user_session','1'); }
+function closeUserSession(){ localStorage.removeItem('mesa_user_session'); }
+function userSessionOpen(){ return localStorage.getItem('mesa_user_session') === '1'; }
+function userInitials(u){
+  const n = ((u && u.name) || '').trim();
+  if(!n) return icon('person');
+  return n.split(/\s+/).slice(0,2).map(p => p[0].toUpperCase()).join('');
+}
+function userFirstName(u){
+  const n = ((u && u.name) || '').trim();
+  return n ? n.split(/\s+/)[0] : '';
+}
+function syncOwnerName(){
+  const list = DB.getUsers();
+  const o = list.find(u => u.role === 'dueno');
+  const acc = (typeof currentUser === 'function' ? currentUser() : null) || {};
+  if(o && acc.name && acc.name.trim() && o.name !== acc.name.trim()){
+    o.name = acc.name.trim();
+    DB.saveUsers(list);
+  }
+}
+
+/* ---------- Permisos ---------- */
+/** Con un solo usuario no hay restricciones: todo es del Dueño. */
+function can(perm){
+  if(!multiUser()) return true;
+  const u = activeUser();
+  if(!u) return true;
+  if(u.role === 'dueno') return true;
+  const p = Object.assign(defaultPerms(u.role), u.perms || {});
+  return !!p[perm];
+}
+function isOwner(){
+  if(!multiUser()) return true;
+  const u = activeUser();
+  return !u || u.role === 'dueno';
+}
+function requirePerm(perm, msg){
+  if(can(perm)) return true;
+  vibrate([18,60,18]);
+  toast(msg || 'No tienes permiso para hacer esto', { variant:'toast-danger', icon:icon('close'), subtitle:'Pídeselo al Dueño o al Administrador.' });
+  return false;
+}
+function requireOwner(msg){
+  if(isOwner()) return true;
+  vibrate([18,60,18]);
+  toast(msg || 'Solo el Dueño puede hacer esto', { variant:'toast-danger', icon:icon('close') });
+  return false;
+}
+
+/* ---------- Ventas visibles según quién está usando Mesa ---------- */
+function visibleSales(list){
+  list = list || DB.getSales();
+  if(!multiUser() || can('verTodasVentas')) return list;
+  const me = activeUser();
+  if(!me) return list;
+  return list.filter(s => s.userId === me.id);
+}
+function canSeeSale(sale){
+  if(!multiUser() || can('verTodasVentas')) return true;
+  const me = activeUser();
+  return !!me && sale.userId === me.id;
+}
+/** Nombre de quien cobró, para mostrarlo al Dueño y al Administrador. */
+function saleWho(sale){
+  if(!multiUser() || !can('verTodasVentas')) return '';
+  if(!sale.userName) return '';
+  return sale.userName;
+}
+
+/* =========================================================
+   TURNOS
+   Se abre un turno cuando alguien entra con su NIP y se
+   cierra al cambiar de usuario. Solo aplica con varios
+   usuarios: con uno solo, Mesa no lleva turnos.
+========================================================= */
+function openShiftFor(user){
+  if(!multiUser() || !user) return;
+  const shifts = DB.getShifts();
+  shifts.forEach(s => { if(!s.end) s.end = new Date().toISOString(); });
+  shifts.push({
+    id: 't' + Date.now(),
+    userId: user.id,
+    userName: user.name,
+    role: user.role,
+    start: new Date().toISOString(),
+    end: null
+  });
+  DB.saveShifts(shifts);
+}
+function closeOpenShifts(){
+  const shifts = DB.getShifts();
+  let changed = false;
+  shifts.forEach(s => { if(!s.end){ s.end = new Date().toISOString(); changed = true; } });
+  if(changed) DB.saveShifts(shifts);
+}
+function currentShift(){
+  const me = activeUser();
+  if(!me) return null;
+  return DB.getShifts().find(s => !s.end && s.userId === me.id) || null;
+}
+function shiftSales(shift){
+  const start = new Date(shift.start).getTime();
+  const end = shift.end ? new Date(shift.end).getTime() : Date.now();
+  return DB.getSales().filter(s => {
+    if(s.userId !== shift.userId || s.cancelled) return false;
+    const t = new Date(s.date).getTime();
+    return t >= start && t <= end;
+  });
+}
+function shiftTotals(shift){
+  const sales = shiftSales(shift);
+  return { count: sales.length, total: sales.reduce((a,s) => a + s.total, 0) };
+}
+function shiftClock(iso){
+  return new Date(iso).toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+}
+function visibleShifts(){
+  const all = DB.getShifts().slice().sort((a,b) => new Date(b.start) - new Date(a.start));
+  if(can('verTodasVentas')) return all;
+  const me = activeUser();
+  return me ? all.filter(s => s.userId === me.id) : [];
+}
+
+/* =========================================================
+   ENTRAR A MESA CON VARIOS USUARIOS
+   (solo aparece si el Dueño creó a alguien más)
+========================================================= */
+function authUsersHTML(){
+  const list = DB.getUsers();
+  return `
+    <div class="auth-top"></div>
+    <div class="auth-body">
+      <h1 class="auth-title" style="text-align:center; margin-top:14px;">¿Quién va a usar Mesa?</h1>
+      <p class="auth-sub" style="text-align:center;">Elige tu nombre y escribe tu NIP.</p>
+      <div class="user-pick-grid">
+        ${list.map(u => `
+          <button class="user-pick" onclick="pickUser('${u.id}')">
+            <span class="up-avatar">${userInitials(u)}</span>
+            <span class="up-name">${escapeHtml(u.name)}</span>
+            <span class="role-chip ${u.role}">${roleOf(u.role).name}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="auth-actions">
+        <button class="btn ghost xl block" onclick="openNipRecovery()">Olvidé mi NIP</button>
+      </div>
+    </div>
+  `;
+}
+
+function pickUser(id){
+  const u = userById(id);
+  if(!u) return;
+  authState.pickedUser = id;
+  if(!u.pin){                      // Usuario sin NIP: entra directo.
+    enterAsUser(u);
+    return;
+  }
+  authGo('userpin');
+}
+
+function authUserPinHTML(){
+  const u = userById(authState.pickedUser);
+  if(!u){ return authUsersHTML(); }
+  return `
+    <div class="auth-top">
+      <button class="auth-back" onclick="authGo('users')">${icon('chevronLeft')}</button>
+    </div>
+    <div class="auth-body">
+      <div style="text-align:center; margin-top:10px;">
+        <span class="up-avatar" style="margin:0 auto;">${userInitials(u)}</span>
+      </div>
+      <h1 class="auth-title" style="text-align:center; margin-top:16px;">Hola, ${escapeHtml(userFirstName(u) || u.name)}</h1>
+      <p class="auth-sub" style="text-align:center;">Escribe tu NIP de 4 dígitos para entrar.</p>
+      <div class="pin-dots" id="userPinDots">
+        ${[0,1,2,3].map(() => '<span class="pin-dot"></span>').join('')}
+      </div>
+      <div class="field" style="max-width:220px; margin:18px auto 0;">
+        <input id="userPinInput" class="phone-input" type="tel" inputmode="numeric" maxlength="4"
+               style="text-align:center; letter-spacing:10px; font-size:22px;"
+               placeholder="••••" oninput="onUserPinInput(this)">
+      </div>
+      <div class="auth-actions">
+        <button class="btn ghost xl block" onclick="openNipRecovery('${u.id}')">Olvidé mi NIP</button>
+      </div>
+    </div>
+  `;
+}
+
+function onUserPinInput(el){
+  el.value = el.value.replace(/\D/g,'').slice(0,4);
+  const dots = document.querySelectorAll('#userPinDots .pin-dot');
+  dots.forEach((d, i) => d.classList.toggle('on', i < el.value.length));
+  if(el.value.length !== 4) return;
+  const u = userById(authState.pickedUser);
+  if(u && el.value === u.pin){
+    vibrate(15);
+    enterAsUser(u);
+  }else{
+    vibrate([18,60,18]);
+    el.value = '';
+    dots.forEach(d => d.classList.remove('on'));
+    toast('NIP incorrecto', { variant:'toast-danger', icon:icon('close') });
+  }
+}
+
+function enterAsUser(u){
+  setActiveUser(u.id);
+  openUserSession();
+  openShiftFor(u);
+  hideAuth();
+  closeModal();
+  cart = [];
+  currentView = 'home';
+  paintChrome();
+  render();
+  toast('Bienvenido, ' + (userFirstName(u) || u.name), { variant:'toast-success', icon:icon('check'), subtitle:'Turno iniciado a las ' + shiftClock(new Date().toISOString()) });
+}
+
+/** Cierra el turno actual y vuelve a la selección de usuario. */
+function switchUser(){
+  const sh = currentShift();
+  let resumen = '';
+  if(sh){
+    const t = shiftTotals(sh);
+    resumen = t.count + (t.count === 1 ? ' venta · ' : ' ventas · ') + formatMoney(t.total);
+  }
+  closeOpenShifts();
+  closeUserSession();
+  closeModal();
+  cart = [];
+  checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
+  currentView = 'home';
+  authState.pickedUser = null;
+  showAuth('users');
+  if(resumen) toast('Turno cerrado', { subtitle: resumen, icon:icon('clock') });
+}
+
+/* =========================================================
+   CONFIGURACIÓN → USUARIOS
+   Es una opción más de Configuración, nunca una pantalla
+   obligatoria ni una sección del menú principal.
+========================================================= */
+function usersSubtitle(){
+  const n = DB.getUsers().length;
+  if(n <= 1) return 'Solo tú (Dueño) · Opcional';
+  const me = activeUser();
+  const rol = roleOf(me ? me.role : 'dueno').name;
+  if(!isOwner() && !can('verTodasVentas')) return 'Entraste como ' + rol + ' · Tu NIP y tus turnos';
+  return n + ' usuarios · Entraste como ' + rol;
+}
+
+function openUsersSheet(){
+  const me = activeUser();
+  const list = DB.getUsers();
+  const multi = multiUser();
+  const soyDueno = isOwner();
+
+  const intro = !multi ? `
+    <p class="sheet-text">
+      Ahora mismo Mesa funciona con <b>un solo usuario: tú, el Dueño</b>.
+      Si quieres, puedes agregar a tu equipo y cada quien entrará con su propio NIP.
+      Si no agregas a nadie, Mesa sigue funcionando igual que hoy.
+    </p>` : '';
+
+  const listaHTML = soyDueno || can('verTodasVentas') ? `
+    <div class="acc-list">
+      ${list.map(u => {
+        const esYo = me && u.id === me.id;
+        const sub = roleOf(u.role).name + (esYo ? ' · Tú' : '') + (u.pin ? '' : ' · sin NIP');
+        const clickable = soyDueno;
+        return `
+          <button class="acc-row" ${clickable ? `onclick="openUserDetail('${u.id}')"` : 'disabled style="opacity:1;"'}>
+            <span class="acc-ico ${u.role === 'dueno' ? 'gold' : (u.role === 'admin' ? 'blue' : 'green')}">
+              <span class="ini">${userInitials(u)}</span>
+            </span>
+            <span class="acc-txt">
+              <span class="acc-label">${escapeHtml(u.name)}</span>
+              <span class="acc-sub">${escapeHtml(sub)}</span>
+            </span>
+            ${clickable ? `<span class="acc-chev">${icon('chevronRight')}</span>` : ''}
+          </button>`;
+      }).join('')}
+    </div>` : `
+    <div class="acc-list">
+      <div class="acc-row">
+        <span class="acc-ico green"><span class="ini">${userInitials(me)}</span></span>
+        <span class="acc-txt">
+          <span class="acc-label">${escapeHtml(me ? me.name : '')}</span>
+          <span class="acc-sub">${roleOf(me ? me.role : 'empleado').name} · Este es tu usuario</span>
+        </span>
+      </div>
+    </div>`;
+
+  openModal(`
+    <div class="sheet-header">
+      <h2>Usuarios</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    ${intro}
+    ${listaHTML}
+
+    ${soyDueno ? `
+      <button class="btn primary block" style="margin-top:14px;" onclick="startAddUser()">
+        ${icon('plus')} Agregar usuario
+      </button>` : ''}
+
+    <div class="acc-list" style="margin-top:14px;">
+      <button class="acc-row" onclick="openMyPinForm()">
+        <span class="acc-ico gold">${icon('key')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">Mi NIP</span>
+          <span class="acc-sub">${(me && me.pin) ? 'Cambiar mi NIP de 4 dígitos' : 'Aún no tienes NIP'}</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
+      <button class="acc-row" onclick="openShiftsSheet()">
+        <span class="acc-ico violet">${icon('clock')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">${can('verTodasVentas') ? 'Turnos' : 'Mis turnos'}</span>
+          <span class="acc-sub">${multi ? (visibleShifts().length + ' turno' + (visibleShifts().length === 1 ? '' : 's') + ' registrado' + (visibleShifts().length === 1 ? '' : 's')) : 'Se registran cuando hay varios usuarios'}</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
+      <button class="acc-row" onclick="openNipRecovery()">
+        <span class="acc-ico blue">${icon('phone')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">Olvidé mi NIP</span>
+          <span class="acc-sub">Recuperarlo con el número de teléfono</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
+      ${multi ? `
+        <button class="acc-row" onclick="switchUser()">
+          <span class="acc-ico">${icon('swap')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Cambiar de usuario</span>
+            <span class="acc-sub">Cierra tu turno y vuelve a la selección</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>` : ''}
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn primary block" onclick="closeModal(); render();">Listo</button>
+    </div>
+  `, { dismissible:true });
+}
+
+/* ---------- Agregar usuario ---------- */
+function startAddUser(){
+  if(!requireOwner('Solo el Dueño puede agregar usuarios')) return;
+  const owner = ownerUser();
+  if(owner && !owner.pin){ openOwnerPinSheet(); return; }   // Primero su propio NIP
+  openUserForm();
+}
+
+function openOwnerPinSheet(){
+  const owner = ownerUser() || {};
+  openModal(`
+    <h3 class="sheet-title">Primero crea tu NIP de Dueño</h3>
+    <p class="sheet-text">
+      Vas a agregar a alguien más a Mesa. Antes, crea tu propio NIP de 4 dígitos:
+      será el que uses para entrar y el que protege lo que solo tú puedes hacer.
+    </p>
+    <div class="field">
+      <label for="opPhone">Tu teléfono (para recuperar el NIP)</label>
+      <input id="opPhone" type="tel" inputmode="numeric" value="${escapeHtml(owner.phone || '')}" placeholder="981 123 4567">
+      <div class="field-hint">Se guarda solo en este dispositivo.</div>
+    </div>
+    <div class="field">
+      <label for="opPin1">Tu NIP</label>
+      <input id="opPin1" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="field">
+      <label for="opPin2">Repite tu NIP</label>
+      <input id="opPin2" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUsersSheet()">Cancelar</button>
+      <button class="btn primary block" onclick="saveOwnerPin()">Guardar y continuar</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function saveOwnerPin(){
+  const a = document.getElementById('opPin1').value.replace(/\D/g,'');
+  const b = document.getElementById('opPin2').value.replace(/\D/g,'');
+  const phone = document.getElementById('opPhone').value.replace(/\D/g,'');
+  if(a.length !== 4){ toast('El NIP debe tener 4 dígitos'); return; }
+  if(a !== b){ toast('Los dos NIP no son iguales'); return; }
+  const list = DB.getUsers();
+  const o = list.find(u => u.role === 'dueno');
+  if(!o) return;
+  o.pin = a;
+  o.phone = phone;
+  DB.saveUsers(list);
+  toast('NIP de Dueño creado', { variant:'toast-success', icon:icon('check') });
+  openUserForm();
+}
+
+function openUserForm(){
+  if(!requireOwner('Solo el Dueño puede agregar usuarios')) return;
+  openModal(`
+    <h3 class="sheet-title">Nuevo usuario</h3>
+    <p class="sheet-text">Esta persona entrará a Mesa con su propio NIP.</p>
+    <div class="field">
+      <label for="nuName">Nombre</label>
+      <input id="nuName" type="text" placeholder="Luis Pérez" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="nuRole">Tipo de usuario</label>
+      <select id="nuRole" onchange="previewRoleHint()">
+        <option value="empleado">Empleado</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <div class="field-hint" id="nuRoleHint">${roleOf('empleado').sub}</div>
+    </div>
+    <div class="field">
+      <label for="nuPhone">Teléfono (para recuperar su NIP)</label>
+      <input id="nuPhone" type="tel" inputmode="numeric" placeholder="981 123 4567">
+      <div class="field-hint">Opcional, pero sin él no podrá recuperar su NIP.</div>
+    </div>
+    <div class="field">
+      <label for="nuPin1">NIP de 4 dígitos</label>
+      <input id="nuPin1" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="field">
+      <label for="nuPin2">Repite el NIP</label>
+      <input id="nuPin2" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUsersSheet()">Cancelar</button>
+      <button class="btn primary block" onclick="saveNewUser()">Crear usuario</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function previewRoleHint(){
+  const sel = document.getElementById('nuRole');
+  const hint = document.getElementById('nuRoleHint');
+  if(sel && hint) hint.textContent = roleOf(sel.value).sub;
+}
+
+function saveNewUser(){
+  if(!requireOwner('Solo el Dueño puede agregar usuarios')) return;
+  const name = document.getElementById('nuName').value.trim();
+  const role = document.getElementById('nuRole').value;
+  const phone = document.getElementById('nuPhone').value.replace(/\D/g,'');
+  const a = document.getElementById('nuPin1').value.replace(/\D/g,'');
+  const b = document.getElementById('nuPin2').value.replace(/\D/g,'');
+  if(name.length < 2){ toast('Escribe el nombre de la persona'); return; }
+  if(a.length !== 4){ toast('El NIP debe tener 4 dígitos'); return; }
+  if(a !== b){ toast('Los dos NIP no son iguales'); return; }
+
+  const list = DB.getUsers();
+  list.push({
+    id: 'u' + Date.now(),
+    name: name,
+    role: (role === 'admin' ? 'admin' : 'empleado'),
+    pin: a,
+    phone: phone,
+    country: (currentUser() || {}).country || 'MX',
+    perms: defaultPerms(role),
+    createdAt: new Date().toISOString()
+  });
+  DB.saveUsers(list);
+
+  // El Dueño que estaba usando Mesa sigue siendo el usuario activo.
+  const me = activeUser();
+  if(me) setActiveUser(me.id);
+  openUserSession();
+  if(!currentShift()) openShiftFor(activeUser());
+
+  toast(roleOf(role).name + ' agregado', { variant:'toast-success', icon:icon('check'), subtitle: name + ' ya puede entrar con su NIP' });
+  paintChrome();
+  render();
+  openUsersSheet();
+}
+
+/* ---------- Ver y modificar un usuario (solo el Dueño) ---------- */
+function openUserDetail(id){
+  if(!requireOwner('Solo el Dueño puede modificar usuarios')) return;
+  const u = userById(id);
+  if(!u) return;
+  const esDueno = u.role === 'dueno';
+  const perms = Object.assign(defaultPerms(u.role), u.perms || {});
+
+  openModal(`
+    <div class="sheet-header">
+      <h2>${escapeHtml(u.name)}</h2>
+      <button class="sheet-close" onclick="openUsersSheet()">${icon('close')}</button>
+    </div>
+    <p class="sheet-text">${roleOf(u.role).sub}</p>
+
+    <div class="field">
+      <label for="udName">Nombre</label>
+      <input id="udName" type="text" value="${escapeHtml(u.name)}">
+    </div>
+    <div class="field">
+      <label for="udPhone">Teléfono (para recuperar el NIP)</label>
+      <input id="udPhone" type="tel" inputmode="numeric" value="${escapeHtml(u.phone || '')}" placeholder="981 123 4567">
+    </div>
+    <div class="field">
+      <label for="udRole">Tipo de usuario</label>
+      <select id="udRole" ${esDueno ? 'disabled' : ''}>
+        ${esDueno ? '<option value="dueno">Dueño</option>' : `
+          <option value="empleado" ${u.role === 'empleado' ? 'selected' : ''}>Empleado</option>
+          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Administrador</option>
+        `}
+      </select>
+      ${esDueno ? '<div class="field-hint">El Dueño no puede cambiar de tipo ni eliminarse.</div>' : '<div class="field-hint">Al cambiar el tipo, los permisos vuelven a los de ese rol.</div>'}
+    </div>
+
+    <div class="section-title" style="margin-top:6px;">Permisos</div>
+    ${esDueno ? `
+      <p class="sheet-text">El Dueño siempre tiene todos los permisos.</p>
+    ` : PERMS.map(p => `
+      <div class="toggle-row">
+        <span class="acc-ico ${p.id === 'gestionarProductos' ? 'green' : (p.id === 'verGanancias' ? 'violet' : 'blue')}">${icon(p.id === 'gestionarProductos' ? 'box' : (p.id === 'verGanancias' ? 'chart' : 'receipt'))}</span>
+        <span class="acc-txt">
+          <span class="acc-label">${p.label}</span>
+          <span class="acc-sub">${p.sub}</span>
+        </span>
+        <label class="switch">
+          <input type="checkbox" ${perms[p.id] ? 'checked' : ''} onchange="toggleUserPerm('${u.id}','${p.id}', this.checked)">
+          <span class="track"></span>
+        </label>
+      </div>
+    `).join('')}
+
+    <button class="btn ghost block" style="margin-top:16px;" onclick="openSetPinForm('${u.id}')">
+      ${icon('key')} Cambiar su NIP
+    </button>
+    ${!esDueno ? `
+      <button class="btn danger block" style="margin-top:10px;" onclick="confirmDeleteUser('${u.id}')">
+        ${icon('trash')} Eliminar usuario
+      </button>` : ''}
+
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUsersSheet()">Volver</button>
+      <button class="btn primary block" onclick="saveUserDetail('${u.id}')">Guardar</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function toggleUserPerm(id, perm, value){
+  if(!requireOwner('Solo el Dueño puede modificar permisos')) return;
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === id);
+  if(!u || u.role === 'dueno') return;
+  u.perms = Object.assign(defaultPerms(u.role), u.perms || {});
+  u.perms[perm] = !!value;
+  DB.saveUsers(list);
+  toast(value ? 'Permiso activado' : 'Permiso quitado');
+}
+
+function saveUserDetail(id){
+  if(!requireOwner('Solo el Dueño puede modificar usuarios')) return;
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === id);
+  if(!u) return;
+  const name = document.getElementById('udName').value.trim();
+  const phone = document.getElementById('udPhone').value.replace(/\D/g,'');
+  const roleSel = document.getElementById('udRole');
+  if(name.length < 2){ toast('Escribe el nombre'); return; }
+  u.name = name;
+  u.phone = phone;
+  if(u.role !== 'dueno' && roleSel && roleSel.value !== u.role){
+    u.role = roleSel.value;
+    u.perms = defaultPerms(u.role);
+  }
+  DB.saveUsers(list);
+  if(u.role === 'dueno'){
+    const acc = currentUser();
+    if(acc){ updateUser({ name: name }); }
+  }
+  paintChrome();
+  render();
+  toast('Usuario actualizado', { variant:'toast-success', icon:icon('check') });
+  openUsersSheet();
+}
+
+function confirmDeleteUser(id){
+  if(!requireOwner('Solo el Dueño puede eliminar usuarios')) return;
+  const u = userById(id);
+  if(!u) return;
+  if(u.role === 'dueno'){ toast('El Dueño no se puede eliminar', { variant:'toast-danger', icon:icon('close') }); return; }
+  openModal(`
+    <h3 class="sheet-title">¿Eliminar a ${escapeHtml(u.name)}?</h3>
+    <p class="sheet-text">
+      Ya no podrá entrar a Mesa. Sus ventas y sus turnos se quedan en el historial
+      con su nombre. Esto no se puede deshacer.
+    </p>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUserDetail('${u.id}')">Cancelar</button>
+      <button class="btn danger block" onclick="doDeleteUser('${u.id}')">Eliminar</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function doDeleteUser(id){
+  if(!requireOwner('Solo el Dueño puede eliminar usuarios')) return;
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === id);
+  if(!u || u.role === 'dueno') return;
+  DB.saveUsers(list.filter(x => x.id !== id));
+  const me = activeUser();
+  if(me) setActiveUser(me.id);
+  toast('Usuario eliminado');
+  paintChrome();
+  render();
+  openUsersSheet();
+}
+
+/* ---------- Mi NIP ---------- */
+function openMyPinForm(){
+  const me = activeUser();
+  if(!me) return;
+  openSetPinForm(me.id, true);
+}
+
+function openSetPinForm(id, mine){
+  const u = userById(id);
+  if(!u) return;
+  if(!mine && !isOwner()){ requireOwner('Solo el Dueño puede cambiar el NIP de otros'); return; }
+  const me = activeUser();
+  const esMio = !!mine || (me && me.id === u.id);
+  openModal(`
+    <h3 class="sheet-title">${esMio ? 'Mi NIP' : 'NIP de ' + escapeHtml(u.name)}</h3>
+    <p class="sheet-text">
+      ${u.pin ? 'Escribe un NIP nuevo de 4 dígitos.' : 'Crea un NIP de 4 dígitos para entrar a Mesa.'}
+    </p>
+    ${(esMio && u.pin) ? `
+      <div class="field">
+        <label for="spOld">NIP actual</label>
+        <input id="spOld" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+      </div>` : ''}
+    <div class="field">
+      <label for="spPin1">NIP nuevo</label>
+      <input id="spPin1" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="field">
+      <label for="spPin2">Repite el NIP</label>
+      <input id="spPin2" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUsersSheet()">Cancelar</button>
+      <button class="btn primary block" onclick="saveSetPin('${u.id}', ${esMio ? 'true' : 'false'})">Guardar NIP</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function saveSetPin(id, esMio){
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === id);
+  if(!u) return;
+  if(!esMio && !isOwner()){ requireOwner('Solo el Dueño puede cambiar el NIP de otros'); return; }
+  const oldEl = document.getElementById('spOld');
+  if(oldEl && u.pin && oldEl.value.replace(/\D/g,'') !== u.pin){
+    toast('Tu NIP actual no es correcto', { variant:'toast-danger', icon:icon('close') });
+    return;
+  }
+  const a = document.getElementById('spPin1').value.replace(/\D/g,'');
+  const b = document.getElementById('spPin2').value.replace(/\D/g,'');
+  if(a.length !== 4){ toast('El NIP debe tener 4 dígitos'); return; }
+  if(a !== b){ toast('Los dos NIP no son iguales'); return; }
+  u.pin = a;
+  DB.saveUsers(list);
+  toast('NIP guardado', { variant:'toast-success', icon:icon('check') });
+  openUsersSheet();
+}
+
+/* =========================================================
+   TURNOS — hoja de consulta
+========================================================= */
+function openShiftsSheet(){
+  const shifts = visibleShifts();
+  const todos = can('verTodasVentas');
+  const body = shifts.length === 0 ? `
+    <div class="empty-state">
+      ${illustration('receiptEmpty')}
+      <div class="empty-title">Aún no hay turnos</div>
+      <div class="empty-text">Los turnos se registran cuando cada usuario entra con su NIP.</div>
+    </div>
+  ` : `
+    <div class="card">
+      ${shifts.slice(0, 40).map(s => {
+        const t = shiftTotals(s);
+        const abierto = !s.end;
+        return `
+          <div class="shift-row">
+            <span class="acc-ico ${s.role === 'dueno' ? 'gold' : (s.role === 'admin' ? 'blue' : 'green')}">
+              <span class="ini">${userInitials({ name:s.userName })}</span>
+            </span>
+            <span class="shift-main">
+              <span class="shift-name">${escapeHtml(todos ? s.userName : 'Mi turno')}</span>
+              <span class="shift-meta">${formatDateShort(s.start)} · ${shiftClock(s.start)} → ${s.end ? shiftClock(s.end) : 'en curso'}</span>
+            </span>
+            <span class="shift-right">
+              <span class="shift-total">${formatMoney(t.total)}</span>
+              <span class="shift-meta">${t.count} venta${t.count === 1 ? '' : 's'}</span>
+              ${abierto ? '<span class="shift-open">Abierto</span>' : ''}
+            </span>
+          </div>`;
+      }).join('')}
+    </div>`;
+
+  openModal(`
+    <div class="sheet-header">
+      <h2>${todos ? 'Turnos' : 'Mis turnos'}</h2>
+      <button class="sheet-close" onclick="openUsersSheet()">${icon('close')}</button>
+    </div>
+    ${body}
+    <div class="sheet-actions">
+      <button class="btn primary block" onclick="openUsersSheet()">Volver</button>
+    </div>
+  `, { dismissible:true });
+}
+
+/* =========================================================
+   OLVIDÉ MI NIP  (prototipo local)
+   ---------------------------------------------------------
+   Por ahora NO se envía ningún SMS ni WhatsApp: el código se
+   genera y se muestra en la misma pantalla, solo para probar
+   el flujo completo. Cuando conectes un servicio real, aquí
+   es donde se manda el código al teléfono guardado.
+========================================================= */
+const NIP_SMS_ACTIVADO = false;
+let nipRecover = { userId:null, code:'', step:1 };
+
+function openNipRecovery(preId){
+  const list = DB.getUsers();
+  const enAcceso = document.getElementById('authLayer').classList.contains('show');
+  nipRecover = { userId: preId || null, code:'', step: preId ? 2 : 1 };
+  /* Dentro de la app, cada quien solo recupera su propio NIP.
+     El Dueño sí puede recuperar el de cualquiera, y en la pantalla
+     de acceso se puede elegir a quién (todavía nadie entró). */
+  if(!enAcceso && !isOwner()){
+    const me = activeUser();
+    if(me){ nipRecover.userId = me.id; nipRecover.step = 2; }
+  }
+  if(list.length === 1){ nipRecover.userId = list[0].id; nipRecover.step = 2; }
+  renderNipRecovery();
+}
+
+function renderNipRecovery(){
+  const list = DB.getUsers();
+  const u = userById(nipRecover.userId);
+  const back = `<button class="sheet-close" onclick="closeNipRecovery()">${icon('close')}</button>`;
+
+  if(nipRecover.step === 1){
+    openModal(`
+      <div class="sheet-header"><h2>Olvidé mi NIP</h2>${back}</div>
+      <p class="sheet-text">¿De quién es el NIP que quieres recuperar?</p>
+      <div class="acc-list">
+        ${list.map(x => `
+          <button class="acc-row" onclick="nipPickUser('${x.id}')">
+            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')}"><span class="ini">${userInitials(x)}</span></span>
+            <span class="acc-txt">
+              <span class="acc-label">${escapeHtml(x.name)}</span>
+              <span class="acc-sub">${roleOf(x.role).name}</span>
+            </span>
+            <span class="acc-chev">${icon('chevronRight')}</span>
+          </button>`).join('')}
+      </div>
+    `, { dismissible:true });
+    return;
+  }
+
+  if(nipRecover.step === 2){
+    const tiene = !!(u && u.phone);
+    openModal(`
+      <div class="sheet-header"><h2>Olvidé mi NIP</h2>${back}</div>
+      <p class="sheet-text">
+        ${tiene
+          ? 'Escribe el teléfono registrado de <b>' + escapeHtml(u.name) + '</b> para confirmar que eres tú.'
+          : '<b>' + escapeHtml(u ? u.name : '') + '</b> no tiene un teléfono registrado. Pídele al Dueño que lo agregue en Configuración → Usuarios.'}
+      </p>
+      ${tiene ? `
+        <div class="field">
+          <label for="nrPhone">Teléfono registrado</label>
+          <input id="nrPhone" type="tel" inputmode="numeric" placeholder="981 123 4567">
+          <div class="field-hint">Termina en ${escapeHtml(String(u.phone).slice(-2))}</div>
+        </div>` : ''}
+      <div class="sheet-actions">
+        <button class="btn ghost block" onclick="closeNipRecovery()">Cancelar</button>
+        ${tiene ? '<button class="btn primary block" onclick="nipCheckPhone()">Continuar</button>' : ''}
+      </div>
+    `, { dismissible:true });
+    return;
+  }
+
+  if(nipRecover.step === 3){
+    openModal(`
+      <div class="sheet-header"><h2>Código de verificación</h2>${back}</div>
+      <p class="sheet-text">
+        Escribe el código de 6 dígitos para continuar.
+      </p>
+      ${!NIP_SMS_ACTIVADO ? `
+        <div class="recover-code">${nipRecover.code}</div>
+        <p class="sheet-text" style="margin-top:0;">
+          Prototipo local: el código se muestra aquí porque todavía no hay envío
+          real por SMS ni WhatsApp. Nada sale de este dispositivo.
+        </p>` : ''}
+      <div class="field">
+        <label for="nrCode">Código</label>
+        <input id="nrCode" type="tel" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:6px; text-align:center;">
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost block" onclick="closeNipRecovery()">Cancelar</button>
+        <button class="btn primary block" onclick="nipCheckCode()">Verificar</button>
+      </div>
+    `, { dismissible:true });
+    return;
+  }
+
+  openModal(`
+    <div class="sheet-header"><h2>Nuevo NIP</h2>${back}</div>
+    <p class="sheet-text">Listo. Ahora crea el NIP nuevo de <b>${escapeHtml(u ? u.name : '')}</b>.</p>
+    <div class="field">
+      <label for="nrPin1">NIP nuevo</label>
+      <input id="nrPin1" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="field">
+      <label for="nrPin2">Repite el NIP</label>
+      <input id="nrPin2" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="closeNipRecovery()">Cancelar</button>
+      <button class="btn primary block" onclick="nipSaveNewPin()">Guardar NIP</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function nipPickUser(id){ nipRecover.userId = id; nipRecover.step = 2; renderNipRecovery(); }
+
+function nipCheckPhone(){
+  const u = userById(nipRecover.userId);
+  if(!u) return;
+  const typed = (document.getElementById('nrPhone').value || '').replace(/\D/g,'');
+  const saved = String(u.phone || '').replace(/\D/g,'');
+  if(!typed){ toast('Escribe el teléfono'); return; }
+  if(typed !== saved){
+    vibrate([18,60,18]);
+    toast('Ese no es el teléfono registrado', { variant:'toast-danger', icon:icon('close') });
+    return;
+  }
+  nipRecover.code = String(Math.floor(100000 + Math.random() * 900000));
+  nipRecover.step = 3;
+  renderNipRecovery();
+}
+
+function nipCheckCode(){
+  const typed = (document.getElementById('nrCode').value || '').replace(/\D/g,'');
+  if(typed !== nipRecover.code){
+    vibrate([18,60,18]);
+    toast('Código incorrecto', { variant:'toast-danger', icon:icon('close') });
+    return;
+  }
+  nipRecover.step = 4;
+  renderNipRecovery();
+}
+
+function nipSaveNewPin(){
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === nipRecover.userId);
+  if(!u) return;
+  const a = document.getElementById('nrPin1').value.replace(/\D/g,'');
+  const b = document.getElementById('nrPin2').value.replace(/\D/g,'');
+  if(a.length !== 4){ toast('El NIP debe tener 4 dígitos'); return; }
+  if(a !== b){ toast('Los dos NIP no son iguales'); return; }
+  u.pin = a;
+  DB.saveUsers(list);
+  nipRecover = { userId:null, code:'', step:1 };
+  toast('NIP actualizado', { variant:'toast-success', icon:icon('check') });
+  if(document.getElementById('authLayer').classList.contains('show')){
+    closeModal();
+    authGo('users');
+  }else{
+    openUsersSheet();
+  }
+}
+
+function closeNipRecovery(){
+  nipRecover = { userId:null, code:'', step:1 };
+  closeModal();
+  if(!document.getElementById('authLayer').classList.contains('show')) openUsersSheet();
+}
+
 /* ---------- Arranque de la app con sesión ---------- */
 function bootApp(){
   initDB();
+  ensureOwnerUser();     // La primera vez: se entra como Dueño, sin NIP.
+  syncOwnerName();
   applyPrintVars();
   paintChrome();
   render();
@@ -4919,6 +6072,21 @@ function bootApp(){
   if(!AUTH.isLogged()){
     showAuth(u ? 'login' : 'welcome');
     if(u) authState.mode = 'login';
+  }else if(multiUser()){
+    const me = activeUser();
+    if(userSessionOpen() && me){
+      /* La sesión de este usuario sigue abierta: aunque se recargue la
+         página, Mesa no vuelve a pedir el NIP. Solo se pide otra vez
+         cuando le dan a "Cambiar de usuario". */
+      if(!currentShift()) openShiftFor(me);
+      paintChrome();
+      render();
+    }else{
+      /* Nadie ha entrado todavía: cada quien entra con su NIP. */
+      closeOpenShifts();
+      authState.pickedUser = null;
+      showAuth('users');
+    }
   }else if(u && u.pin){
     showAuth('lock');
   }
