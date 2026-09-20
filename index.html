@@ -1229,6 +1229,9 @@
     display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800;
   }
   .up-avatar svg{ width:24px; height:24px; }
+  .up-avatar img{ width:100%; height:100%; border-radius:50%; object-fit:cover; }
+  .acc-ico.has-photo{ overflow:hidden; padding:0; }
+  .acc-ico img{ width:100%; height:100%; object-fit:cover; border-radius:13px; }
   .up-name{
     font-size:14.5px; font-weight:800; max-width:100%;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -3760,8 +3763,9 @@ function paintChrome(){
   /* Con varios usuarios, arriba se ve quién está usando Mesa. */
   const mu = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
   if(av){
-    av.innerHTML = (!mu && u && u.photo) ? `<img src="${u.photo}" alt="">`
-                 : `<span class="ini">${mu ? userInitials(mu) : initials()}</span>`;
+    const foto = mu ? userPhoto(mu) : (u && u.photo);
+    av.innerHTML = foto ? `<img src="${foto}" alt="">`
+                        : `<span class="ini">${mu ? userInitials(mu) : initials()}</span>`;
   }
   const chip = document.getElementById('chipName');
   if(chip){
@@ -4482,7 +4486,7 @@ function renderAccount(){
     <p class="page-sub">${soyDueno ? 'Tus datos, tu negocio y la configuración de la app.' : 'Tu usuario y la configuración de la app.'}</p>
 
     <div class="profile-hero">
-      <div class="profile-avatar">${(!me && u.photo) ? `<img src="${u.photo}" alt="">` : (me ? userInitials(me) : initials())}</div>
+      <div class="profile-avatar">${me ? userAvatar(me) : (u.photo ? `<img src="${u.photo}" alt="">` : initials())}</div>
       <div class="profile-meta">
         <div class="profile-name">${escapeHtml(me ? me.name : displayName())}</div>
         <div class="profile-phone">${escapeHtml(me ? (me.phone ? formatPhone(me.phone, me.country || 'MX') : roleOf(me.role).name) : fullPhone(u))}</div>
@@ -5180,6 +5184,21 @@ function userFirstName(u){
   const n = ((u && u.name) || '').trim();
   return n ? n.split(/\s+/)[0] : '';
 }
+/* Foto del usuario. El Dueño usa la misma foto de su perfil, así que
+   si ya tenía una, se sigue viendo en todas partes. */
+function userPhoto(u){
+  if(!u) return null;
+  if(u.photo) return u.photo;
+  if(u.role === 'dueno'){
+    const acc = (typeof currentUser === 'function') ? currentUser() : null;
+    if(acc && acc.photo) return acc.photo;
+  }
+  return null;
+}
+function userAvatar(u){
+  const ph = userPhoto(u);
+  return ph ? `<img src="${ph}" alt="">` : userInitials(u);
+}
 function syncOwnerName(){
   const list = DB.getUsers();
   const o = list.find(u => u.role === 'dueno');
@@ -5306,7 +5325,7 @@ function authUsersHTML(){
       <div class="user-pick-grid">
         ${list.map(u => `
           <button class="user-pick" onclick="pickUser('${u.id}')">
-            <span class="up-avatar">${userInitials(u)}</span>
+            <span class="up-avatar">${userAvatar(u)}</span>
             <span class="up-name">${escapeHtml(u.name)}</span>
             <span class="role-chip ${u.role}">${roleOf(u.role).name}</span>
           </button>
@@ -5339,7 +5358,7 @@ function authUserPinHTML(){
     </div>
     <div class="auth-body">
       <div style="text-align:center; margin-top:10px;">
-        <span class="up-avatar" style="margin:0 auto;">${userInitials(u)}</span>
+        <span class="up-avatar" style="margin:0 auto;">${userAvatar(u)}</span>
       </div>
       <h1 class="auth-title" style="text-align:center; margin-top:16px;">Hola, ${escapeHtml(userFirstName(u) || u.name)}</h1>
       <p class="auth-sub" style="text-align:center;">Escribe tu NIP de 4 dígitos para entrar.</p>
@@ -5442,8 +5461,8 @@ function openUsersSheet(){
         const clickable = soyDueno;
         return `
           <button class="acc-row" ${clickable ? `onclick="openUserDetail('${u.id}')"` : 'disabled style="opacity:1;"'}>
-            <span class="acc-ico ${u.role === 'dueno' ? 'gold' : (u.role === 'admin' ? 'blue' : 'green')}">
-              <span class="ini">${userInitials(u)}</span>
+            <span class="acc-ico ${u.role === 'dueno' ? 'gold' : (u.role === 'admin' ? 'blue' : 'green')} ${userPhoto(u) ? 'has-photo' : ''}">
+              ${userPhoto(u) ? `<img src="${userPhoto(u)}" alt="">` : `<span class="ini">${userInitials(u)}</span>`}
             </span>
             <span class="acc-txt">
               <span class="acc-label">${escapeHtml(u.name)}</span>
@@ -5455,7 +5474,7 @@ function openUsersSheet(){
     </div>` : `
     <div class="acc-list">
       <div class="acc-row">
-        <span class="acc-ico green"><span class="ini">${userInitials(me)}</span></span>
+        <span class="acc-ico green ${userPhoto(me) ? 'has-photo' : ''}">${userPhoto(me) ? `<img src="${userPhoto(me)}" alt="">` : `<span class="ini">${userInitials(me)}</span>`}</span>
         <span class="acc-txt">
           <span class="acc-label">${escapeHtml(me ? me.name : '')}</span>
           <span class="acc-sub">${roleOf(me ? me.role : 'empleado').name} · Este es tu usuario</span>
@@ -5477,6 +5496,14 @@ function openUsersSheet(){
       </button>` : ''}
 
     <div class="acc-list" style="margin-top:14px;">
+      <button class="acc-row" onclick="openMyPhotoForm()">
+        <span class="acc-ico ${userPhoto(me) ? 'has-photo' : 'green'}">${userPhoto(me) ? `<img src="${userPhoto(me)}" alt="">` : icon('camera')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">Mi foto</span>
+          <span class="acc-sub">${userPhoto(me) ? 'Cambiar o quitar mi foto' : 'Ponle una foto a tu usuario'}</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
       <button class="acc-row" onclick="openMyPinForm()">
         <span class="acc-ico gold">${icon('key')}</span>
         <span class="acc-txt">
@@ -5700,7 +5727,10 @@ function openUserDetail(id){
       </div>
     `).join('')}
 
-    <button class="btn ghost block" style="margin-top:16px;" onclick="openSetPinForm('${u.id}')">
+    <button class="btn ghost block" style="margin-top:16px;" onclick="openUserPhotoForm('${u.id}')">
+      ${icon('camera')} Cambiar su foto
+    </button>
+    <button class="btn ghost block" style="margin-top:10px;" onclick="openSetPinForm('${u.id}')">
       ${icon('key')} Cambiar su NIP
     </button>
     ${!esDueno ? `
@@ -5784,6 +5814,95 @@ function doDeleteUser(id){
   openUsersSheet();
 }
 
+/* ---------- Foto de cada usuario ---------- */
+let userFormPhoto = null;
+
+function openMyPhotoForm(){
+  const me = activeUser();
+  if(me) openUserPhotoForm(me.id);
+}
+
+function openUserPhotoForm(id){
+  const u = userById(id);
+  if(!u) return;
+  const me = activeUser();
+  const esMio = me && me.id === u.id;
+  if(!esMio && !isOwner()){ requireOwner('Solo el Dueño puede cambiar la foto de otros'); return; }
+  userFormPhoto = userPhoto(u);
+  openModal(`
+    <h3 class="sheet-title">${esMio ? 'Mi foto' : 'Foto de ' + escapeHtml(u.name)}</h3>
+    <p class="sheet-text">Se verá arriba, en la selección de usuario y en los turnos.</p>
+    <div class="photo-picker">
+      <div class="photo-picker-circle ${userFormPhoto ? 'has-image':''}" id="userPhotoBox" onclick="document.getElementById('userPhotoInput').click()">
+        ${userFormPhoto ? `<img src="${userFormPhoto}" alt="">` : icon('camera')}
+      </div>
+      <div class="photo-picker-actions">
+        <button class="btn ghost" onclick="document.getElementById('userPhotoInput').click()">${icon('camera')} Elegir foto</button>
+        ${userFormPhoto ? `<button class="btn danger" onclick="removeUserPhoto()">${icon('trash')} Quitar</button>` : ''}
+      </div>
+      <input id="userPhotoInput" type="file" accept="image/*" style="display:none" onchange="onUserPhotoSelected(this)">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUsersSheet()">Cancelar</button>
+      <button class="btn primary block" onclick="saveUserPhoto('${u.id}')">Guardar</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function onUserPhotoSelected(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('Selecciona un archivo de imagen'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const size = AVATAR_SIZE;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(size / img.width, size / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,size,size);
+      ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+      userFormPhoto = canvas.toDataURL('image/jpeg', 0.85);
+      const box = document.getElementById('userPhotoBox');
+      if(box){
+        box.classList.add('has-image');
+        box.innerHTML = `<img src="${userFormPhoto}" alt="">`;
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeUserPhoto(){
+  userFormPhoto = null;
+  const box = document.getElementById('userPhotoBox');
+  if(box){ box.classList.remove('has-image'); box.innerHTML = icon('camera'); }
+  const del = document.querySelector('.photo-picker-actions .btn.danger');
+  if(del) del.remove();
+}
+
+function saveUserPhoto(id){
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === id);
+  if(!u) return;
+  const me = activeUser();
+  if(!(me && me.id === u.id) && !isOwner()){ requireOwner('Solo el Dueño puede cambiar la foto de otros'); return; }
+  u.photo = userFormPhoto || null;
+  DB.saveUsers(list);
+  /* El Dueño comparte la foto con su perfil de la cuenta. */
+  if(u.role === 'dueno') updateUser({ photo: userFormPhoto || null });
+  userFormPhoto = null;
+  paintChrome();
+  render();
+  toast('Foto actualizada', { variant:'toast-success', icon:icon('check') });
+  openUsersSheet();
+}
+
 /* ---------- Mi NIP ---------- */
 function openMyPinForm(){
   const me = activeUser();
@@ -5861,8 +5980,10 @@ function openShiftsSheet(){
         const abierto = !s.end;
         return `
           <div class="shift-row">
-            <span class="acc-ico ${s.role === 'dueno' ? 'gold' : (s.role === 'admin' ? 'blue' : 'green')}">
-              <span class="ini">${userInitials({ name:s.userName })}</span>
+            <span class="acc-ico ${s.role === 'dueno' ? 'gold' : (s.role === 'admin' ? 'blue' : 'green')} ${userPhoto(userById(s.userId)) ? 'has-photo' : ''}">
+              ${userPhoto(userById(s.userId))
+                ? `<img src="${userPhoto(userById(s.userId))}" alt="">`
+                : `<span class="ini">${userInitials({ name:s.userName })}</span>`}
             </span>
             <span class="shift-main">
               <span class="shift-name">${escapeHtml(todos ? s.userName : 'Mi turno')}</span>
@@ -5927,7 +6048,7 @@ function renderNipRecovery(){
       <div class="acc-list">
         ${list.map(x => `
           <button class="acc-row" onclick="nipPickUser('${x.id}')">
-            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')}"><span class="ini">${userInitials(x)}</span></span>
+            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')} ${userPhoto(x) ? 'has-photo' : ''}">${userPhoto(x) ? `<img src="${userPhoto(x)}" alt="">` : `<span class="ini">${userInitials(x)}</span>`}</span>
             <span class="acc-txt">
               <span class="acc-label">${escapeHtml(x.name)}</span>
               <span class="acc-sub">${roleOf(x.role).name}</span>
