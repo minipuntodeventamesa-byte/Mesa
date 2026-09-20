@@ -1117,8 +1117,10 @@
     width:40px; height:40px; border-radius:13px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
     background:var(--surface-alt); color:var(--ink);
+    overflow:hidden;
   }
   .acc-ico svg{ width:19px; height:19px; }
+  .acc-ico img{ width:100%; height:100%; object-fit:cover; display:block; }
   .acc-ico.gold{ background:var(--accent-soft); color:#8A6A18; }
   .acc-ico.blue{ background:var(--sec-history-soft); color:var(--sec-history-ink); }
   .acc-ico.green{ background:var(--sec-home-soft); color:var(--sec-home-ink); }
@@ -1227,8 +1229,10 @@
   .up-avatar{
     width:56px; height:56px; border-radius:50%; background:var(--ink); color:#fff;
     display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800;
+    overflow:hidden;
   }
   .up-avatar svg{ width:24px; height:24px; }
+  .up-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
   .up-name{
     font-size:14.5px; font-weight:800; max-width:100%;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -3792,7 +3796,8 @@ function paintChrome(){
   /* Con varios usuarios, arriba se ve quién está usando Mesa. */
   const mu = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
   if(av){
-    av.innerHTML = (!mu && u && u.photo) ? `<img src="${u.photo}" alt="">`
+    const avUser = mu || u;
+    av.innerHTML = (avUser && avUser.photo) ? `<img src="${avUser.photo}" alt="">`
                  : `<span class="ini">${mu ? userInitials(mu) : initials()}</span>`;
   }
   const chip = document.getElementById('chipName');
@@ -4515,7 +4520,7 @@ function renderAccount(){
     <p class="page-sub">${soyDueno ? 'Tus datos, tu negocio y la configuración de la app.' : 'Tu usuario y la configuración de la app.'}</p>
 
     <div class="profile-hero">
-      <div class="profile-avatar">${(!me && u.photo) ? `<img src="${u.photo}" alt="">` : (me ? userInitials(me) : initials())}</div>
+      <div class="profile-avatar">${((me || u) && (me || u).photo) ? `<img src="${(me || u).photo}" alt="">` : (me ? userInitials(me) : initials())}</div>
       <div class="profile-meta">
         <div class="profile-name">${escapeHtml(me ? me.name : displayName())}</div>
         <div class="profile-phone">${escapeHtml(me ? (me.phone ? formatPhone(me.phone, me.country || 'MX') : roleOf(me.role).name) : fullPhone(u))}</div>
@@ -5333,7 +5338,7 @@ function authUsersHTML(){
       <div class="user-pick-grid">
         ${list.map(u => `
           <button class="user-pick" onclick="pickUser('${u.id}')">
-            <span class="up-avatar">${userInitials(u)}</span>
+            <span class="up-avatar">${u.photo ? `<img src="${u.photo}" alt="">` : userInitials(u)}</span>
             <span class="up-name">${escapeHtml(u.name)}</span>
             <span class="role-chip ${u.role}">${roleOf(u.role).name}</span>
           </button>
@@ -5366,7 +5371,7 @@ function authUserPinHTML(){
     </div>
     <div class="auth-body">
       <div style="text-align:center; margin-top:10px;">
-        <span class="up-avatar" style="margin:0 auto;">${userInitials(u)}</span>
+        <span class="up-avatar" style="margin:0 auto;">${u.photo ? `<img src="${u.photo}" alt="">` : userInitials(u)}</span>
       </div>
       <h1 class="auth-title" style="text-align:center; margin-top:16px;">Hola, ${escapeHtml(userFirstName(u) || u.name)}</h1>
       <p class="auth-sub" style="text-align:center;">Escribe tu NIP de 4 dígitos para entrar.</p>
@@ -5470,7 +5475,7 @@ function openUsersSheet(){
         return `
           <button class="acc-row" ${clickable ? `onclick="openUserDetail('${u.id}')"` : 'disabled style="opacity:1;"'}>
             <span class="acc-ico ${u.role === 'dueno' ? 'gold' : (u.role === 'admin' ? 'blue' : 'green')}">
-              <span class="ini">${userInitials(u)}</span>
+              ${u.photo ? `<img src="${u.photo}" alt="">` : `<span class="ini">${userInitials(u)}</span>`}
             </span>
             <span class="acc-txt">
               <span class="acc-label">${escapeHtml(u.name)}</span>
@@ -5482,7 +5487,7 @@ function openUsersSheet(){
     </div>` : `
     <div class="acc-list">
       <div class="acc-row">
-        <span class="acc-ico green"><span class="ini">${userInitials(me)}</span></span>
+        <span class="acc-ico green">${me && me.photo ? `<img src="${me.photo}" alt="">` : `<span class="ini">${userInitials(me)}</span>`}</span>
         <span class="acc-txt">
           <span class="acc-label">${escapeHtml(me ? me.name : '')}</span>
           <span class="acc-sub">${roleOf(me ? me.role : 'empleado').name} · Este es tu usuario</span>
@@ -5953,7 +5958,7 @@ function renderNipRecovery(){
       <div class="acc-list">
         ${list.map(x => `
           <button class="acc-row" onclick="nipPickUser('${x.id}')">
-            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')}"><span class="ini">${userInitials(x)}</span></span>
+            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')}">${x.photo ? `<img src="${x.photo}" alt="">` : `<span class="ini">${userInitials(x)}</span>`}</span>
             <span class="acc-txt">
               <span class="acc-label">${escapeHtml(x.name)}</span>
               <span class="acc-sub">${roleOf(x.role).name}</span>
