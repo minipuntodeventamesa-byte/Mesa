@@ -4634,7 +4634,6 @@ function renderAuth(){
   else if(s === 'otp') html = authOtpHTML();
   else if(s === 'name') html = authNameHTML();
   else if(s === 'trial') html = authTrialHTML();
-  else if(s === 'lock') html = authLockHTML();
   else if(s === 'users') html = authUsersHTML();          // selección de usuario
   else if(s === 'userpin') html = authUserPinHTML();      // NIP de ese usuario
   layer.innerHTML = `<div class="auth-screen" key="${s}">${html}</div>`;
@@ -5066,56 +5065,6 @@ function appleDemoLogin(){
   finishAuth('Sesión iniciada con Apple');
 }
 
-/* ---------- Bloqueo con PIN ---------- */
-function authLockHTML(){
-  return `
-    <div class="auth-top"></div>
-    <div class="auth-body">
-      <div class="auth-illu" style="margin-top:20px;">${ILLUSTRATIONS.lockShield}</div>
-      <h1 class="auth-title" style="text-align:center;">Escribe tu PIN</h1>
-      <p class="auth-sub" style="text-align:center;">Tu app está protegida con un PIN de 4 dígitos.</p>
-      <div class="pin-dots" id="pinDots">
-        ${[0,1,2,3].map(() => '<span class="pin-dot"></span>').join('')}
-      </div>
-      <div class="field" style="max-width:220px; margin:18px auto 0;">
-        <input id="pinInput" class="phone-input" type="tel" inputmode="numeric" maxlength="4"
-               style="text-align:center; letter-spacing:10px; font-size:22px;"
-               placeholder="••••" oninput="onPinInput(this)">
-      </div>
-      <div class="auth-actions">
-        <button class="btn ghost xl block" onclick="forgotPin()">Olvidé mi PIN</button>
-      </div>
-    </div>
-  `;
-}
-function onPinInput(el){
-  el.value = el.value.replace(/\D/g,'').slice(0,4);
-  const dots = document.querySelectorAll('#pinDots .pin-dot');
-  dots.forEach((d, i) => d.classList.toggle('on', i < el.value.length));
-  if(el.value.length === 4){
-    if(el.value === (currentUser() || {}).pin){
-      vibrate(15);
-      markAppUnlocked();
-      hideAuth(); paintChrome(); render();
-    }else{
-      vibrate([18,60,18]);
-      el.value = '';
-      dots.forEach(d => d.classList.remove('on'));
-      toast('PIN incorrecto', { variant:'toast-danger', icon:icon('close') });
-    }
-  }
-}
-function forgotPin(){
-  openModal(`
-    <h3 class="sheet-title">¿Olvidaste tu PIN?</h3>
-    <p class="sheet-text">Puedes cerrar la sesión y volver a entrar con tu número de celular. Tus ventas y productos no se borran.</p>
-    <div class="sheet-actions">
-      <button class="btn ghost block" onclick="closeModal()">Cancelar</button>
-      <button class="btn dark block" onclick="closeModal(); doLogout(true);">Entrar con mi número</button>
-    </div>
-  `, { dismissible:true });
-}
-
 /* =========================================================
    VISTA: MI CUENTA
 ========================================================= */
@@ -5284,7 +5233,7 @@ function renderAccount(){
           <span class="acc-ico gold">${icon('shield')}</span>
           <span class="acc-txt">
             <span class="acc-label">Seguridad</span>
-            <span class="acc-sub">${u.pin ? 'PIN activado' : 'Sin PIN de bloqueo'}</span>
+            <span class="acc-sub">Datos de acceso a tu cuenta</span>
           </span>
           <span class="acc-chev">${icon('chevronRight')}</span>
         </button>` : ''}
@@ -5659,60 +5608,13 @@ function setPref(key, value){
 
 /* ---------- Seguridad ---------- */
 function openSecurity(){
-  const u = currentUser() || {};
   openModal(`
     <h3 class="sheet-title">Seguridad</h3>
-    <div class="toggle-row">
-      <span class="acc-ico gold">${icon('key')}</span>
-      <span class="acc-txt">
-        <span class="acc-label">PIN para abrir la app</span>
-        <span class="acc-sub">${u.pin ? 'Está activado. Se pide cada vez que abres la app.' : 'Protege tus ventas con 4 dígitos.'}</span>
-      </span>
-      <label class="switch"><input type="checkbox" ${u.pin ? 'checked':''} onchange="togglePin(this.checked)"><span class="track"></span></label>
-    </div>
-    ${u.pin ? `<button class="btn ghost block" style="margin-top:14px;" onclick="openPinForm()">${icon('edit')} Cambiar mi PIN</button>` : ''}
-    <button class="btn ghost block" style="margin-top:10px;" onclick="openChangePhone()">${icon('phone')} Cambiar número de celular</button>
+    <button class="btn ghost block" onclick="openChangePhone()">${icon('phone')} Cambiar número de celular</button>
     <div class="sheet-actions">
       <button class="btn primary block" onclick="closeModal(); render();">Listo</button>
     </div>
   `, { dismissible:true });
-}
-function togglePin(on){
-  if(on){ openPinForm(); }
-  else{
-    updateUser({ pin:null });
-    openSecurity();
-    toast('PIN desactivado');
-  }
-}
-function openPinForm(){
-  openModal(`
-    <h3 class="sheet-title">Tu PIN de 4 dígitos</h3>
-    <p class="sheet-text">Te lo vamos a pedir cada vez que abras la app. Si lo olvidas, puedes entrar otra vez con tu número.</p>
-    <div class="field">
-      <label for="pin1">Nuevo PIN</label>
-      <input id="pin1" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
-    </div>
-    <div class="field">
-      <label for="pin2">Repite el PIN</label>
-      <input id="pin2" type="tel" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:8px; text-align:center;">
-    </div>
-    <div class="sheet-actions">
-      <button class="btn ghost block" onclick="openSecurity()">Cancelar</button>
-      <button class="btn primary block" onclick="savePin()">Guardar PIN</button>
-    </div>
-  `, { dismissible:true });
-}
-function savePin(){
-  const a = document.getElementById('pin1').value.replace(/\D/g,'');
-  const b = document.getElementById('pin2').value.replace(/\D/g,'');
-  if(a.length !== 4){ toast('El PIN debe tener 4 dígitos'); return; }
-  if(a !== b){ toast('Los dos PIN no son iguales'); return; }
-  updateUser({ pin:a });
-  /* Lo acaba de poner, ya está adentro: que la recarga no le pida el NIP. */
-  markAppUnlocked();
-  openSecurity();
-  toast('PIN activado', { variant:'toast-success', icon:icon('check') });
 }
 function openChangePhone(){
   const u = currentUser() || {};
@@ -6923,6 +6825,10 @@ function bootApp(){
   initDB();
   ensureOwnerUser();     // La primera vez: se entra como Dueño, sin NIP.
   syncOwnerName();
+  /* Ya no existe el PIN para abrir la app. Si alguien lo tenía activado
+     antes, se borra aquí para que no se quede encerrado. */
+  const acc = AUTH.getUser();
+  if(acc && acc.pin){ acc.pin = null; AUTH.saveUser(acc); }
   applyPrintVars();
   paintChrome();
   render();
@@ -6946,10 +6852,6 @@ function bootApp(){
       authState.pickedUser = null;
       showAuth('users');
     }
-  }else if(u && u.pin){
-    /* Solo se pide el NIP al abrir Mesa. Si ya lo escribió en esta
-       sesión, al recargar la página entra directo. */
-    if(!appUnlockedThisSession()) showAuth('lock');
   }
 }
 
