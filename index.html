@@ -5061,6 +5061,7 @@ function confirmLogout(){
 function doLogout(){
   AUTH.closeSession();
   sessionStorage.removeItem('mesa_pin_unlocked');
+  sessionStorage.removeItem('mesa_user_session_active');
   currentView = 'home';
   authState = Object.assign(authState, { screen:'welcome', mode:'login', phone:'', terms:false, code:'' });
   showAuth('welcome');
@@ -5404,6 +5405,7 @@ function onUserPinInput(el){
 function enterAsUser(u){
   setActiveUser(u.id);
   openShiftFor(u);
+  sessionStorage.setItem('mesa_user_session_active', '1');
   hideAuth();
   closeModal();
   cart = [];
@@ -5427,6 +5429,7 @@ function switchUser(){
   checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
   currentView = 'home';
   authState.pickedUser = null;
+  sessionStorage.removeItem('mesa_user_session_active');
   showAuth('users');
   if(resumen) toast('Turno cerrado', { subtitle: resumen, icon:icon('clock') });
 }
@@ -6122,10 +6125,15 @@ function bootApp(){
       if(u) authState.mode = 'login';
     }else if(multiUser()){
       /* Hay más de un usuario: cada quien entra con su NIP.
-         (Con un solo usuario esto nunca aparece.) */
-      closeOpenShifts();
-      authState.pickedUser = null;
-      showAuth('users');
+         (Con un solo usuario esto nunca aparece.)
+         Solo se pregunta al iniciar la app; una recarga de página
+         no vuelve a mandar a "¿quién va a usar Mesa?" — para eso
+         está el botón "Cambiar usuario". */
+      if(sessionStorage.getItem('mesa_user_session_active') !== '1'){
+        closeOpenShifts();
+        authState.pickedUser = null;
+        showAuth('users');
+      }
     }else if(u && u.pin){
       /* El NIP solo se pide al iniciar la app; si ya se desbloqueó
          en esta misma sesión, una recarga de página no lo vuelve a pedir. */
