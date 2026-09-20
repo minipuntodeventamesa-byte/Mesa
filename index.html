@@ -78,6 +78,35 @@
     position:relative;
   }
 
+  /* ---------- Splash de arranque ---------- */
+  /* Solo se ve al abrir Mesa. Si la página se recarga, no aparece. */
+  #splash{
+    position:fixed; inset:0; z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg);
+    animation:splash-out .4s ease .95s forwards;
+  }
+  #splash .splash-mark{
+    width:96px; height:96px; border-radius:28px;
+    background:var(--sec-home);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 12px 28px rgba(37,211,102,0.35);
+    animation:splash-spin .85s cubic-bezier(.65,0,.35,1) .05s both;
+  }
+  #splash .splash-mark svg{ width:46px; height:46px; }
+  @keyframes splash-spin{
+    0%{ transform:rotate(0deg) scale(.86); opacity:0; }
+    18%{ opacity:1; }
+    100%{ transform:rotate(360deg) scale(1); opacity:1; }
+  }
+  @keyframes splash-out{
+    to{ opacity:0; visibility:hidden; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #splash .splash-mark{ animation:splash-appear .3s ease both; }
+    @keyframes splash-appear{ from{ opacity:0; } to{ opacity:1; } }
+  }
+
   /* ---------- Topbar ---------- */
   .topbar{
     position:sticky; top:0; z-index:20;
@@ -1395,6 +1424,39 @@
 
 </head>
 <body>
+
+<!-- Pantalla de bienvenida: el logo da una vuelta y desaparece -->
+<div id="splash" aria-hidden="true">
+  <span class="splash-mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 2.5v6a3.5 3.5 0 0 0 7 0v-6M8 2.5v19M19 21.5V2.5c-2.3.6-4 2.6-4 5.5v4c0 1 .8 1.8 1.8 1.8H19" stroke="#16213E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+</div>
+<script>
+/* El logo solo se muestra cuando se ABRE Mesa. Si la página se recarga
+   (o se regresa con el botón de atrás), el splash se quita de inmediato,
+   antes de que se alcance a ver. */
+(function(){
+  var sp = document.getElementById('splash');
+  if(!sp) return;
+
+  var yaSeVio = false;
+  try{ yaSeVio = sessionStorage.getItem('mesaSplashVisto') === '1'; }catch(e){}
+
+  var esRecarga = false;
+  try{
+    var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || null;
+    var tipo = nav ? nav.type
+                   : (performance.navigation && performance.navigation.type === 1 ? 'reload' : '');
+    esRecarga = (tipo === 'reload' || tipo === 'back_forward');
+  }catch(e){}
+
+  if(yaSeVio || esRecarga){ sp.remove(); return; }
+
+  try{ sessionStorage.setItem('mesaSplashVisto','1'); }catch(e){}
+
+  sp.addEventListener('animationend', function(ev){
+    if(ev.animationName === 'splash-out' && sp.parentNode) sp.remove();
+  });
+})();
+</script>
 
 <div class="app">
   <header class="topbar">
@@ -5033,6 +5095,7 @@ function onPinInput(el){
   if(el.value.length === 4){
     if(el.value === (currentUser() || {}).pin){
       vibrate(15);
+      markAppUnlocked();
       hideAuth(); paintChrome(); render();
     }else{
       vibrate([18,60,18]);
@@ -5646,6 +5709,8 @@ function savePin(){
   if(a.length !== 4){ toast('El PIN debe tener 4 dígitos'); return; }
   if(a !== b){ toast('Los dos PIN no son iguales'); return; }
   updateUser({ pin:a });
+  /* Lo acaba de poner, ya está adentro: que la recarga no le pida el NIP. */
+  markAppUnlocked();
   openSecurity();
   toast('PIN activado', { variant:'toast-success', icon:icon('check') });
 }
@@ -5694,6 +5759,7 @@ function doLogout(){
   AUTH.closeSession();
   closeOpenShifts();
   closeUserSession();
+  clearAppUnlocked();
   currentView = 'home';
   authState = Object.assign(authState, { screen:'welcome', mode:'login', phone:'', terms:false, code:'' });
   showAuth('welcome');
@@ -5836,6 +5902,15 @@ function setActiveUser(id){
 function openUserSession(){ localStorage.setItem('mesa_user_session','1'); }
 function closeUserSession(){ localStorage.removeItem('mesa_user_session'); }
 function userSessionOpen(){ return localStorage.getItem('mesa_user_session') === '1'; }
+
+/* Desbloqueo de esta sesión. Vive en sessionStorage: aguanta las recargas
+   de la página, pero se borra al cerrar Mesa. Así el NIP se pide cuando
+   se ABRE la app, y no otra vez cada vez que se recarga. */
+function markAppUnlocked(){ try{ sessionStorage.setItem('mesa_unlocked','1'); }catch(e){} }
+function clearAppUnlocked(){ try{ sessionStorage.removeItem('mesa_unlocked'); }catch(e){} }
+function appUnlockedThisSession(){
+  try{ return sessionStorage.getItem('mesa_unlocked') === '1'; }catch(e){ return false; }
+}
 function userInitials(u){
   const n = ((u && u.name) || '').trim();
   if(!n) return icon('person');
@@ -6058,6 +6133,7 @@ function onUserPinInput(el){
 function enterAsUser(u){
   setActiveUser(u.id);
   openUserSession();
+  markAppUnlocked();
   openShiftFor(u);
   hideAuth();
   closeModal();
@@ -6078,6 +6154,7 @@ function switchUser(){
   }
   closeOpenShifts();
   closeUserSession();
+  clearAppUnlocked();
   closeModal();
   cart = [];
   checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
@@ -6870,7 +6947,9 @@ function bootApp(){
       showAuth('users');
     }
   }else if(u && u.pin){
-    showAuth('lock');
+    /* Solo se pide el NIP al abrir Mesa. Si ya lo escribió en esta
+       sesión, al recargar la página entra directo. */
+    if(!appUnlockedThisSession()) showAuth('lock');
   }
 }
 
