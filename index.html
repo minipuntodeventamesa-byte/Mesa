@@ -40,9 +40,9 @@
     --sec-stats:#6C4FCB;
     --sec-stats-soft:#EFEAFB;
     --sec-stats-ink:#4B3593;
-    --sec-products:#C9A876;
-    --sec-products-soft:#F7EFE1;
-    --sec-products-ink:#7A5A32;
+    --sec-products:#25D366;
+    --sec-products-soft:#E5FAEC;
+    --sec-products-ink:#0E7A3D;
     --radius-card:16px;
     --radius-btn:12px;
     --radius-chip:999px;
@@ -136,7 +136,7 @@
   body[data-section="sale"] .btn.primary{ background:var(--sec-sale); color:#fff; }
   body[data-section="sale"] .opt-card.active{ border-color:var(--sec-sale); background:var(--sec-sale-soft); color:var(--ink); }
 
-  body[data-section="products"] .btn.primary{ background:var(--sec-products); color:var(--ink); }
+  body[data-section="products"] .btn.primary{ background:var(--sec-products); color:#fff; }
   body[data-section="products"] .btn.ghost{ border-color:var(--sec-products); color:var(--sec-products-ink); }
 
   /* ---------- Bottom nav ---------- */
@@ -1428,11 +1428,8 @@ const IVA_RATE = 0.16;
 
 function defaultCategories(){
   return [
-    { id:'hamburguesas', name:'Hamburguesas', emoji:'🍔', color:'#C1443B' },
-    { id:'tacos',        name:'Tacos',        emoji:'🌮', color:'#E8A33D' },
-    { id:'complementos', name:'Complementos', emoji:'🍟', color:'#5B8C5A' },
-    { id:'bebidas',      name:'Bebidas',      emoji:'🥤', color:'#3D7EA6' },
-    { id:'postres',      name:'Postres',      emoji:'🍰', color:'#8B5FA3' },
+    { id:'hotcakes',  name:'Hotcakes',  emoji:'🥞', color:'#D19A4E', demo:true },
+    { id:'malteadas', name:'Malteadas', emoji:'🥤', color:'#D96A8A', demo:true },
   ];
 }
 const UNCATEGORIZED = { id:'_none', name:'Sin categoría', emoji:'🍽️', color:'#8A93AC' };
@@ -1458,29 +1455,142 @@ const DEMO_COSTS = {
   p17:24, p18:16, p19:15, p20:14
 };
 
+/* ---------------------------------------------------------
+   FOTOS DE EJEMPLO
+   Ilustraciones dibujadas con SVG (fondo blanco) para que la
+   app arranque con imágenes sin depender de internet.
+   El dueño las reemplaza con sus propias fotos desde
+   Productos > Editar > Cambiar foto.
+--------------------------------------------------------- */
+function svgPhoto(svg){
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg.replace(/\s+/g, ' ').trim());
+}
+
+/* Pila de hotcakes: se reutiliza en las dos fotos, cambiando
+   solo lo que lleva encima (miel o fresas). */
+function hotcakeStackSVG(topping){
+  return `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    <rect width="200" height="200" fill="#FFFFFF"/>
+    <ellipse cx="100" cy="172" rx="66" ry="7" fill="#16213E" opacity="0.06"/>
+    <ellipse cx="100" cy="158" rx="76" ry="16" fill="#E7E9EF"/>
+    <ellipse cx="100" cy="152" rx="76" ry="16" fill="#FAFBFD"/>
+    <ellipse cx="100" cy="151" rx="57" ry="11" fill="#EFF1F5"/>
+    <ellipse cx="100" cy="147" rx="57" ry="13" fill="#B9742A"/>
+    <ellipse cx="100" cy="140" rx="57" ry="13" fill="#E0A44D"/>
+    <ellipse cx="100" cy="132" rx="55" ry="12.5" fill="#B9742A"/>
+    <ellipse cx="100" cy="125" rx="55" ry="12.5" fill="#E8B160"/>
+    <ellipse cx="100" cy="117" rx="53" ry="12" fill="#B9742A"/>
+    <ellipse cx="100" cy="110" rx="53" ry="12" fill="#EFBD6E"/>
+    <ellipse cx="96" cy="109" rx="31" ry="6" fill="#DCA055" opacity="0.5"/>
+    ${topping}
+  </svg>`;
+}
+
+function syrupSVG(color){
+  return `
+    <ellipse cx="100" cy="109" rx="40" ry="8.5" fill="${color}" opacity="0.75"/>
+    <ellipse cx="100" cy="107" rx="40" ry="8.5" fill="${color}"/>
+    <path d="M68 111 c-4 6 -5 13 -1 17 c5 -3 5 -11 1 -17 Z" fill="${color}"/>
+    <path d="M88 115 c-4 7 -5 16 -1 20 c5 -3 5 -13 1 -20 Z" fill="${color}"/>
+    <path d="M114 115 c4 7 5 15 1 19 c-5 -3 -5 -12 -1 -19 Z" fill="${color}"/>
+    <path d="M131 111 c4 6 5 12 1 16 c-5 -3 -5 -10 -1 -16 Z" fill="${color}"/>`;
+}
+
+function strawberrySVG(x, y, scale){
+  return `
+    <g transform="translate(${x},${y}) scale(${scale})">
+      <rect x="-1.6" y="-13" width="3.2" height="8" rx="1.6" fill="#52A34E"/>
+      <path d="M0 -4 c9 -4 17 2 17 11 c0 10 -9 19 -17 23 c-8 -4 -17 -13 -17 -23 c0 -9 8 -15 17 -11 Z" fill="#E0453F"/>
+      <path d="M0 -4 c-9 -4 -17 2 -17 11 c0 5 2 9 5 13 c-1 -12 4 -20 12 -24 Z" fill="#F06A63" opacity="0.7"/>
+      <g fill="#FFD98A">
+        <ellipse cx="-5" cy="7" rx="1.4" ry="2"/>
+        <ellipse cx="5" cy="5" rx="1.4" ry="2"/>
+        <ellipse cx="0" cy="14" rx="1.4" ry="2"/>
+        <ellipse cx="-8" cy="15" rx="1.4" ry="2"/>
+        <ellipse cx="8" cy="13" rx="1.4" ry="2"/>
+      </g>
+      <path d="M-14 -5 q7 -6 14 -4 q7 -2 14 4 q-7 4 -14 2 q-7 2 -14 -2 Z" fill="#52A34E"/>
+    </g>`;
+}
+
+/* Malteada: vaso alto con crema batida encima. */
+function milkshakeSVG(id, liquid, liquidTop, straw, drizzle, topper){
+  return `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    <rect width="200" height="200" fill="#FFFFFF"/>
+    <defs>
+      <clipPath id="glass${id}">
+        <path d="M68 71 L76 158 q1 9 10 9 h28 q9 0 10 -9 L132 71 Z"/>
+      </clipPath>
+    </defs>
+    <ellipse cx="100" cy="176" rx="46" ry="6" fill="#16213E" opacity="0.06"/>
+    <path d="M67 70 L75 158 q1 10 11 10 h28 q10 0 11 -10 L133 70 Z" fill="#F4F6FA"/>
+    <g clip-path="url(#glass${id})">
+      <rect x="58" y="86" width="84" height="95" fill="${liquid}"/>
+      <ellipse cx="100" cy="86" rx="32" ry="6" fill="${liquidTop}"/>
+      <rect x="77" y="92" width="7" height="58" rx="3.5" fill="#FFFFFF" opacity="0.28"/>
+      <rect x="119" y="96" width="4" height="44" rx="2" fill="#FFFFFF" opacity="0.18"/>
+    </g>
+    <path d="M67 70 L75 158 q1 10 11 10 h28 q10 0 11 -10 L133 70 Z" fill="none" stroke="#D7DCE6" stroke-width="3"/>
+    <ellipse cx="100" cy="70" rx="33" ry="7" fill="none" stroke="#D7DCE6" stroke-width="3"/>
+    <path d="M124 20 L113 54" stroke="${straw}" stroke-width="8" stroke-linecap="round"/>
+    <g fill="#E6D9C6">
+      <circle cx="82" cy="62" r="15"/><circle cx="118" cy="62" r="15"/>
+      <circle cx="100" cy="66" r="17"/><circle cx="100" cy="48" r="16"/>
+      <circle cx="88" cy="52" r="12"/><circle cx="112" cy="52" r="12"/>
+    </g>
+    <g fill="#FFF9F0">
+      <circle cx="82" cy="62" r="13"/><circle cx="118" cy="62" r="13"/>
+      <circle cx="100" cy="66" r="15"/><circle cx="100" cy="48" r="14"/>
+      <circle cx="88" cy="52" r="10"/><circle cx="112" cy="52" r="10"/>
+    </g>
+    <g fill="${drizzle}" opacity="0.9">
+      <ellipse cx="100" cy="38" rx="14" ry="5"/>
+      <path d="M89 40 c-3 6 -2 10 1 12 c3 -3 3 -8 -1 -12 Z"/>
+      <path d="M111 40 c3 6 2 10 -1 12 c-3 -3 -3 -8 1 -12 Z"/>
+    </g>
+    ${topper}
+  </svg>`;
+}
+
+const DEMO_PHOTOS = {
+  hotcakesMiel: svgPhoto(hotcakeStackSVG(`
+    ${syrupSVG('#D9932F')}
+    <path d="M85 91 h30 a5 5 0 0 1 5 5 v9 a5 5 0 0 1 -5 5 h-30 a5 5 0 0 1 -5 -5 v-9 a5 5 0 0 1 5 -5 Z" fill="#F3CE73"/>
+    <rect x="80" y="91" width="40" height="7" rx="3.5" fill="#FFE9A8"/>
+  `)),
+  hotcakesFresa: svgPhoto(hotcakeStackSVG(`
+    ${syrupSVG('#E0556E')}
+    ${strawberrySVG(112, 88, 0.72)}
+    ${strawberrySVG(88, 84, 0.88)}
+  `)),
+  malteadaChocolate: svgPhoto(milkshakeSVG('C', '#7C4A2D', '#96603D', '#E0556E', '#5E3520', '')),
+  malteadaFresa: svgPhoto(milkshakeSVG('F', '#F3A0B8', '#F8BACB', '#8CC9A0', '#E0556E', `
+    <circle cx="100" cy="29" r="8.5" fill="#D63B4B"/>
+    <circle cx="97" cy="26" r="2.6" fill="#FFFFFF" opacity="0.45"/>
+    <path d="M100 21 q3 -9 11 -11" stroke="#5E8F4E" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  `)),
+};
+
+/* El aviso de "productos de ejemplo" se muestra hasta que el dueño
+   toca su catálogo: en cuanto edita o elimina cualquier producto,
+   el aviso desaparece para siempre. */
+function demoHintVisible(){
+  if(localStorage.getItem('mesa_demo_hint_off') !== null) return false;
+  return DB.getProducts().some(p => p.demo);
+}
+function dismissDemoHint(){
+  try{ localStorage.setItem('mesa_demo_hint_off', '1'); }catch(e){}
+}
+
 function defaultProducts(){
   return [
-    { id:'p1',  name:'Hamburguesa Clásica',    price:89,  category:'hamburguesas', active:true, image:null },
-    { id:'p2',  name:'Hamburguesa con Queso',  price:99,  category:'hamburguesas', active:true, image:null },
-    { id:'p3',  name:'Hamburguesa Doble',      price:129, category:'hamburguesas', active:true, image:null },
-    { id:'p4',  name:'Hamburguesa BBQ',        price:119, category:'hamburguesas', active:true, image:null },
-    { id:'p5',  name:'Taco de Asada',          price:22,  category:'tacos', active:true, image:null },
-    { id:'p6',  name:'Taco de Pastor',         price:20,  category:'tacos', active:true, image:null },
-    { id:'p7',  name:'Taco de Bistec',         price:22,  category:'tacos', active:true, image:null },
-    { id:'p8',  name:'Taco de Suadero',        price:20,  category:'tacos', active:true, image:null },
-    { id:'p9',  name:'Papas a la Francesa',    price:45,  category:'complementos', active:true, image:null },
-    { id:'p10', name:'Aros de Cebolla',        price:55,  category:'complementos', active:true, image:null },
-    { id:'p11', name:'Ensalada César',         price:55,  category:'complementos', active:true, image:null },
-    { id:'p12', name:'Nachos con Queso',       price:65,  category:'complementos', active:true, image:null },
-    { id:'p13', name:'Refresco',               price:25,  category:'bebidas', active:true, image:null, stock:12, minStock:2 },
-    { id:'p14', name:'Agua de Horchata',       price:30,  category:'bebidas', active:true, image:null, stock:2,  minStock:2 },
-    { id:'p15', name:'Limonada Natural',       price:28,  category:'bebidas', active:true, image:null, stock:0,  minStock:2 },
-    { id:'p16', name:'Café Americano',         price:25,  category:'bebidas', active:true, image:null },
-    { id:'p17', name:'Pastel de Chocolate',    price:55,  category:'postres', active:true, image:null },
-    { id:'p18', name:'Flan Napolitano',        price:45,  category:'postres', active:true, image:null },
-    { id:'p19', name:'Helado 2 bolas',         price:40,  category:'postres', active:true, image:null },
-    { id:'p20', name:'Churros con Cajeta',     price:42,  category:'postres', active:true, image:null },
-  ].map(p => Object.assign(p, { cost: DEMO_COSTS[p.id] }));
+    { id:'demo1', name:'Hotcakes con miel (EJEMPLO · reemplázame)',      price:65, cost:22, category:'hotcakes',  active:true, image:DEMO_PHOTOS.hotcakesMiel,      demo:true },
+    { id:'demo2', name:'Hotcakes con fresa (EJEMPLO · reemplázame)',     price:75, cost:28, category:'hotcakes',  active:true, image:DEMO_PHOTOS.hotcakesFresa,     demo:true },
+    { id:'demo3', name:'Malteada de chocolate (EJEMPLO · reemplázame)',  price:55, cost:20, category:'malteadas', active:true, image:DEMO_PHOTOS.malteadaChocolate, demo:true },
+    { id:'demo4', name:'Malteada de fresa (EJEMPLO · reemplázame)',      price:55, cost:20, category:'malteadas', active:true, image:DEMO_PHOTOS.malteadaFresa,     demo:true },
+  ];
 }
 
 /* ---------- Persistencia ---------- */
@@ -1526,11 +1636,17 @@ function initDB(){
   });
   if(changed) DB.saveProducts(list);
 
-  if(localStorage.getItem('mesa_todos') === null){
-    DB.saveTodos([
-      { id:'t1', text:'Comprar refrescos', done:false, date:new Date().toISOString() },
-      { id:'t2', text:'Pagar al proveedor', done:false, date:new Date().toISOString() }
-    ]);
+  /* Pendientes de arranque. Se ponen la primera vez, y también una
+     única vez si la lista quedó vacía por pruebas anteriores. Después
+     de eso ya no vuelven a aparecer solos. */
+  if(localStorage.getItem('mesa_todos_seed') === null){
+    if(DB.getTodos().length === 0){
+      DB.saveTodos([
+        { id:'t1', text:'Comprar refrescos', done:false, date:new Date().toISOString() },
+        { id:'t2', text:'Pagar al proveedor', done:false, date:new Date().toISOString() }
+      ]);
+    }
+    localStorage.setItem('mesa_todos_seed', '1');
   }
 }
 
@@ -1949,6 +2065,15 @@ function renderSale(){
   return `
     <h1 class="page-title">Nueva venta</h1>
     <p class="page-sub">Toca un producto para agregarlo al pedido</p>
+    ${demoHintVisible() ? `
+      <div class="alert-card" style="margin:14px 0 4px;">
+        <span class="alert-ico">${icon('alert')}</span>
+        <span class="alert-txt">
+          <span class="alert-title">Estos productos son solo un ejemplo</span>
+          <span class="alert-sub">Edítalos o bórralos en la sección de Productos y pon los tuyos con tus precios y tus fotos.</span>
+        </span>
+      </div>
+    ` : ''}
     ${chips}
     ${grid}
     ${cartCount > 0 ? `
@@ -3055,6 +3180,16 @@ function renderProducts(){
     <h1 class="page-title">Productos</h1>
     <p class="page-sub">Administra tu catálogo y tus existencias</p>
 
+    ${demoHintVisible() ? `
+      <div class="alert-card" style="margin-top:14px;">
+        <span class="alert-ico">${icon('alert')}</span>
+        <span class="alert-txt">
+          <span class="alert-title">Estos productos son solo un ejemplo</span>
+          <span class="alert-sub">Edítalos o bórralos y pon los tuyos con tus precios y tus fotos.</span>
+        </span>
+      </div>
+    ` : ''}
+
     ${stockWarningCardHTML()}
 
     <div class="fab-row" style="gap:8px; margin-top:16px;">
@@ -3193,6 +3328,7 @@ function deleteProduct(productId){
 
   DB.saveProducts(products.filter(x => x.id !== productId));
   cart = cart.filter(c => c.productId !== productId);
+  dismissDemoHint();   // ya tocó su catálogo: el aviso de ejemplo se va
 
   toast('Producto eliminado');
   render();
@@ -3473,6 +3609,8 @@ function saveProductForm(productId){
   if(productId){
     const p = products.find(x => x.id === productId);
     p.name = name; p.price = round2(price); p.cost = cost === null ? null : round2(cost); p.category = category; p.image = productFormImage;
+    p.demo = false; // ya lo personalizó: deja de ser un producto de ejemplo
+    dismissDemoHint();
     p.stock = stock; p.minStock = minStock;
   } else {
     products.push({ id:'p' + Date.now(), name, price: round2(price), cost: cost === null ? null : round2(cost), category, active:true, image: productFormImage, stock: stock, minStock: minStock });
@@ -4759,7 +4897,7 @@ function doDeleteAccount(){
   const wipeAll = document.getElementById('wipeRow').classList.contains('checked');
   AUTH.eraseAccount();
   if(wipeAll){
-    ['mesa_products','mesa_categories','mesa_sales','mesa_counter'].forEach(k => localStorage.removeItem(k));
+    ['mesa_products','mesa_categories','mesa_sales','mesa_counter','mesa_todos','mesa_todos_seed','mesa_demo_hint_off'].forEach(k => localStorage.removeItem(k));
     initDB();
   }
   closeModal();
