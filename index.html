@@ -412,6 +412,9 @@
   .field-hint{ font-size:12px; margin-top:7px; font-weight:700; }
   .field-hint.ok{ color:var(--success); }
   .field-hint.warn{ color:var(--accent-2); }
+  .field.has-error input, .field.has-error select{ border-color:var(--accent-2); background:var(--danger-bg); }
+  .field-error{ font-size:12px; margin-top:7px; font-weight:700; color:var(--accent-2); }
+  .size-row.has-error .pf-size-label, .size-row.has-error .pf-size-price{ border-color:var(--accent-2); background:var(--danger-bg); }
 
   .switch{ display:flex; align-items:center; }
   .switch input{ display:none; }
@@ -1023,6 +1026,26 @@
   .auth-illu{ display:flex; justify-content:center; margin:6px 0 28px; }
   .auth-illu svg{ width:190px; height:190px; }
 
+  /* ---- Oferta de bienvenida: 3 meses gratis ---- */
+  .trial-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--accent-soft); color:#8A6A18;
+    border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:800;
+    margin-bottom:14px;
+  }
+  .trial-card{
+    background:var(--surface-alt); border:1px solid var(--border);
+    border-radius:16px; padding:2px 16px; margin:8px 0 6px;
+  }
+  .trial-card-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 0; border-bottom:1px solid var(--border);
+    font-size:14px; font-weight:700; color:var(--ink-soft);
+  }
+  .trial-card-row:last-child{ border-bottom:none; }
+  .trial-card-row b{ color:var(--ink); font-size:15px; font-weight:800; }
+  .trial-card-row.highlight b{ color:#8A6A18; }
+
   .auth-foot{
     text-align:center; font-size:14px; font-weight:600;
     color:var(--ink-soft); margin-top:18px;
@@ -1117,10 +1140,8 @@
     width:40px; height:40px; border-radius:13px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
     background:var(--surface-alt); color:var(--ink);
-    overflow:hidden;
   }
   .acc-ico svg{ width:19px; height:19px; }
-  .acc-ico img{ width:100%; height:100%; object-fit:cover; display:block; }
   .acc-ico.gold{ background:var(--accent-soft); color:#8A6A18; }
   .acc-ico.blue{ background:var(--sec-history-soft); color:var(--sec-history-ink); }
   .acc-ico.green{ background:var(--sec-home-soft); color:var(--sec-home-ink); }
@@ -1132,6 +1153,30 @@
   .acc-row .acc-chev{ color:var(--ink-faint); flex-shrink:0; }
   .acc-row .acc-chev svg{ width:18px; height:18px; }
   .acc-row.danger .acc-label{ color:var(--accent-2); }
+
+  /* ---- Mini contador de la prueba gratis (Mi cuenta) ---- */
+  .trial-widget{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-card); box-shadow:var(--shadow-card);
+    padding:16px;
+  }
+  .trial-widget-top{ display:flex; align-items:center; gap:12px; }
+  .trial-widget-ico{
+    width:40px; height:40px; border-radius:13px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft); font-size:19px;
+  }
+  .trial-widget-ico svg{ width:19px; height:19px; color:#8A6A18; }
+  .trial-widget-ico.warn{ background:var(--danger-bg); color:var(--accent-2); }
+  .trial-widget-ico.warn svg{ color:var(--accent-2); }
+  .trial-widget-ico.paid{ background:var(--success-bg); }
+  .trial-widget-ico.paid svg{ color:var(--success); }
+  .trial-widget-txt{ flex:1; min-width:0; }
+  .trial-widget-label{ display:block; font-size:15px; font-weight:800; color:var(--ink); }
+  .trial-widget-sub{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-top:2px; }
+  .trial-bar{ height:8px; border-radius:999px; background:var(--surface-alt); margin-top:14px; overflow:hidden; }
+  .trial-bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,var(--accent-strong),var(--accent)); transition:width .3s ease; }
+  .trial-widget.expired{ border-color:#F3CFC9; }
 
   .photo-picker{
     display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:22px;
@@ -1155,6 +1200,35 @@
   .toggle-row:last-of-type{ border-bottom:none; }
   .toggle-row .acc-txt{ flex:1; }
   .toggle-row .acc-sub{ white-space:normal; }
+
+  /* ---- Tamaños/presentaciones del producto (medio litro, litro, kilo...) ---- */
+  .size-row{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .size-row .pf-size-label, .size-row .pf-size-price{
+    border:1.5px solid var(--border); border-radius:12px; padding:12px 12px;
+    font-size:14.5px; background:var(--surface); color:var(--ink); font-weight:600;
+  }
+  .size-row .pf-size-label{ flex:1.4; min-width:0; }
+  .size-row .pf-size-price{ flex:1; min-width:0; }
+  .size-row .pf-size-label:focus, .size-row .pf-size-price:focus{ border-color:var(--accent-strong); outline:none; }
+  .size-row .icon-btn{ flex-shrink:0; }
+
+  /* ---- Selector de tamaño al agregar el producto a la venta ---- */
+  .size-picker-list{ margin-top:4px; }
+  .size-picker-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .size-picker-row:last-child{ border-bottom:none; }
+  .size-picker-label{ font-weight:800; font-size:14.5px; color:var(--ink); }
+  .size-picker-price{ font-size:13px; color:var(--ink-soft); font-weight:700; margin-top:2px; }
+
+  /* ---- Foto pequeña del producto dentro del carrito ---- */
+  .cart-item-photo{
+    width:40px; height:40px; border-radius:10px; background:var(--surface-alt);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .cart-item-photo img{ width:100%; height:100%; object-fit:cover; }
+  .cart-item-photo-ph{ color:var(--ink-faint); width:20px; height:20px; }
 
   @media (min-width:700px){
     .profile-hero{ padding:26px 24px; }
@@ -1229,10 +1303,11 @@
   .up-avatar{
     width:56px; height:56px; border-radius:50%; background:var(--ink); color:#fff;
     display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800;
-    overflow:hidden;
   }
   .up-avatar svg{ width:24px; height:24px; }
-  .up-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .up-avatar img{ width:100%; height:100%; border-radius:50%; object-fit:cover; }
+  .acc-ico.has-photo{ overflow:hidden; padding:0; }
+  .acc-ico img{ width:100%; height:100%; object-fit:cover; border-radius:13px; }
   .up-name{
     font-size:14.5px; font-weight:800; max-width:100%;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -1316,42 +1391,10 @@
     .chart-grid{ grid-template-columns:1fr 1fr; }
     .chart-plot{ height:180px; }
   }
-
-  /* ---------- Splash de arranque ---------- */
-  #splashScreen{
-    position:fixed; inset:0; z-index:9999;
-    display:flex; align-items:center; justify-content:center;
-    background:var(--bg);
-    pointer-events:none;
-  }
-  #splashScreen .splash-mark{
-    width:88px; height:88px; border-radius:26px;
-    background:var(--sec-home);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 10px 26px rgba(37,211,102,0.35);
-    animation:splashSpin 0.9s cubic-bezier(.4,0,.2,1);
-  }
-  #splashScreen .splash-mark svg{ width:44px; height:44px; }
-  #splashScreen.splash-hide{
-    animation:splashFade .35s ease forwards;
-    pointer-events:none;
-  }
-  @keyframes splashSpin{
-    0%{ transform:rotate(0deg) scale(.85); opacity:0; }
-    35%{ opacity:1; }
-    100%{ transform:rotate(360deg) scale(1); opacity:1; }
-  }
-  @keyframes splashFade{
-    to{ opacity:0; }
-  }
 </style>
 
 </head>
 <body>
-
-<div id="splashScreen" style="display:none;">
-  <span class="splash-mark" id="splashMark"></span>
-</div>
 
 <div class="app">
   <header class="topbar">
@@ -1739,6 +1782,11 @@ function initDB(){
     // dueño lo active desde el formulario del producto.
     if(p.stock === undefined){ p.stock = null; changed = true; }
     if(p.minStock === undefined){ p.minStock = 2; changed = true; }
+    // Tamaños/presentaciones (medio litro, litro, 2 litros, por kilo, etc.):
+    // productos guardados antes de que existiera esta opción quedan sin ella.
+    if(p.sizesOn === undefined){ p.sizesOn = false; changed = true; }
+    if(p.sizeUnit === undefined){ p.sizeUnit = 'litro'; changed = true; }
+    if(!Array.isArray(p.sizes)){ p.sizes = []; changed = true; }
   });
   if(changed) DB.saveProducts(list);
 
@@ -1774,8 +1822,17 @@ function stockInfo(p){
   return { control, stock, min, level, label };
 }
 function inCartQty(productId){
-  const it = cart.find(c => c.productId === productId);
-  return it ? it.qty : 0;
+  // Suma todas las líneas del carrito de este producto, sin importar
+  // el tamaño elegido (medio litro, litro, etc.).
+  return cart.filter(c => c.productId === productId).reduce((a,c) => a + c.qty, 0);
+}
+function cartLinePrice(c){
+  if(c.unitPrice != null) return c.unitPrice;
+  const p = findProduct(c.productId);
+  return p ? p.price : 0;
+}
+function cartAmountForProduct(productId){
+  return cart.filter(c => c.productId === productId).reduce((a,c) => a + (cartLinePrice(c) * c.qty), 0);
 }
 /** Piezas que todavía se pueden agregar al carrito. */
 function freeStock(p){
@@ -1799,7 +1856,7 @@ function stockBadge(p){
 
 /* ---------- Estado en memoria ---------- */
 let currentView = 'home';
-let cart = [];               // { productId, qty }
+let cart = [];               // { productId, qty, sizeId?, unitPrice?, sizeLabel? }
 let checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
 let saleCategoryFilter = 'todos';
 let historyFilters = { search:'', period:'all', service:'all', payment:'all', status:'all' };
@@ -1838,6 +1895,28 @@ function startOfWeek(d){
 }
 function isSameWeek(a,b){ return startOfWeek(a).getTime() === startOfWeek(b).getTime(); }
 function isSameMonth(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth(); }
+
+/* Marca/limpia un campo obligatorio con un mensaje de error debajo,
+   sin depender del toast (para que el usuario vea justo qué falta). */
+function setFieldError(fieldId, message){
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.classList.add('has-error');
+  let msg = field.querySelector('.field-error');
+  if(!msg){
+    msg = document.createElement('div');
+    msg.className = 'field-error';
+    field.appendChild(msg);
+  }
+  msg.textContent = message;
+}
+function clearFieldError(fieldId){
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.classList.remove('has-error');
+  const msg = field.querySelector('.field-error');
+  if(msg) msg.remove();
+}
 
 function toast(msg, opts){
   opts = opts || {};
@@ -2127,15 +2206,16 @@ function renderSale(){
     ` : `<div class="product-grid">
       ${list.map(p => {
         const cat = categoryOf(p.category);
-        const inCart = cart.find(c => c.productId === p.id);
-        const qty = inCart ? inCart.qty : 0;
+        const hasSizes = !!(p.sizesOn && p.sizes && p.sizes.length);
+        const qty = inCartQty(p.id);
         const st = stockInfo(p);
         const agotado = st.level === 'out';
-        const sinMas = st.control && (st.stock - qty) <= 0;   // ya no quedan piezas libres
+        const sinMas = !hasSizes && st.control && (st.stock - qty) <= 0;   // ya no quedan piezas libres
+        const tapAction = hasSizes ? `openSizePicker('${p.id}')` : `addToCart('${p.id}')`;
         return `<div class="product-card ${qty > 0 ? 'in-cart' : ''} ${agotado ? 'is-out' : ''}">
           ${agotado ? `<span class="pc-flag">Agotado</span>`
             : (st.level === 'low' ? `<span class="pc-flag low">Quedan ${st.stock}</span>` : '')}
-          <div class="pc-tap" onclick="addToCart('${p.id}')">
+          <div class="pc-tap" onclick="${tapAction}">
             <div class="pc-top" style="background:${cat.color}"></div>
             <div class="pc-photo ${p.image ? '' : 'is-placeholder'}">
               ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}">` : icon('plateSet')}
@@ -2146,7 +2226,13 @@ function renderSale(){
               ${st.control ? `<div class="pc-stock ${st.level}">${agotado ? 'Sin existencias' : st.stock + ' en existencia'}</div>` : ''}
             </div>
           </div>
-          ${qty > 0 ? `
+          ${hasSizes ? `
+            <div class="pc-pricebar" onclick="openSizePicker('${p.id}')" style="cursor:pointer;">
+              ${qty > 0
+                ? `<div class="pc-qty-total">${qty} · ${formatMoney(cartAmountForProduct(p.id))}</div>`
+                : `<div class="pc-price">Desde ${formatMoney(Math.min.apply(null, p.sizes.map(s => s.price)))}</div>`}
+            </div>
+          ` : qty > 0 ? `
             <div class="pc-qtybar">
               <div class="qty-control mini">
                 <button class="qty-btn" onclick="changeQtyFromGrid('${p.id}', -1)">−</button>
@@ -2207,6 +2293,7 @@ function setSaleCategory(id){ saleCategoryFilter = id; render(); }
 function addToCart(productId){
   const p = findProduct(productId);
   if(!p) return;
+  if(p.sizesOn && p.sizes && p.sizes.length){ openSizePicker(productId); return; }
   const st = stockInfo(p);
 
   // Sin existencias: no se puede vender.
@@ -2267,13 +2354,63 @@ function changeQtyFromGrid(productId, delta){
 }
 
 function computeTotals(){
-  const subtotal = cart.reduce((a,c) => {
-    const p = findProduct(c.productId);
-    return a + (p ? p.price * c.qty : 0);
-  }, 0);
+  const subtotal = cart.reduce((a,c) => a + (cartLinePrice(c) * c.qty), 0);
   const iva = subtotal * IVA_RATE;
   const total = subtotal + iva;
   return { subtotal: round2(subtotal), iva: round2(iva), total: round2(total) };
+}
+
+/* ---------- Selector de tamaño (medio litro, litro, por kilo, etc.) ---------- */
+function openSizePicker(productId){
+  const p = findProduct(productId);
+  if(!p || !p.sizesOn || !p.sizes || !p.sizes.length) return;
+  const unitWord = p.sizeUnit === 'kilo' ? 'kilos' : 'litros';
+  const html = `
+    <div class="sheet-header">
+      <h2>¿Cuántos ${unitWord}?</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    <p class="page-sub" style="margin-top:-8px;">${escapeHtml(p.name)}</p>
+    <div class="size-picker-list">
+      ${p.sizes.map(s => {
+        const qty = cartQtyForSize(productId, s.id);
+        return `
+        <div class="size-picker-row">
+          <div class="size-picker-info">
+            <div class="size-picker-label">${escapeHtml(s.label)}</div>
+            <div class="size-picker-price">${formatMoney(s.price)}</div>
+          </div>
+          <div class="qty-control mini">
+            <button class="qty-btn" onclick="changeSizeQty('${productId}','${s.id}', -1)">−</button>
+            <span class="qty-val">${qty}</span>
+            <button class="qty-btn" onclick="changeSizeQty('${productId}','${s.id}', 1)">+</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="btn primary block" style="margin-top:16px;" onclick="closeModal(); renderBackgroundIfSale();">Listo</button>
+  `;
+  openModal(html, { dismissible:true });
+}
+function cartQtyForSize(productId, sizeId){
+  const it = cart.find(c => c.productId === productId && c.sizeId === sizeId);
+  return it ? it.qty : 0;
+}
+function changeSizeQty(productId, sizeId, delta){
+  const p = findProduct(productId);
+  const size = p && p.sizes.find(s => s.id === sizeId);
+  if(!size) return;
+  let item = cart.find(c => c.productId === productId && c.sizeId === sizeId);
+  if(!item){
+    if(delta <= 0) return;
+    item = { productId, sizeId, qty:0, unitPrice: size.price, sizeLabel: size.label };
+    cart.push(item);
+  }
+  item.qty += delta;
+  if(item.qty <= 0){ cart = cart.filter(c => c !== item); }
+  vibrate(10);
+  openSizePicker(productId);
+  renderBackgroundIfSale();
 }
 
 /* ---------- Carrito / checkout (modal) ---------- */
@@ -2373,19 +2510,27 @@ function cartSheetHTML(step){
     ` : cart.map(c => {
       const p = findProduct(c.productId);
       if(!p) return '';
+      const linePrice = cartLinePrice(c);
+      const label = c.sizeLabel ? (p.name + ' · ' + c.sizeLabel) : p.name;
+      const st = stockInfo(p);
+      const stockNote = (!c.sizeId && st.control) ? ' · ' + st.stock + ' en existencia' : '';
+      const blockInc = !c.sizeId && st.control && c.qty >= st.stock;
       return `
         <div class="cart-item">
+          <div class="cart-item-photo">
+            ${p.image ? `<img src="${p.image}" alt="">` : `<span class="cart-item-photo-ph">${icon('plate')}</span>`}
+          </div>
           <div class="cart-item-info">
-            <div class="cart-item-name">${escapeHtml(p.name)}</div>
-            <div class="cart-item-price">${formatMoney(p.price)} c/u${stockInfo(p).control ? ' · ' + stockInfo(p).stock + ' en existencia' : ''}</div>
+            <div class="cart-item-name">${escapeHtml(label)}</div>
+            <div class="cart-item-price">${formatMoney(linePrice)} c/u${stockNote}</div>
           </div>
           <div class="qty-control">
-            <button class="qty-btn" onclick="changeQty('${p.id}', -1)">−</button>
+            <button class="qty-btn" onclick="changeQty('${p.id}', '${c.sizeId || ''}', -1)">−</button>
             <span class="qty-val">${c.qty}</span>
-            <button class="qty-btn" ${stockInfo(p).control && c.qty >= stockInfo(p).stock ? 'disabled style="opacity:.35"' : ''} onclick="changeQty('${p.id}', 1)">+</button>
+            <button class="qty-btn" ${blockInc ? 'disabled style="opacity:.35"' : ''} onclick="changeQty('${p.id}', '${c.sizeId || ''}', 1)">+</button>
           </div>
-          <div class="cart-item-subtotal">${formatMoney(p.price * c.qty)}</div>
-          <button class="cart-item-remove" onclick="removeFromCart('${p.id}')">${icon('trash')}</button>
+          <div class="cart-item-subtotal">${formatMoney(linePrice * c.qty)}</div>
+          <button class="cart-item-remove" onclick="removeFromCart('${p.id}', '${c.sizeId || ''}')">${icon('trash')}</button>
         </div>
       `;
     }).join('')}
@@ -2400,24 +2545,28 @@ function cartSheetHTML(step){
   `;
 }
 
-function changeQty(productId, delta){
-  const item = cart.find(c => c.productId === productId);
+function changeQty(productId, sizeId, delta){
+  const sid = sizeId || null;
+  const item = cart.find(c => c.productId === productId && (c.sizeId || null) === sid);
   if(!item) return;
   const p = findProduct(productId);
-  const st = stockInfo(p);
-  if(delta > 0 && st.control && item.qty >= st.stock){
-    vibrate(40);
-    toast('Solo te quedan ' + st.stock, { icon:icon('alert'), variant:'toast-danger toast-top', subtitle: p.name, duration:1800 });
-    return;
+  if(!sid){
+    const st = stockInfo(p);
+    if(delta > 0 && st.control && item.qty >= st.stock){
+      vibrate(40);
+      toast('Solo te quedan ' + st.stock, { icon:icon('alert'), variant:'toast-danger toast-top', subtitle: p.name, duration:1800 });
+      return;
+    }
   }
   item.qty += delta;
-  if(item.qty <= 0){ cart = cart.filter(c => c.productId !== productId); }
+  if(item.qty <= 0){ cart = cart.filter(c => c !== item); }
   vibrate(10);
   openCartSheet('cart');
   renderBackgroundIfSale();
 }
-function removeFromCart(productId){
-  cart = cart.filter(c => c.productId !== productId);
+function removeFromCart(productId, sizeId){
+  const sid = sizeId || null;
+  cart = cart.filter(c => !(c.productId === productId && (c.sizeId || null) === sid));
   vibrate(10);
   openCartSheet('cart');
   renderBackgroundIfSale();
@@ -2471,7 +2620,22 @@ function confirmarCobro(){
     date: new Date().toISOString(),
     items: cart.map(c => {
       const p = findProduct(c.productId);
-      return { productId: p.id, name: p.name, price: p.price, cost: p.cost != null ? p.cost : null, qty: c.qty };
+      const price = cartLinePrice(c);
+      // El precio de producción del producto es "por litro/kilo". Si se vendió
+      // por tamaño (medio litro, 2 litros...), el costo real de esa venta es
+      // ese precio multiplicado por los litros/kilos que representa el tamaño,
+      // no el precio de producción completo sin importar cuánto se vendió.
+      const size = (c.sizeId && p && p.sizes) ? p.sizes.find(sz => sz.id === c.sizeId) : null;
+      const unitFactor = (size && size.unitQty != null) ? size.unitQty : 1;
+      const cost = (p && p.cost != null) ? round2(p.cost * unitFactor) : null;
+      return {
+        productId: p.id,
+        name: p.name + (c.sizeLabel ? ' · ' + c.sizeLabel : ''),
+        price: price,
+        cost: cost,
+        qty: c.qty,
+        sizeLabel: c.sizeLabel || null
+      };
     }),
     subtotal: totals.subtotal,
     iva: totals.iva,
@@ -3027,9 +3191,11 @@ function openSaleDetail(saleId){
       <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
     </div>
     <div id="ticket-print">${ticketHTML(sale)}</div>
-    <div style="display:flex; gap:10px; margin-top:16px;" class="no-print">
+    <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;" class="no-print">
       <button class="btn ghost" onclick="printTicket('${sale.id}')">${icon('print')} Imprimir</button>
-      ${(!sale.cancelled && can('cancelarVentas')) ? `<button class="btn danger block" onclick="cancelSale('${sale.id}')">Cancelar venta</button>` : `<button class="btn dark block" onclick="closeModal()">Cerrar</button>`}
+      ${(!sale.cancelled && can('cancelarVentas')) ? `<button class="btn danger block" onclick="cancelSale('${sale.id}')">Cancelar venta</button>` : ''}
+      ${(sale.cancelled && isOwner()) ? `<button class="btn danger block" onclick="deleteSale('${sale.id}')">${icon('trash')} Eliminar del historial</button>` : ''}
+      ${(sale.cancelled || !can('cancelarVentas')) && !(sale.cancelled && isOwner()) ? `<button class="btn dark block" onclick="closeModal()">Cerrar</button>` : ''}
     </div>
   `;
   openModal(html, { dismissible:true });
@@ -3045,6 +3211,22 @@ function cancelSale(saleId){
   sale.cancelled = true;
   DB.saveSales(sales);
   toast('Venta cancelada');
+  closeModal();
+  render();
+}
+
+/* Eliminar del historial es permanente: solo el Dueño puede hacerlo,
+   y solo sobre ventas que ya estén canceladas. */
+function deleteSale(saleId){
+  if(!requireOwner('Solo el Dueño puede eliminar ventas del historial')) return;
+  const sales = DB.getSales();
+  const sale = sales.find(s => s.id === saleId);
+  if(!sale) return;
+  if(!sale.cancelled){ toast('Primero debes cancelar la venta'); return; }
+  const ok = window.confirm('¿Eliminar esta venta del historial? Esta acción no se puede deshacer.');
+  if(!ok) return;
+  DB.saveSales(sales.filter(s => s.id !== saleId));
+  toast('Venta eliminada del historial');
   closeModal();
   render();
 }
@@ -3378,7 +3560,7 @@ function renderProdRow(p, cat){
       </div>
       <div class="pr-info">
         <div class="pr-name">${escapeHtml(p.name)}</div>
-        <div class="pr-price">${formatMoney(p.price)}${(p.cost != null && can('verGanancias')) ? ' · producción ' + formatMoney(p.cost) : ''}</div>
+        <div class="pr-price">${(p.sizesOn && p.sizes && p.sizes.length) ? ('Desde ' + formatMoney(Math.min.apply(null, p.sizes.map(s => s.price))) + ' · ' + p.sizes.length + ' tamaño' + (p.sizes.length > 1 ? 's' : '')) : formatMoney(p.price)}${(p.cost != null && can('verGanancias')) ? ' · producción ' + formatMoney(p.cost) : ''}</div>
         ${st.control ? `<div class="pr-stock">${stockBadge(p)}</div>` : ''}
       </div>
       ${puedeEditar ? `
@@ -3591,6 +3773,26 @@ function deleteCategory(categoryId){
 function renderBackgroundIfProducts(){ if(currentView === 'products') render(); }
 
 
+/* Texto de la etiqueta de precio de producción: cuando el producto
+   se vende por tamaño, el precio principal ya no es "el" precio, es un
+   aproximado por litro/kilo (referencia para reportes y ganancia).
+   El precio de venta se queda fijo porque ese ya se define por tamaño. */
+function priceFieldLabel(kind, sizesOn, unit){
+  const u = unit === 'kilo' ? 'kilo' : 'litro';
+  if(kind !== 'produccion' || !sizesOn) return kind === 'venta' ? 'Precio de venta' : 'Precio de producción';
+  return `Precio de producción por ${u} (aprox.)`;
+}
+function updatePriceFieldLabels(){
+  const sizesOnEl = document.getElementById('pfSizesOn');
+  const unitEl = document.getElementById('pfSizeUnit');
+  const sizesOn = !!(sizesOnEl && sizesOnEl.checked);
+  const unit = (unitEl && unitEl.value === 'kilo') ? 'kilo' : 'litro';
+  const priceLabel = document.getElementById('pfPriceLabel');
+  const costLabel = document.getElementById('pfCostLabel');
+  if(priceLabel) priceLabel.textContent = priceFieldLabel('venta', sizesOn, unit);
+  if(costLabel) costLabel.textContent = priceFieldLabel('produccion', sizesOn, unit);
+}
+
 function openProductForm(productId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const products = DB.getProducts();
@@ -3605,6 +3807,8 @@ function openProductForm(productId){
 
   productFormImage = editing ? (editing.image || null) : null;
   const stockOn = !!editing && editing.stock !== null && editing.stock !== undefined;
+  const sizesOn = !!editing && !!editing.sizesOn;
+  const sizeUnit = (editing && editing.sizeUnit === 'kilo') ? 'kilo' : 'litro';
 
   const html = `
     <div class="sheet-header">
@@ -3620,18 +3824,19 @@ function openProductForm(productId){
       </label>
       ${productFormImage ? `<button type="button" class="btn ghost block photo-upload-remove-block" style="margin-top:8px;" onclick="removeProductPhoto()">${icon('trash')} Quitar foto</button>` : ''}
     </div>
-    <div class="field">
+    <div class="field" id="pfNameField">
       <label>Nombre</label>
       <input id="pfName" type="text" placeholder="Ej. Hamburguesa Especial" value="${editing ? escapeHtml(editing.name) : ''}">
     </div>
-    <div class="field">
-      <label>Precio de venta</label>
-      <input id="pfPrice" type="number" min="0" step="0.5" placeholder="0.00" value="${editing ? editing.price : ''}">
+    <div class="field" id="pfPriceField" style="display:${sizesOn ? 'none' : 'block'};">
+      <label id="pfPriceLabel">${priceFieldLabel('venta', sizesOn, sizeUnit)}</label>
+      <input id="pfPrice" type="number" min="0" step="0.5" placeholder="0.00" value="${editing ? editing.price : ''}" oninput="updateProductFormWarnings()">
     </div>
-    <div class="field">
-      <label>Precio de producción</label>
-      <input id="pfCost" type="number" min="0" step="0.5" placeholder="0.00" value="${editing && editing.cost != null ? editing.cost : ''}">
+    <div class="field" id="pfCostField">
+      <label id="pfCostLabel">${priceFieldLabel('produccion', sizesOn, sizeUnit)}</label>
+      <input id="pfCost" type="number" min="0" step="0.5" placeholder="0.00" value="${editing && editing.cost != null ? editing.cost : ''}" oninput="updateProductFormWarnings()">
     </div>
+    <div class="field-hint warn" id="pfConsistencyHint" style="display:none;"></div>
     <div class="field">
       <label>Categoría</label>
       <select id="pfCategory">
@@ -3653,11 +3858,11 @@ function openProductForm(productId){
     </div>
     <div id="pfStockBox" style="display:${stockOn ? 'block' : 'none'}; margin-top:14px;">
       <div class="two-fields">
-        <div class="field">
+        <div class="field" id="pfStockField">
           <label>Piezas que tienes</label>
           <input id="pfStock" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${stockOn ? editing.stock : ''}">
         </div>
-        <div class="field">
+        <div class="field" id="pfMinStockField">
           <label>Avisar cuando queden</label>
           <input id="pfMinStock" type="number" inputmode="numeric" min="0" step="1" placeholder="2" value="${stockOn ? (editing.minStock == null ? 2 : editing.minStock) : 2}">
         </div>
@@ -3665,9 +3870,41 @@ function openProductForm(productId){
       <div class="field-hint">Si lo dejas apagado, el producto se vende sin límite (por ejemplo la comida que preparas al momento).</div>
     </div>
 
+    <div class="section-title">Tamaños / presentaciones</div>
+    <div class="toggle-row" style="padding-top:0;">
+      <span class="acc-ico green">${icon('boxes')}</span>
+      <span class="acc-txt">
+        <span class="acc-label">Vender por tamaño</span>
+        <span class="acc-sub">Por ejemplo medio litro, litro o 2 litros. Cada tamaño con su propio precio.</span>
+      </span>
+      <label class="switch">
+        <input id="pfSizesOn" type="checkbox" ${sizesOn ? 'checked' : ''} onchange="toggleSizeFields(this.checked)">
+        <span class="track"></span>
+      </label>
+    </div>
+    <div id="pfSizesBox" style="display:${sizesOn ? 'block' : 'none'}; margin-top:14px;">
+      <div class="field">
+        <label>Se vende por</label>
+        <div class="opt-grid" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+          <button type="button" class="opt-card ${sizeUnit==='litro'?'active':''}" id="pfUnitLitro" onclick="setSizeUnit('litro')">💧 Litro</button>
+          <button type="button" class="opt-card ${sizeUnit==='kilo'?'active':''}" id="pfUnitKilo" onclick="setSizeUnit('kilo')">⚖️ Kilo</button>
+        </div>
+        <input type="hidden" id="pfSizeUnit" value="${sizeUnit}">
+      </div>
+      <div class="field">
+        <label>Tamaños y precios</label>
+        <div id="pfSizeRows">
+          ${(sizesOn && editing && editing.sizes && editing.sizes.length ? editing.sizes : [{}]).map(s => sizeRowHTML(s)).join('')}
+        </div>
+        <button type="button" class="btn ghost block" style="margin-top:2px;" onclick="addSizeRow()">${icon('plus')} Agregar tamaño</button>
+      </div>
+      <div class="field-hint">Cada tamaño tiene su propio precio: el litro no siempre cuesta el doble que el medio litro, tú decides cuánto vale cada uno.</div>
+    </div>
+
     <button class="btn primary block" style="margin-top:18px;" onclick="saveProductForm('${editing ? editing.id : ''}')">${editing ? 'Guardar cambios' : 'Agregar producto'}</button>
   `;
   openModal(html, { dismissible:true });
+  updateProductFormWarnings();
 }
 
 /* Redimensiona/recorta cualquier imagen a un cuadro fijo (cover) para que
@@ -3734,26 +3971,233 @@ function toggleStockFields(on){
   }
 }
 
+/* Muestra u oculta los campos de tamaños dentro del formulario.
+   Cuando se vende por tamaño, el precio de venta ya no se define arriba
+   (cada tamaño tiene el suyo), así que ese campo se oculta por completo
+   y solo queda el precio de producción por litro/kilo (aprox.). */
+function toggleSizeFields(on){
+  const box = document.getElementById('pfSizesBox');
+  if(box) box.style.display = on ? 'block' : 'none';
+  const priceField = document.getElementById('pfPriceField');
+  if(priceField) priceField.style.display = on ? 'none' : 'block';
+  updatePriceFieldLabels();
+  updateProductFormWarnings();
+}
+function setSizeUnit(unit){
+  const u = unit === 'kilo' ? 'kilo' : 'litro';
+  const hidden = document.getElementById('pfSizeUnit');
+  if(hidden) hidden.value = u;
+  const litroBtn = document.getElementById('pfUnitLitro');
+  const kiloBtn = document.getElementById('pfUnitKilo');
+  if(litroBtn) litroBtn.classList.toggle('active', u === 'litro');
+  if(kiloBtn) kiloBtn.classList.toggle('active', u === 'kilo');
+  updatePriceFieldLabels();
+  updateProductFormWarnings();
+}
+
+/* Adivina a cuántos litros/kilos equivale un tamaño a partir de su nombre
+   (así el usuario solo escribe "Medio litro" o "2 litros", sin llenar un
+   campo aparte). Reconoce palabras comunes (medio, cuarto, tres cuartos),
+   fracciones (1/2), números con ml/g/litros/kilos, o un número suelto.
+   Si no reconoce nada, asume 1 (un litro/kilo completo) para no romper
+   el cálculo; por eso conviene nombrar los tamaños de forma clara. */
+function parseSizeQty(label){
+  if(!label) return 1;
+  let s = label.toLowerCase().trim()
+    .replace(/í/g,'i').replace(/ó/g,'o').replace(/é/g,'e').replace(/á/g,'a').replace(/ú/g,'u');
+
+  if(/\btres cuartos\b|\b3\/4\b/.test(s)) return 0.75;
+  if(/\bcuarto\b/.test(s)) return 0.25;
+  if(/\bmedi[oa]\b/.test(s)) return 0.5;
+  if(/\bdoble\b/.test(s)) return 2;
+
+  const fracMatch = s.match(/(\d+)\s*\/\s*(\d+)/);
+  if(fracMatch){
+    const num = parseFloat(fracMatch[1]), den = parseFloat(fracMatch[2]);
+    if(den) return round2(num / den);
+  }
+
+  const mlMatch = s.match(/(\d+(?:[.,]\d+)?)\s*ml\b/);
+  if(mlMatch) return round2(parseFloat(mlMatch[1].replace(',', '.')) / 1000);
+
+  const gMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:gr|g|gramos)\b/);
+  if(gMatch) return round2(parseFloat(gMatch[1].replace(',', '.')) / 1000);
+
+  const numMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:litros?|lts?|l\b|kilos?|kgs?|kg\b)/);
+  if(numMatch) return round2(parseFloat(numMatch[1].replace(',', '.')));
+
+  const anyNum = s.match(/(\d+(?:[.,]\d+)?)/);
+  if(anyNum) return round2(parseFloat(anyNum[1].replace(',', '.')));
+
+  if(/\blitro\b|\bkilo\b|\bkg\b|\bl\b/.test(s)) return 1;
+
+  return 1;
+}
+
+function sizeRowHTML(s){
+  s = s || {};
+  return `
+    <div class="size-row" data-id="${s.id || ''}">
+      <input type="text" class="pf-size-label" placeholder="Ej. Medio litro" value="${s.label ? escapeHtml(s.label) : ''}" oninput="updateProductFormWarnings()">
+      <input type="number" class="pf-size-price" inputmode="decimal" min="0" step="0.5" placeholder="Precio" value="${s.price != null && s.price !== '' ? s.price : ''}" oninput="updateProductFormWarnings()">
+      <button type="button" class="icon-btn" onclick="removeSizeRow(this)">${icon('trash')}</button>
+    </div>`;
+}
+function addSizeRow(){
+  const box = document.getElementById('pfSizeRows');
+  if(box) box.insertAdjacentHTML('beforeend', sizeRowHTML({}));
+  updateProductFormWarnings();
+}
+function removeSizeRow(btn){
+  const box = document.getElementById('pfSizeRows');
+  const row = btn.closest('.size-row');
+  if(!box || !row) return;
+  if(box.children.length > 1){
+    row.remove();
+  } else {
+    const lbl = row.querySelector('.pf-size-label');
+    const pr = row.querySelector('.pf-size-price');
+    if(lbl) lbl.value = '';
+    if(pr) pr.value = '';
+  }
+  updateProductFormWarnings();
+}
+
+/* Avisa, en vivo mientras se llena el formulario, si el precio de venta
+   (o el de algún tamaño) queda por debajo de lo que cuesta producirlo.
+   No bloquea el guardado: solo explica la inconsistencia para que el
+   usuario decida. Ganancia = precio de venta − precio de producción;
+   si el de venta es menor, esa venta pierde dinero en vez de ganar. */
+function updateProductFormWarnings(){
+  const simpleHint = document.getElementById('pfConsistencyHint');
+  const costEl = document.getElementById('pfCost');
+  const sizesOnEl = document.getElementById('pfSizesOn');
+  if(!costEl || !sizesOnEl) return;
+  const clearHint = el => { if(el){ el.style.display = 'none'; el.innerHTML = ''; } };
+
+  const costRaw = costEl.value.trim();
+  const cost = costRaw === '' ? null : parseFloat(costRaw);
+  if(cost === null || isNaN(cost) || cost < 0){
+    clearHint(simpleHint);
+    return;
+  }
+
+  const sizesOn = sizesOnEl.checked;
+  const problems = [];
+
+  if(sizesOn){
+    // El aviso en vivo para tamaños (litro/kilo) ya no se muestra aquí:
+    // la inconsistencia se valida y se bloquea con una alerta al guardar,
+    // ver saveProductForm().
+    clearHint(simpleHint);
+  } else {
+    const priceEl = document.getElementById('pfPrice');
+    const priceRaw = priceEl ? priceEl.value : '';
+    if(priceRaw !== ''){
+      const price = parseFloat(priceRaw);
+      if(!isNaN(price) && price < cost){
+        problems.push(`el precio de venta (${formatMoney(price)}) es menor que el precio de producción (${formatMoney(cost)})`);
+      }
+    }
+    if(simpleHint){
+      if(problems.length){
+        simpleHint.style.display = 'block';
+        simpleHint.innerHTML = `<b>Pon un precio mayor al costo de producción:</b> ${problems.join('; ')}. La ganancia se calcula como precio de venta − precio de producción: si el de venta es menor, esa venta te hace perder dinero en vez de dejarte ganancia.`;
+      } else {
+        clearHint(simpleHint);
+      }
+    }
+  }
+}
+
 function saveProductForm(productId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
+
+  // Limpia mensajes de error de una validación anterior.
+  ['pfNameField','pfPriceField','pfCostField','pfStockField','pfMinStockField'].forEach(clearFieldError);
+  document.querySelectorAll('#pfSizeRows .size-row.has-error').forEach(r => r.classList.remove('has-error'));
+
+  let ok = true;
+  let firstErrorEl = null;
+  const markError = (fieldId, message, inputId) => {
+    setFieldError(fieldId, message);
+    ok = false;
+    if(!firstErrorEl) firstErrorEl = document.getElementById(inputId || fieldId);
+  };
+
   const name = document.getElementById('pfName').value.trim();
-  const price = parseFloat(document.getElementById('pfPrice').value);
   const category = document.getElementById('pfCategory').value;
 
-  if(!name){ toast('Escribe un nombre para el producto'); return; }
-  if(isNaN(price) || price < 0){ toast('Ingresa un precio de venta válido'); return; }
+  if(!name){ markError('pfNameField', 'Escribe un nombre para el producto', 'pfName'); }
+
+  // Tamaños/presentaciones (opcional): medio litro, litro, 2 litros, por kilo, etc.
+  // Se necesita saber esto antes de validar el precio: cuando se vende por
+  // tamaño, el precio de venta no se pide arriba (cada tamaño trae el suyo).
+  const sizesOn = document.getElementById('pfSizesOn').checked;
+
+  let price = 0;
+  if(!sizesOn){
+    price = parseFloat(document.getElementById('pfPrice').value);
+    if(isNaN(price) || price < 0){ markError('pfPriceField', 'Ingresa un precio de venta válido', 'pfPrice'); }
+  }
+
   const costRaw = document.getElementById('pfCost').value.trim();
   const cost = costRaw === '' ? null : parseFloat(costRaw);
-  if(cost !== null && (isNaN(cost) || cost < 0)){ toast('Ingresa un precio de producción válido'); return; }
+  if(cost !== null && (isNaN(cost) || cost < 0)){ markError('pfCostField', 'Ingresa un precio de producción válido', 'pfCost'); }
 
   // Existencias (opcional)
   const stockOn = document.getElementById('pfStockOn').checked;
   let stock = null, minStock = 2;
   if(stockOn){
     stock = parseInt(document.getElementById('pfStock').value, 10);
-    if(isNaN(stock) || stock < 0){ toast('Escribe cuántas piezas tienes'); return; }
+    if(isNaN(stock) || stock < 0){ markError('pfStockField', 'Escribe cuántas piezas tienes', 'pfStock'); }
     minStock = parseInt(document.getElementById('pfMinStock').value, 10);
     if(isNaN(minStock) || minStock < 0) minStock = 2;
+  }
+
+  let sizeUnit = 'litro', sizes = [];
+  if(sizesOn){
+    sizeUnit = document.getElementById('pfSizeUnit').value === 'kilo' ? 'kilo' : 'litro';
+    const rows = document.querySelectorAll('#pfSizeRows .size-row');
+    let sizeError = false;
+    rows.forEach(row => {
+      const label = row.querySelector('.pf-size-label').value.trim();
+      const priceRaw = row.querySelector('.pf-size-price').value;
+      if(!label && priceRaw === '') return; // fila vacía: se ignora
+      const sPrice = parseFloat(priceRaw);
+      if(!label || isNaN(sPrice) || sPrice < 0){
+        sizeError = true;
+        row.classList.add('has-error');
+        if(!firstErrorEl) firstErrorEl = row.querySelector('.pf-size-label');
+        return;
+      }
+      // unitQty: cuántos litros/kilos representa este tamaño, adivinado a
+      // partir de su nombre (medio litro = 0.5, 2 litros = 2...). Con esto
+      // la ganancia se calcula por litro/kilo real y no con el precio de
+      // producción completo sin importar el tamaño vendido.
+      sizes.push({ id: row.dataset.id || ('sz' + Date.now() + Math.floor(Math.random()*1000)), label, price: round2(sPrice), unitQty: parseSizeQty(label) });
+    });
+    if(sizeError){
+      toast('Cada tamaño necesita un nombre y un precio válido', { variant:'toast-danger', icon:icon('close') });
+      ok = false;
+    } else if(sizes.length === 0){
+      toast('Agrega al menos un tamaño con su precio', { variant:'toast-danger', icon:icon('close') });
+      ok = false;
+    } else if(cost !== null && !isNaN(cost) && sizes.some(s => s.price < round2(cost * s.unitQty))){
+      // No deja agregar/guardar el producto si algún tamaño (litro/kilo, etc.)
+      // se vende por debajo de lo que cuesta producirlo.
+      alert('El precio de producción es mayor al precio de venta, modifique los precios');
+      ok = false;
+    } else {
+      // El precio "principal" del producto ya no lo define el usuario aquí;
+      // se usa el más bajo de los tamaños solo como referencia interna.
+      price = round2(Math.min.apply(null, sizes.map(s => s.price)));
+    }
+  }
+
+  if(!ok){
+    if(firstErrorEl){ firstErrorEl.focus({ preventScroll:true }); firstErrorEl.scrollIntoView({ behavior:'smooth', block:'center' }); }
+    return;
   }
 
   const products = DB.getProducts();
@@ -3763,8 +4207,9 @@ function saveProductForm(productId){
     p.demo = false; // ya lo personalizó: deja de ser un producto de ejemplo
     dismissDemoHint();
     p.stock = stock; p.minStock = minStock;
+    p.sizesOn = sizesOn; p.sizeUnit = sizeUnit; p.sizes = sizes;
   } else {
-    products.push({ id:'p' + Date.now(), name, price: round2(price), cost: cost === null ? null : round2(cost), category, active:true, image: productFormImage, stock: stock, minStock: minStock });
+    products.push({ id:'p' + Date.now(), name, price: round2(price), cost: cost === null ? null : round2(cost), category, active:true, image: productFormImage, stock: stock, minStock: minStock, sizesOn: sizesOn, sizeUnit: sizeUnit, sizes: sizes });
   }
   DB.saveProducts(products);
   productFormImage = null;
@@ -3796,9 +4241,9 @@ function paintChrome(){
   /* Con varios usuarios, arriba se ve quién está usando Mesa. */
   const mu = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
   if(av){
-    const avUser = mu || u;
-    av.innerHTML = (avUser && avUser.photo) ? `<img src="${avUser.photo}" alt="">`
-                 : `<span class="ini">${mu ? userInitials(mu) : initials()}</span>`;
+    const foto = mu ? userPhoto(mu) : (u && u.photo);
+    av.innerHTML = foto ? `<img src="${foto}" alt="">`
+                        : `<span class="ini">${mu ? userInitials(mu) : initials()}</span>`;
   }
   const chip = document.getElementById('chipName');
   if(chip){
@@ -3912,6 +4357,58 @@ Object.assign(ILLUSTRATIONS, {
     <path d="M44 84c-4 2-6 6-5 10l6 22c2 7 8 12 15 12h28" stroke="#F5C6A3" stroke-width="11" stroke-linecap="round"/>
     <path d="M47 92c0-6 4-10 9-10h4" stroke="#EBB491" stroke-width="7" stroke-linecap="round"/>
   </svg>`,
+  // Escena de bienvenida al regalo de 3 meses gratis
+  trialGift: `
+  <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="glowTrial" x1="200" y1="10" x2="200" y2="300" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#2E4677" stop-opacity=".55"/><stop offset="1" stop-color="#16213E" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <circle cx="200" cy="150" r="140" fill="url(#glowTrial)"/>
+    <!-- confeti -->
+    <circle cx="58" cy="56" r="5" fill="#FFD666"/>
+    <circle cx="344" cy="52" r="4" fill="#E1594C"/>
+    <rect x="88" y="28" width="8" height="8" rx="2" fill="#25D366" transform="rotate(20 92 32)"/>
+    <rect x="312" y="86" width="8" height="8" rx="2" fill="#6C4FCB" transform="rotate(-15 316 90)"/>
+    <circle cx="332" cy="138" r="4" fill="#FFD666"/>
+    <circle cx="42" cy="118" r="4" fill="#2E7DC0"/>
+    <rect x="52" y="158" width="7" height="7" rx="2" fill="#F5BF3C" transform="rotate(30 55 162)"/>
+    <circle cx="366" cy="180" r="4" fill="#25D366"/>
+    <!-- mostrador -->
+    <rect x="0" y="230" width="400" height="70" fill="#F2E2C0"/>
+    <rect x="0" y="230" width="400" height="9" rx="3" fill="#FFF6E2"/>
+    <!-- regalo -->
+    <g>
+      <rect x="228" y="178" width="92" height="68" rx="9" fill="#FFD666"/>
+      <rect x="228" y="178" width="92" height="17" fill="#F5BF3C"/>
+      <rect x="265" y="178" width="18" height="68" fill="#E1594C"/>
+      <path d="M265 178c0-14-9-24-18-24 0 12 8 20 18 24Z" fill="#E1594C"/>
+      <path d="M283 178c0-14 9-24 18-24 0 12-8 20-18 24Z" fill="#E1594C"/>
+    </g>
+    <!-- persona -->
+    <g>
+      <path d="M96 230c0-30 20-48 52-48s52 18 52 48v16H96v-16Z" fill="#FFFFFF"/>
+      <path d="M124 196h48c8 12 11 26 11 50h-70c0-24 3-38 11-50Z" fill="#25D366"/>
+      <path d="M134 190c4 8 9 12 14 12s10-4 14-12" stroke="#25D366" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M138 172h20v18h-20z" fill="#EBB491"/>
+      <ellipse cx="148" cy="150" rx="27" ry="30" fill="#F5C6A3"/>
+      <path d="M148 116c19 0 30 12 30 30 0 7-1 12-3 17-2-12-6-17-10-19-6 4-25 6-38 1-3 4-5 10-6 18-3-6-4-11-4-17 0-18 12-30 31-30Z" fill="#3A2A22"/>
+      <path d="M118 145c-6 4-8 14-5 22 2-9 4-14 8-17l-3-5Z" fill="#3A2A22"/>
+      <path d="M138 148c2-2 5-2 7 0M151 148c2-2 5-2 7 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M138 161c5 5 14 5 19-1" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="125" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
+      <circle cx="171" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
+      <path d="M198 214c14-6 24-14 30-24" stroke="#F5C6A3" stroke-width="11" stroke-linecap="round"/>
+    </g>
+    <!-- burbuja -->
+    <g>
+      <rect x="148" y="62" width="152" height="58" rx="18" fill="#FFFFFF"/>
+      <path d="M186 120l-10 14-6-14Z" fill="#FFFFFF"/>
+      <text x="224" y="90" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="17" font-weight="800" fill="#16213E">3 MESES</text>
+      <text x="224" y="109" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="12.5" font-weight="700" fill="#0E7A3D">totalmente gratis</text>
+    </g>
+  </svg>`,
   // Candado para seguridad / código
   lockShield: `
   <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -3963,7 +4460,31 @@ function newUser(country, phone){
     business: { name:'', type:'', address:'', phone:'' },
     prefs: { notifSales:true, notifStock:true, notifDaily:false, haptics:true, bizOnTicket:true },
     pin: null,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    trialStart: new Date().toISOString(),
+    membershipPaid: false,
+    membershipPaidAt: null
+  };
+}
+
+/* ---------- Prueba gratis de 3 meses ---------- */
+const TRIAL_MESES = 3;
+const TRIAL_PRECIO = 129;
+function trialInfo(u){
+  u = u || currentUser();
+  if(!u) return null;
+  const start = new Date(u.trialStart || u.createdAt || Date.now());
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + TRIAL_MESES);
+  const now = new Date();
+  const totalDays = Math.max(1, Math.round((end - start) / 86400000));
+  const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
+  const daysUsed = Math.min(totalDays, totalDays - daysLeft);
+  return {
+    start, end, totalDays, daysLeft,
+    pct: Math.min(100, Math.max(0, Math.round((daysUsed / totalDays) * 100))),
+    expired: now >= end,
+    paid: !!u.membershipPaid
   };
 }
 
@@ -4050,6 +4571,7 @@ function renderAuth(){
   else if(s === 'signup' || s === 'login') html = authPhoneHTML();
   else if(s === 'otp') html = authOtpHTML();
   else if(s === 'name') html = authNameHTML();
+  else if(s === 'trial') html = authTrialHTML();
   else if(s === 'lock') html = authLockHTML();
   else if(s === 'users') html = authUsersHTML();          // selección de usuario
   else if(s === 'userpin') html = authUserPinHTML();      // NIP de ese usuario
@@ -4406,7 +4928,37 @@ function saveRegistrationName(){
   AUTH.saveUser(u);
   ensureOwnerUser();
   syncOwnerName();
-  finishAuth('¡Tu cuenta está lista, ' + name.split(' ')[0] + '!');
+  authState.pendingWelcomeMsg = '¡Tu cuenta está lista, ' + name.split(' ')[0] + '!';
+  /* Solo se ve esta pantalla la primera vez que alguien crea su cuenta.
+     Si inicia sesión de nuevo o recarga la página, nunca vuelve a aparecer. */
+  authGo('trial');
+}
+
+/* ---------- Pantalla única: regalo de bienvenida (solo primer registro) ---------- */
+function authTrialHTML(){
+  return `
+    <div class="auth-hero">${ILLUSTRATIONS.trialGift}</div>
+    <div class="auth-sheet">
+      <div class="auth-body">
+        <span class="trial-badge">🎁 Regalo de bienvenida</span>
+        <h1 class="auth-title">3 meses de prueba gratis</h1>
+        <p class="auth-sub">Usa Mesa sin costo durante <b style="color:var(--ink)">3 meses completos</b>. Cuando termine tu prueba, la membresía cuesta <b style="color:var(--ink)">$${TRIAL_PRECIO} al mes</b>. Te avisaremos antes de que se acabe.</p>
+        <div class="trial-card">
+          <div class="trial-card-row"><span>Hoy</span><b>Gratis</b></div>
+          <div class="trial-card-row"><span>Durante 3 meses</span><b>$0</b></div>
+          <div class="trial-card-row highlight"><span>Después</span><b>$${TRIAL_PRECIO}/mes</b></div>
+        </div>
+        <div class="auth-actions">
+          <button class="btn dark xl block" onclick="acceptTrialAndEnter()">Empezar mi prueba gratis</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function acceptTrialAndEnter(){
+  const msg = authState.pendingWelcomeMsg || '¡Tu cuenta está lista!';
+  authState.pendingWelcomeMsg = null;
+  finishAuth(msg);
 }
 
 function finishAuth(msg){
@@ -4481,7 +5033,6 @@ function onPinInput(el){
   if(el.value.length === 4){
     if(el.value === (currentUser() || {}).pin){
       vibrate(15);
-      sessionStorage.setItem('mesa_pin_unlocked', '1');
       hideAuth(); paintChrome(); render();
     }else{
       vibrate([18,60,18]);
@@ -4505,6 +5056,80 @@ function forgotPin(){
 /* =========================================================
    VISTA: MI CUENTA
 ========================================================= */
+
+/* ---------- Mini contador de la prueba gratis ---------- */
+function trialWidgetHTML(u){
+  const t = trialInfo(u);
+  if(!t) return '';
+
+  if(t.paid){
+    return `
+    <div class="section-title">Membresía</div>
+    <div class="trial-widget paid">
+      <div class="trial-widget-top">
+        <span class="trial-widget-ico paid">${icon('shield')}</span>
+        <div class="trial-widget-txt">
+          <span class="trial-widget-label">Membresía activa</span>
+          <span class="trial-widget-sub">$${TRIAL_PRECIO} al mes</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(t.expired){
+    return `
+    <div class="section-title">Membresía</div>
+    <div class="trial-widget expired">
+      <div class="trial-widget-top">
+        <span class="trial-widget-ico warn">${icon('bell')}</span>
+        <div class="trial-widget-txt">
+          <span class="trial-widget-label">Tu prueba gratis terminó</span>
+          <span class="trial-widget-sub">Activa tu membresía para seguir usando Mesa</span>
+        </div>
+      </div>
+      <button class="btn dark block" style="margin-top:12px;" onclick="openMembershipPay()">Pagar membresía · $${TRIAL_PRECIO}/mes</button>
+    </div>`;
+  }
+
+  return `
+    <div class="section-title">Membresía</div>
+    <div class="trial-widget">
+      <div class="trial-widget-top">
+        <span class="trial-widget-ico">🎁</span>
+        <div class="trial-widget-txt">
+          <span class="trial-widget-label">${t.daysLeft} día${t.daysLeft === 1 ? '' : 's'} gratis restantes</span>
+          <span class="trial-widget-sub">Después: $${TRIAL_PRECIO} al mes</span>
+        </div>
+      </div>
+      <div class="trial-bar"><div class="trial-bar-fill" style="width:${t.pct}%"></div></div>
+    </div>`;
+}
+
+function openMembershipPay(){
+  openModal(`
+    <h3 class="sheet-title">Activar membresía</h3>
+    <p class="sheet-text">Esto es un prototipo: aquí no se cobra nada de verdad. En la versión final se conectará una pasarela de pago real.</p>
+    <div class="trial-card" style="margin-bottom:6px;">
+      <div class="trial-card-row highlight"><span>Membresía Mesa</span><b>$${TRIAL_PRECIO}/mes</b></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary block" onclick="confirmMembershipPay()">Confirmar pago (demo)</button>
+    </div>
+  `, { dismissible:true });
+}
+function confirmMembershipPay(){
+  const u = currentUser();
+  if(u){
+    u.membershipPaid = true;
+    u.membershipPaidAt = new Date().toISOString();
+    AUTH.saveUser(u);
+  }
+  closeModal();
+  render();
+  toast('Membresía activada (demo)', { subtitle:'Gracias por confiar en Mesa', variant:'toast-success', icon:icon('check') });
+}
+
 function renderAccount(){
   const u = currentUser() || newUser('MX','');
   const prefs = userPrefs();
@@ -4520,7 +5145,7 @@ function renderAccount(){
     <p class="page-sub">${soyDueno ? 'Tus datos, tu negocio y la configuración de la app.' : 'Tu usuario y la configuración de la app.'}</p>
 
     <div class="profile-hero">
-      <div class="profile-avatar">${((me || u) && (me || u).photo) ? `<img src="${(me || u).photo}" alt="">` : (me ? userInitials(me) : initials())}</div>
+      <div class="profile-avatar">${me ? userAvatar(me) : (u.photo ? `<img src="${u.photo}" alt="">` : initials())}</div>
       <div class="profile-meta">
         <div class="profile-name">${escapeHtml(me ? me.name : displayName())}</div>
         <div class="profile-phone">${escapeHtml(me ? (me.phone ? formatPhone(me.phone, me.country || 'MX') : roleOf(me.role).name) : fullPhone(u))}</div>
@@ -4533,6 +5158,8 @@ function renderAccount(){
       <button class="btn primary block" style="margin-top:14px;" onclick="openEditProfile()">
         ${icon('edit')} Editar perfil
       </button>` : ''}
+
+    ${soyDueno ? trialWidgetHTML(u) : ''}
 
     <div class="section-title">${soyDueno ? 'Mi negocio' : 'El negocio'}</div>
     <div class="acc-list">
@@ -5065,8 +5692,8 @@ function confirmLogout(){
 }
 function doLogout(){
   AUTH.closeSession();
-  sessionStorage.removeItem('mesa_pin_unlocked');
-  sessionStorage.removeItem('mesa_user_session_active');
+  closeOpenShifts();
+  closeUserSession();
   currentView = 'home';
   authState = Object.assign(authState, { screen:'welcome', mode:'login', phone:'', terms:false, code:'' });
   showAuth('welcome');
@@ -5101,13 +5728,13 @@ function doDeleteAccount(){
   AUTH.eraseAccount();
   if(wipeAll){
     ['mesa_products','mesa_categories','mesa_sales','mesa_counter','mesa_todos','mesa_todos_seed','mesa_demo_hint_off',
-     'mesa_users','mesa_active_user','mesa_shifts'].forEach(k => localStorage.removeItem(k));
+     'mesa_users','mesa_active_user','mesa_user_session','mesa_shifts'].forEach(k => localStorage.removeItem(k));
     initDB();
   }else{
     /* Se borra el perfil, pero los usuarios del negocio dejan de tener
        dueño con nombre: se limpian para que Mesa vuelva a empezar
        como POS de un solo usuario. */
-    ['mesa_users','mesa_active_user','mesa_shifts'].forEach(k => localStorage.removeItem(k));
+    ['mesa_users','mesa_active_user','mesa_user_session','mesa_shifts'].forEach(k => localStorage.removeItem(k));
   }
   closeModal();
   currentView = 'home';
@@ -5203,6 +5830,12 @@ function setActiveUser(id){
   if(id) localStorage.setItem('mesa_active_user', id);
   else localStorage.removeItem('mesa_active_user');
 }
+/* Sesión del usuario: mientras esté abierta, Mesa NO vuelve a pedir el
+   NIP aunque se recargue o se cierre la página. Solo se cierra cuando
+   alguien le da a "Cambiar de usuario" (o se cierra la cuenta). */
+function openUserSession(){ localStorage.setItem('mesa_user_session','1'); }
+function closeUserSession(){ localStorage.removeItem('mesa_user_session'); }
+function userSessionOpen(){ return localStorage.getItem('mesa_user_session') === '1'; }
 function userInitials(u){
   const n = ((u && u.name) || '').trim();
   if(!n) return icon('person');
@@ -5211,6 +5844,21 @@ function userInitials(u){
 function userFirstName(u){
   const n = ((u && u.name) || '').trim();
   return n ? n.split(/\s+/)[0] : '';
+}
+/* Foto del usuario. El Dueño usa la misma foto de su perfil, así que
+   si ya tenía una, se sigue viendo en todas partes. */
+function userPhoto(u){
+  if(!u) return null;
+  if(u.photo) return u.photo;
+  if(u.role === 'dueno'){
+    const acc = (typeof currentUser === 'function') ? currentUser() : null;
+    if(acc && acc.photo) return acc.photo;
+  }
+  return null;
+}
+function userAvatar(u){
+  const ph = userPhoto(u);
+  return ph ? `<img src="${ph}" alt="">` : userInitials(u);
 }
 function syncOwnerName(){
   const list = DB.getUsers();
@@ -5338,7 +5986,7 @@ function authUsersHTML(){
       <div class="user-pick-grid">
         ${list.map(u => `
           <button class="user-pick" onclick="pickUser('${u.id}')">
-            <span class="up-avatar">${u.photo ? `<img src="${u.photo}" alt="">` : userInitials(u)}</span>
+            <span class="up-avatar">${userAvatar(u)}</span>
             <span class="up-name">${escapeHtml(u.name)}</span>
             <span class="role-chip ${u.role}">${roleOf(u.role).name}</span>
           </button>
@@ -5371,7 +6019,7 @@ function authUserPinHTML(){
     </div>
     <div class="auth-body">
       <div style="text-align:center; margin-top:10px;">
-        <span class="up-avatar" style="margin:0 auto;">${u.photo ? `<img src="${u.photo}" alt="">` : userInitials(u)}</span>
+        <span class="up-avatar" style="margin:0 auto;">${userAvatar(u)}</span>
       </div>
       <h1 class="auth-title" style="text-align:center; margin-top:16px;">Hola, ${escapeHtml(userFirstName(u) || u.name)}</h1>
       <p class="auth-sub" style="text-align:center;">Escribe tu NIP de 4 dígitos para entrar.</p>
@@ -5409,8 +6057,8 @@ function onUserPinInput(el){
 
 function enterAsUser(u){
   setActiveUser(u.id);
+  openUserSession();
   openShiftFor(u);
-  sessionStorage.setItem('mesa_user_session_active', '1');
   hideAuth();
   closeModal();
   cart = [];
@@ -5429,12 +6077,12 @@ function switchUser(){
     resumen = t.count + (t.count === 1 ? ' venta · ' : ' ventas · ') + formatMoney(t.total);
   }
   closeOpenShifts();
+  closeUserSession();
   closeModal();
   cart = [];
   checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
   currentView = 'home';
   authState.pickedUser = null;
-  sessionStorage.removeItem('mesa_user_session_active');
   showAuth('users');
   if(resumen) toast('Turno cerrado', { subtitle: resumen, icon:icon('clock') });
 }
@@ -5474,8 +6122,8 @@ function openUsersSheet(){
         const clickable = soyDueno;
         return `
           <button class="acc-row" ${clickable ? `onclick="openUserDetail('${u.id}')"` : 'disabled style="opacity:1;"'}>
-            <span class="acc-ico ${u.role === 'dueno' ? 'gold' : (u.role === 'admin' ? 'blue' : 'green')}">
-              ${u.photo ? `<img src="${u.photo}" alt="">` : `<span class="ini">${userInitials(u)}</span>`}
+            <span class="acc-ico ${u.role === 'dueno' ? 'gold' : (u.role === 'admin' ? 'blue' : 'green')} ${userPhoto(u) ? 'has-photo' : ''}">
+              ${userPhoto(u) ? `<img src="${userPhoto(u)}" alt="">` : `<span class="ini">${userInitials(u)}</span>`}
             </span>
             <span class="acc-txt">
               <span class="acc-label">${escapeHtml(u.name)}</span>
@@ -5487,7 +6135,7 @@ function openUsersSheet(){
     </div>` : `
     <div class="acc-list">
       <div class="acc-row">
-        <span class="acc-ico green">${me && me.photo ? `<img src="${me.photo}" alt="">` : `<span class="ini">${userInitials(me)}</span>`}</span>
+        <span class="acc-ico green ${userPhoto(me) ? 'has-photo' : ''}">${userPhoto(me) ? `<img src="${userPhoto(me)}" alt="">` : `<span class="ini">${userInitials(me)}</span>`}</span>
         <span class="acc-txt">
           <span class="acc-label">${escapeHtml(me ? me.name : '')}</span>
           <span class="acc-sub">${roleOf(me ? me.role : 'empleado').name} · Este es tu usuario</span>
@@ -5509,6 +6157,14 @@ function openUsersSheet(){
       </button>` : ''}
 
     <div class="acc-list" style="margin-top:14px;">
+      <button class="acc-row" onclick="openMyPhotoForm()">
+        <span class="acc-ico ${userPhoto(me) ? 'has-photo' : 'green'}">${userPhoto(me) ? `<img src="${userPhoto(me)}" alt="">` : icon('camera')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">Mi foto</span>
+          <span class="acc-sub">${userPhoto(me) ? 'Cambiar o quitar mi foto' : 'Ponle una foto a tu usuario'}</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
       <button class="acc-row" onclick="openMyPinForm()">
         <span class="acc-ico gold">${icon('key')}</span>
         <span class="acc-txt">
@@ -5672,6 +6328,7 @@ function saveNewUser(){
   // El Dueño que estaba usando Mesa sigue siendo el usuario activo.
   const me = activeUser();
   if(me) setActiveUser(me.id);
+  openUserSession();
   if(!currentShift()) openShiftFor(activeUser());
 
   toast(roleOf(role).name + ' agregado', { variant:'toast-success', icon:icon('check'), subtitle: name + ' ya puede entrar con su NIP' });
@@ -5731,7 +6388,10 @@ function openUserDetail(id){
       </div>
     `).join('')}
 
-    <button class="btn ghost block" style="margin-top:16px;" onclick="openSetPinForm('${u.id}')">
+    <button class="btn ghost block" style="margin-top:16px;" onclick="openUserPhotoForm('${u.id}')">
+      ${icon('camera')} Cambiar su foto
+    </button>
+    <button class="btn ghost block" style="margin-top:10px;" onclick="openSetPinForm('${u.id}')">
       ${icon('key')} Cambiar su NIP
     </button>
     ${!esDueno ? `
@@ -5815,6 +6475,95 @@ function doDeleteUser(id){
   openUsersSheet();
 }
 
+/* ---------- Foto de cada usuario ---------- */
+let userFormPhoto = null;
+
+function openMyPhotoForm(){
+  const me = activeUser();
+  if(me) openUserPhotoForm(me.id);
+}
+
+function openUserPhotoForm(id){
+  const u = userById(id);
+  if(!u) return;
+  const me = activeUser();
+  const esMio = me && me.id === u.id;
+  if(!esMio && !isOwner()){ requireOwner('Solo el Dueño puede cambiar la foto de otros'); return; }
+  userFormPhoto = userPhoto(u);
+  openModal(`
+    <h3 class="sheet-title">${esMio ? 'Mi foto' : 'Foto de ' + escapeHtml(u.name)}</h3>
+    <p class="sheet-text">Se verá arriba, en la selección de usuario y en los turnos.</p>
+    <div class="photo-picker">
+      <div class="photo-picker-circle ${userFormPhoto ? 'has-image':''}" id="userPhotoBox" onclick="document.getElementById('userPhotoInput').click()">
+        ${userFormPhoto ? `<img src="${userFormPhoto}" alt="">` : icon('camera')}
+      </div>
+      <div class="photo-picker-actions">
+        <button class="btn ghost" onclick="document.getElementById('userPhotoInput').click()">${icon('camera')} Elegir foto</button>
+        ${userFormPhoto ? `<button class="btn danger" onclick="removeUserPhoto()">${icon('trash')} Quitar</button>` : ''}
+      </div>
+      <input id="userPhotoInput" type="file" accept="image/*" style="display:none" onchange="onUserPhotoSelected(this)">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="openUsersSheet()">Cancelar</button>
+      <button class="btn primary block" onclick="saveUserPhoto('${u.id}')">Guardar</button>
+    </div>
+  `, { dismissible:true });
+}
+
+function onUserPhotoSelected(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('Selecciona un archivo de imagen'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const size = AVATAR_SIZE;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const scale = Math.max(size / img.width, size / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0,0,size,size);
+      ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+      userFormPhoto = canvas.toDataURL('image/jpeg', 0.85);
+      const box = document.getElementById('userPhotoBox');
+      if(box){
+        box.classList.add('has-image');
+        box.innerHTML = `<img src="${userFormPhoto}" alt="">`;
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeUserPhoto(){
+  userFormPhoto = null;
+  const box = document.getElementById('userPhotoBox');
+  if(box){ box.classList.remove('has-image'); box.innerHTML = icon('camera'); }
+  const del = document.querySelector('.photo-picker-actions .btn.danger');
+  if(del) del.remove();
+}
+
+function saveUserPhoto(id){
+  const list = DB.getUsers();
+  const u = list.find(x => x.id === id);
+  if(!u) return;
+  const me = activeUser();
+  if(!(me && me.id === u.id) && !isOwner()){ requireOwner('Solo el Dueño puede cambiar la foto de otros'); return; }
+  u.photo = userFormPhoto || null;
+  DB.saveUsers(list);
+  /* El Dueño comparte la foto con su perfil de la cuenta. */
+  if(u.role === 'dueno') updateUser({ photo: userFormPhoto || null });
+  userFormPhoto = null;
+  paintChrome();
+  render();
+  toast('Foto actualizada', { variant:'toast-success', icon:icon('check') });
+  openUsersSheet();
+}
+
 /* ---------- Mi NIP ---------- */
 function openMyPinForm(){
   const me = activeUser();
@@ -5892,8 +6641,10 @@ function openShiftsSheet(){
         const abierto = !s.end;
         return `
           <div class="shift-row">
-            <span class="acc-ico ${s.role === 'dueno' ? 'gold' : (s.role === 'admin' ? 'blue' : 'green')}">
-              <span class="ini">${userInitials({ name:s.userName })}</span>
+            <span class="acc-ico ${s.role === 'dueno' ? 'gold' : (s.role === 'admin' ? 'blue' : 'green')} ${userPhoto(userById(s.userId)) ? 'has-photo' : ''}">
+              ${userPhoto(userById(s.userId))
+                ? `<img src="${userPhoto(userById(s.userId))}" alt="">`
+                : `<span class="ini">${userInitials({ name:s.userName })}</span>`}
             </span>
             <span class="shift-main">
               <span class="shift-name">${escapeHtml(todos ? s.userName : 'Mi turno')}</span>
@@ -5958,7 +6709,7 @@ function renderNipRecovery(){
       <div class="acc-list">
         ${list.map(x => `
           <button class="acc-row" onclick="nipPickUser('${x.id}')">
-            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')}">${x.photo ? `<img src="${x.photo}" alt="">` : `<span class="ini">${userInitials(x)}</span>`}</span>
+            <span class="acc-ico ${x.role === 'dueno' ? 'gold' : (x.role === 'admin' ? 'blue' : 'green')} ${userPhoto(x) ? 'has-photo' : ''}">${userPhoto(x) ? `<img src="${userPhoto(x)}" alt="">` : `<span class="ini">${userInitials(x)}</span>`}</span>
             <span class="acc-txt">
               <span class="acc-label">${escapeHtml(x.name)}</span>
               <span class="acc-sub">${roleOf(x.role).name}</span>
@@ -6090,29 +6841,6 @@ function closeNipRecovery(){
   if(!document.getElementById('authLayer').classList.contains('show')) openUsersSheet();
 }
 
-/* ---------- Splash de arranque (solo al iniciar la app) ---------- */
-function runSplash(onDone){
-  const splash = document.getElementById('splashScreen');
-  const mark = document.getElementById('splashMark');
-  if(!splash){ onDone(); return; }
-  const already = sessionStorage.getItem('mesaSplashShown');
-  if(already){
-    splash.style.display = 'none';
-    onDone();
-    return;
-  }
-  if(mark) mark.innerHTML = ICONS.fork;
-  splash.style.display = 'flex';
-  sessionStorage.setItem('mesaSplashShown', '1');
-  setTimeout(() => {
-    splash.classList.add('splash-hide');
-    setTimeout(() => {
-      splash.style.display = 'none';
-      onDone();
-    }, 350);
-  }, 900);
-}
-
 /* ---------- Arranque de la app con sesión ---------- */
 function bootApp(){
   initDB();
@@ -6122,31 +6850,28 @@ function bootApp(){
   paintChrome();
   render();
   tickClock();
-  /* Primero el logo, y hasta que termine, la pantalla de acceso/NIP. */
-  runSplash(() => {
-    const u = currentUser();
-    if(!AUTH.isLogged()){
-      showAuth(u ? 'login' : 'welcome');
-      if(u) authState.mode = 'login';
-    }else if(multiUser()){
-      /* Hay más de un usuario: cada quien entra con su NIP.
-         (Con un solo usuario esto nunca aparece.)
-         Solo se pregunta al iniciar la app; una recarga de página
-         no vuelve a mandar a "¿quién va a usar Mesa?" — para eso
-         está el botón "Cambiar usuario". */
-      if(sessionStorage.getItem('mesa_user_session_active') !== '1'){
-        closeOpenShifts();
-        authState.pickedUser = null;
-        showAuth('users');
-      }
-    }else if(u && u.pin){
-      /* El NIP solo se pide al iniciar la app; si ya se desbloqueó
-         en esta misma sesión, una recarga de página no lo vuelve a pedir. */
-      if(sessionStorage.getItem('mesa_pin_unlocked') !== '1'){
-        showAuth('lock');
-      }
+  const u = currentUser();
+  if(!AUTH.isLogged()){
+    showAuth(u ? 'login' : 'welcome');
+    if(u) authState.mode = 'login';
+  }else if(multiUser()){
+    const me = activeUser();
+    if(userSessionOpen() && me){
+      /* La sesión de este usuario sigue abierta: aunque se recargue la
+         página, Mesa no vuelve a pedir el NIP. Solo se pide otra vez
+         cuando le dan a "Cambiar de usuario". */
+      if(!currentShift()) openShiftFor(me);
+      paintChrome();
+      render();
+    }else{
+      /* Nadie ha entrado todavía: cada quien entra con su NIP. */
+      closeOpenShifts();
+      authState.pickedUser = null;
+      showAuth('users');
     }
-  });
+  }else if(u && u.pin){
+    showAuth('lock');
+  }
 }
 
 /* ---------- Encabezado del ticket con los datos del negocio ---------- */
