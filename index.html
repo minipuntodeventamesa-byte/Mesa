@@ -412,6 +412,9 @@
   .field-hint{ font-size:12px; margin-top:7px; font-weight:700; }
   .field-hint.ok{ color:var(--success); }
   .field-hint.warn{ color:var(--accent-2); }
+  .field.has-error input, .field.has-error select{ border-color:var(--accent-2); background:var(--danger-bg); }
+  .field-error{ font-size:12px; margin-top:7px; font-weight:700; color:var(--accent-2); }
+  .size-row.has-error .pf-size-label, .size-row.has-error .pf-size-price{ border-color:var(--accent-2); background:var(--danger-bg); }
 
   .switch{ display:flex; align-items:center; }
   .switch input{ display:none; }
@@ -1849,6 +1852,28 @@ function startOfWeek(d){
 function isSameWeek(a,b){ return startOfWeek(a).getTime() === startOfWeek(b).getTime(); }
 function isSameMonth(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth(); }
 
+/* Marca/limpia un campo obligatorio con un mensaje de error debajo,
+   sin depender del toast (para que el usuario vea justo qué falta). */
+function setFieldError(fieldId, message){
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.classList.add('has-error');
+  let msg = field.querySelector('.field-error');
+  if(!msg){
+    msg = document.createElement('div');
+    msg.className = 'field-error';
+    field.appendChild(msg);
+  }
+  msg.textContent = message;
+}
+function clearFieldError(fieldId){
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.classList.remove('has-error');
+  const msg = field.querySelector('.field-error');
+  if(msg) msg.remove();
+}
+
 function toast(msg, opts){
   opts = opts || {};
   const t = document.getElementById('toast');
@@ -2552,11 +2577,18 @@ function confirmarCobro(){
     items: cart.map(c => {
       const p = findProduct(c.productId);
       const price = cartLinePrice(c);
+      // El precio de producción del producto es "por litro/kilo". Si se vendió
+      // por tamaño (medio litro, 2 litros...), el costo real de esa venta es
+      // ese precio multiplicado por los litros/kilos que representa el tamaño,
+      // no el precio de producción completo sin importar cuánto se vendió.
+      const size = (c.sizeId && p && p.sizes) ? p.sizes.find(sz => sz.id === c.sizeId) : null;
+      const unitFactor = (size && size.unitQty != null) ? size.unitQty : 1;
+      const cost = (p && p.cost != null) ? round2(p.cost * unitFactor) : null;
       return {
         productId: p.id,
         name: p.name + (c.sizeLabel ? ' · ' + c.sizeLabel : ''),
         price: price,
-        cost: p.cost != null ? p.cost : null,
+        cost: cost,
         qty: c.qty,
         sizeLabel: c.sizeLabel || null
       };
@@ -3697,6 +3729,26 @@ function deleteCategory(categoryId){
 function renderBackgroundIfProducts(){ if(currentView === 'products') render(); }
 
 
+/* Texto de la etiqueta de precio de producción: cuando el producto
+   se vende por tamaño, el precio principal ya no es "el" precio, es un
+   aproximado por litro/kilo (referencia para reportes y ganancia).
+   El precio de venta se queda fijo porque ese ya se define por tamaño. */
+function priceFieldLabel(kind, sizesOn, unit){
+  const u = unit === 'kilo' ? 'kilo' : 'litro';
+  if(kind !== 'produccion' || !sizesOn) return kind === 'venta' ? 'Precio de venta' : 'Precio de producción';
+  return `Precio de producción por ${u} (aprox.)`;
+}
+function updatePriceFieldLabels(){
+  const sizesOnEl = document.getElementById('pfSizesOn');
+  const unitEl = document.getElementById('pfSizeUnit');
+  const sizesOn = !!(sizesOnEl && sizesOnEl.checked);
+  const unit = (unitEl && unitEl.value === 'kilo') ? 'kilo' : 'litro';
+  const priceLabel = document.getElementById('pfPriceLabel');
+  const costLabel = document.getElementById('pfCostLabel');
+  if(priceLabel) priceLabel.textContent = priceFieldLabel('venta', sizesOn, unit);
+  if(costLabel) costLabel.textContent = priceFieldLabel('produccion', sizesOn, unit);
+}
+
 function openProductForm(productId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const products = DB.getProducts();
@@ -3728,18 +3780,19 @@ function openProductForm(productId){
       </label>
       ${productFormImage ? `<button type="button" class="btn ghost block photo-upload-remove-block" style="margin-top:8px;" onclick="removeProductPhoto()">${icon('trash')} Quitar foto</button>` : ''}
     </div>
-    <div class="field">
+    <div class="field" id="pfNameField">
       <label>Nombre</label>
       <input id="pfName" type="text" placeholder="Ej. Hamburguesa Especial" value="${editing ? escapeHtml(editing.name) : ''}">
     </div>
-    <div class="field">
-      <label>Precio de venta</label>
-      <input id="pfPrice" type="number" min="0" step="0.5" placeholder="0.00" value="${editing ? editing.price : ''}">
+    <div class="field" id="pfPriceField" style="display:${sizesOn ? 'none' : 'block'};">
+      <label id="pfPriceLabel">${priceFieldLabel('venta', sizesOn, sizeUnit)}</label>
+      <input id="pfPrice" type="number" min="0" step="0.5" placeholder="0.00" value="${editing ? editing.price : ''}" oninput="updateProductFormWarnings()">
     </div>
-    <div class="field">
-      <label>Precio de producción</label>
-      <input id="pfCost" type="number" min="0" step="0.5" placeholder="0.00" value="${editing && editing.cost != null ? editing.cost : ''}">
+    <div class="field" id="pfCostField">
+      <label id="pfCostLabel">${priceFieldLabel('produccion', sizesOn, sizeUnit)}</label>
+      <input id="pfCost" type="number" min="0" step="0.5" placeholder="0.00" value="${editing && editing.cost != null ? editing.cost : ''}" oninput="updateProductFormWarnings()">
     </div>
+    <div class="field-hint warn" id="pfConsistencyHint" style="display:none;"></div>
     <div class="field">
       <label>Categoría</label>
       <select id="pfCategory">
@@ -3761,11 +3814,11 @@ function openProductForm(productId){
     </div>
     <div id="pfStockBox" style="display:${stockOn ? 'block' : 'none'}; margin-top:14px;">
       <div class="two-fields">
-        <div class="field">
+        <div class="field" id="pfStockField">
           <label>Piezas que tienes</label>
           <input id="pfStock" type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${stockOn ? editing.stock : ''}">
         </div>
-        <div class="field">
+        <div class="field" id="pfMinStockField">
           <label>Avisar cuando queden</label>
           <input id="pfMinStock" type="number" inputmode="numeric" min="0" step="1" placeholder="2" value="${stockOn ? (editing.minStock == null ? 2 : editing.minStock) : 2}">
         </div>
@@ -3807,6 +3860,7 @@ function openProductForm(productId){
     <button class="btn primary block" style="margin-top:18px;" onclick="saveProductForm('${editing ? editing.id : ''}')">${editing ? 'Guardar cambios' : 'Agregar producto'}</button>
   `;
   openModal(html, { dismissible:true });
+  updateProductFormWarnings();
 }
 
 /* Redimensiona/recorta cualquier imagen a un cuadro fijo (cover) para que
@@ -3873,10 +3927,17 @@ function toggleStockFields(on){
   }
 }
 
-/* Muestra u oculta los campos de tamaños dentro del formulario. */
+/* Muestra u oculta los campos de tamaños dentro del formulario.
+   Cuando se vende por tamaño, el precio de venta ya no se define arriba
+   (cada tamaño tiene el suyo), así que ese campo se oculta por completo
+   y solo queda el precio de producción por litro/kilo (aprox.). */
 function toggleSizeFields(on){
   const box = document.getElementById('pfSizesBox');
   if(box) box.style.display = on ? 'block' : 'none';
+  const priceField = document.getElementById('pfPriceField');
+  if(priceField) priceField.style.display = on ? 'none' : 'block';
+  updatePriceFieldLabels();
+  updateProductFormWarnings();
 }
 function setSizeUnit(unit){
   const u = unit === 'kilo' ? 'kilo' : 'litro';
@@ -3886,19 +3947,62 @@ function setSizeUnit(unit){
   const kiloBtn = document.getElementById('pfUnitKilo');
   if(litroBtn) litroBtn.classList.toggle('active', u === 'litro');
   if(kiloBtn) kiloBtn.classList.toggle('active', u === 'kilo');
+  updatePriceFieldLabels();
+  updateProductFormWarnings();
 }
+
+/* Adivina a cuántos litros/kilos equivale un tamaño a partir de su nombre
+   (así el usuario solo escribe "Medio litro" o "2 litros", sin llenar un
+   campo aparte). Reconoce palabras comunes (medio, cuarto, tres cuartos),
+   fracciones (1/2), números con ml/g/litros/kilos, o un número suelto.
+   Si no reconoce nada, asume 1 (un litro/kilo completo) para no romper
+   el cálculo; por eso conviene nombrar los tamaños de forma clara. */
+function parseSizeQty(label){
+  if(!label) return 1;
+  let s = label.toLowerCase().trim()
+    .replace(/í/g,'i').replace(/ó/g,'o').replace(/é/g,'e').replace(/á/g,'a').replace(/ú/g,'u');
+
+  if(/\btres cuartos\b|\b3\/4\b/.test(s)) return 0.75;
+  if(/\bcuarto\b/.test(s)) return 0.25;
+  if(/\bmedi[oa]\b/.test(s)) return 0.5;
+  if(/\bdoble\b/.test(s)) return 2;
+
+  const fracMatch = s.match(/(\d+)\s*\/\s*(\d+)/);
+  if(fracMatch){
+    const num = parseFloat(fracMatch[1]), den = parseFloat(fracMatch[2]);
+    if(den) return round2(num / den);
+  }
+
+  const mlMatch = s.match(/(\d+(?:[.,]\d+)?)\s*ml\b/);
+  if(mlMatch) return round2(parseFloat(mlMatch[1].replace(',', '.')) / 1000);
+
+  const gMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:gr|g|gramos)\b/);
+  if(gMatch) return round2(parseFloat(gMatch[1].replace(',', '.')) / 1000);
+
+  const numMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:litros?|lts?|l\b|kilos?|kgs?|kg\b)/);
+  if(numMatch) return round2(parseFloat(numMatch[1].replace(',', '.')));
+
+  const anyNum = s.match(/(\d+(?:[.,]\d+)?)/);
+  if(anyNum) return round2(parseFloat(anyNum[1].replace(',', '.')));
+
+  if(/\blitro\b|\bkilo\b|\bkg\b|\bl\b/.test(s)) return 1;
+
+  return 1;
+}
+
 function sizeRowHTML(s){
   s = s || {};
   return `
     <div class="size-row" data-id="${s.id || ''}">
-      <input type="text" class="pf-size-label" placeholder="Ej. Medio litro" value="${s.label ? escapeHtml(s.label) : ''}">
-      <input type="number" class="pf-size-price" inputmode="decimal" min="0" step="0.5" placeholder="Precio" value="${s.price != null && s.price !== '' ? s.price : ''}">
+      <input type="text" class="pf-size-label" placeholder="Ej. Medio litro" value="${s.label ? escapeHtml(s.label) : ''}" oninput="updateProductFormWarnings()">
+      <input type="number" class="pf-size-price" inputmode="decimal" min="0" step="0.5" placeholder="Precio" value="${s.price != null && s.price !== '' ? s.price : ''}" oninput="updateProductFormWarnings()">
       <button type="button" class="icon-btn" onclick="removeSizeRow(this)">${icon('trash')}</button>
     </div>`;
 }
 function addSizeRow(){
   const box = document.getElementById('pfSizeRows');
   if(box) box.insertAdjacentHTML('beforeend', sizeRowHTML({}));
+  updateProductFormWarnings();
 }
 function removeSizeRow(btn){
   const box = document.getElementById('pfSizeRows');
@@ -3912,32 +4016,101 @@ function removeSizeRow(btn){
     if(lbl) lbl.value = '';
     if(pr) pr.value = '';
   }
+  updateProductFormWarnings();
+}
+
+/* Avisa, en vivo mientras se llena el formulario, si el precio de venta
+   (o el de algún tamaño) queda por debajo de lo que cuesta producirlo.
+   No bloquea el guardado: solo explica la inconsistencia para que el
+   usuario decida. Ganancia = precio de venta − precio de producción;
+   si el de venta es menor, esa venta pierde dinero en vez de ganar. */
+function updateProductFormWarnings(){
+  const simpleHint = document.getElementById('pfConsistencyHint');
+  const costEl = document.getElementById('pfCost');
+  const sizesOnEl = document.getElementById('pfSizesOn');
+  if(!costEl || !sizesOnEl) return;
+  const clearHint = el => { if(el){ el.style.display = 'none'; el.innerHTML = ''; } };
+
+  const costRaw = costEl.value.trim();
+  const cost = costRaw === '' ? null : parseFloat(costRaw);
+  if(cost === null || isNaN(cost) || cost < 0){
+    clearHint(simpleHint);
+    return;
+  }
+
+  const sizesOn = sizesOnEl.checked;
+  const problems = [];
+
+  if(sizesOn){
+    // El aviso en vivo para tamaños (litro/kilo) ya no se muestra aquí:
+    // la inconsistencia se valida y se bloquea con una alerta al guardar,
+    // ver saveProductForm().
+    clearHint(simpleHint);
+  } else {
+    const priceEl = document.getElementById('pfPrice');
+    const priceRaw = priceEl ? priceEl.value : '';
+    if(priceRaw !== ''){
+      const price = parseFloat(priceRaw);
+      if(!isNaN(price) && price < cost){
+        problems.push(`el precio de venta (${formatMoney(price)}) es menor que el precio de producción (${formatMoney(cost)})`);
+      }
+    }
+    if(simpleHint){
+      if(problems.length){
+        simpleHint.style.display = 'block';
+        simpleHint.innerHTML = `<b>Pon un precio mayor al costo de producción:</b> ${problems.join('; ')}. La ganancia se calcula como precio de venta − precio de producción: si el de venta es menor, esa venta te hace perder dinero en vez de dejarte ganancia.`;
+      } else {
+        clearHint(simpleHint);
+      }
+    }
+  }
 }
 
 function saveProductForm(productId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
+
+  // Limpia mensajes de error de una validación anterior.
+  ['pfNameField','pfPriceField','pfCostField','pfStockField','pfMinStockField'].forEach(clearFieldError);
+  document.querySelectorAll('#pfSizeRows .size-row.has-error').forEach(r => r.classList.remove('has-error'));
+
+  let ok = true;
+  let firstErrorEl = null;
+  const markError = (fieldId, message, inputId) => {
+    setFieldError(fieldId, message);
+    ok = false;
+    if(!firstErrorEl) firstErrorEl = document.getElementById(inputId || fieldId);
+  };
+
   const name = document.getElementById('pfName').value.trim();
-  const price = parseFloat(document.getElementById('pfPrice').value);
   const category = document.getElementById('pfCategory').value;
 
-  if(!name){ toast('Escribe un nombre para el producto'); return; }
-  if(isNaN(price) || price < 0){ toast('Ingresa un precio de venta válido'); return; }
+  if(!name){ markError('pfNameField', 'Escribe un nombre para el producto', 'pfName'); }
+
+  // Tamaños/presentaciones (opcional): medio litro, litro, 2 litros, por kilo, etc.
+  // Se necesita saber esto antes de validar el precio: cuando se vende por
+  // tamaño, el precio de venta no se pide arriba (cada tamaño trae el suyo).
+  const sizesOn = document.getElementById('pfSizesOn').checked;
+
+  let price = 0;
+  if(!sizesOn){
+    price = parseFloat(document.getElementById('pfPrice').value);
+    if(isNaN(price) || price < 0){ markError('pfPriceField', 'Ingresa un precio de venta válido', 'pfPrice'); }
+  }
+
   const costRaw = document.getElementById('pfCost').value.trim();
   const cost = costRaw === '' ? null : parseFloat(costRaw);
-  if(cost !== null && (isNaN(cost) || cost < 0)){ toast('Ingresa un precio de producción válido'); return; }
+  if(cost !== null && (isNaN(cost) || cost < 0)){ markError('pfCostField', 'Ingresa un precio de producción válido', 'pfCost'); }
 
   // Existencias (opcional)
   const stockOn = document.getElementById('pfStockOn').checked;
   let stock = null, minStock = 2;
   if(stockOn){
     stock = parseInt(document.getElementById('pfStock').value, 10);
-    if(isNaN(stock) || stock < 0){ toast('Escribe cuántas piezas tienes'); return; }
+    if(isNaN(stock) || stock < 0){ markError('pfStockField', 'Escribe cuántas piezas tienes', 'pfStock'); }
     minStock = parseInt(document.getElementById('pfMinStock').value, 10);
     if(isNaN(minStock) || minStock < 0) minStock = 2;
   }
 
-  // Tamaños/presentaciones (opcional): medio litro, litro, 2 litros, por kilo, etc.
-  const sizesOn = document.getElementById('pfSizesOn').checked;
   let sizeUnit = 'litro', sizes = [];
   if(sizesOn){
     sizeUnit = document.getElementById('pfSizeUnit').value === 'kilo' ? 'kilo' : 'litro';
@@ -3948,11 +4121,39 @@ function saveProductForm(productId){
       const priceRaw = row.querySelector('.pf-size-price').value;
       if(!label && priceRaw === '') return; // fila vacía: se ignora
       const sPrice = parseFloat(priceRaw);
-      if(!label || isNaN(sPrice) || sPrice < 0){ sizeError = true; return; }
-      sizes.push({ id: row.dataset.id || ('sz' + Date.now() + Math.floor(Math.random()*1000)), label, price: round2(sPrice) });
+      if(!label || isNaN(sPrice) || sPrice < 0){
+        sizeError = true;
+        row.classList.add('has-error');
+        if(!firstErrorEl) firstErrorEl = row.querySelector('.pf-size-label');
+        return;
+      }
+      // unitQty: cuántos litros/kilos representa este tamaño, adivinado a
+      // partir de su nombre (medio litro = 0.5, 2 litros = 2...). Con esto
+      // la ganancia se calcula por litro/kilo real y no con el precio de
+      // producción completo sin importar el tamaño vendido.
+      sizes.push({ id: row.dataset.id || ('sz' + Date.now() + Math.floor(Math.random()*1000)), label, price: round2(sPrice), unitQty: parseSizeQty(label) });
     });
-    if(sizeError){ toast('Cada tamaño necesita un nombre y un precio válido'); return; }
-    if(sizes.length === 0){ toast('Agrega al menos un tamaño con su precio'); return; }
+    if(sizeError){
+      toast('Cada tamaño necesita un nombre y un precio válido', { variant:'toast-danger', icon:icon('close') });
+      ok = false;
+    } else if(sizes.length === 0){
+      toast('Agrega al menos un tamaño con su precio', { variant:'toast-danger', icon:icon('close') });
+      ok = false;
+    } else if(cost !== null && !isNaN(cost) && sizes.some(s => s.price < round2(cost * s.unitQty))){
+      // No deja agregar/guardar el producto si algún tamaño (litro/kilo, etc.)
+      // se vende por debajo de lo que cuesta producirlo.
+      alert('El precio de producción es mayor al precio de venta, modifique los precios');
+      ok = false;
+    } else {
+      // El precio "principal" del producto ya no lo define el usuario aquí;
+      // se usa el más bajo de los tamaños solo como referencia interna.
+      price = round2(Math.min.apply(null, sizes.map(s => s.price)));
+    }
+  }
+
+  if(!ok){
+    if(firstErrorEl){ firstErrorEl.focus({ preventScroll:true }); firstErrorEl.scrollIntoView({ behavior:'smooth', block:'center' }); }
+    return;
   }
 
   const products = DB.getProducts();
