@@ -1026,6 +1026,26 @@
   .auth-illu{ display:flex; justify-content:center; margin:6px 0 28px; }
   .auth-illu svg{ width:190px; height:190px; }
 
+  /* ---- Oferta de bienvenida: 3 meses gratis ---- */
+  .trial-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--accent-soft); color:#8A6A18;
+    border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:800;
+    margin-bottom:14px;
+  }
+  .trial-card{
+    background:var(--surface-alt); border:1px solid var(--border);
+    border-radius:16px; padding:2px 16px; margin:8px 0 6px;
+  }
+  .trial-card-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 0; border-bottom:1px solid var(--border);
+    font-size:14px; font-weight:700; color:var(--ink-soft);
+  }
+  .trial-card-row:last-child{ border-bottom:none; }
+  .trial-card-row b{ color:var(--ink); font-size:15px; font-weight:800; }
+  .trial-card-row.highlight b{ color:#8A6A18; }
+
   .auth-foot{
     text-align:center; font-size:14px; font-weight:600;
     color:var(--ink-soft); margin-top:18px;
@@ -1133,6 +1153,30 @@
   .acc-row .acc-chev{ color:var(--ink-faint); flex-shrink:0; }
   .acc-row .acc-chev svg{ width:18px; height:18px; }
   .acc-row.danger .acc-label{ color:var(--accent-2); }
+
+  /* ---- Mini contador de la prueba gratis (Mi cuenta) ---- */
+  .trial-widget{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-card); box-shadow:var(--shadow-card);
+    padding:16px;
+  }
+  .trial-widget-top{ display:flex; align-items:center; gap:12px; }
+  .trial-widget-ico{
+    width:40px; height:40px; border-radius:13px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft); font-size:19px;
+  }
+  .trial-widget-ico svg{ width:19px; height:19px; color:#8A6A18; }
+  .trial-widget-ico.warn{ background:var(--danger-bg); color:var(--accent-2); }
+  .trial-widget-ico.warn svg{ color:var(--accent-2); }
+  .trial-widget-ico.paid{ background:var(--success-bg); }
+  .trial-widget-ico.paid svg{ color:var(--success); }
+  .trial-widget-txt{ flex:1; min-width:0; }
+  .trial-widget-label{ display:block; font-size:15px; font-weight:800; color:var(--ink); }
+  .trial-widget-sub{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-top:2px; }
+  .trial-bar{ height:8px; border-radius:999px; background:var(--surface-alt); margin-top:14px; overflow:hidden; }
+  .trial-bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,var(--accent-strong),var(--accent)); transition:width .3s ease; }
+  .trial-widget.expired{ border-color:#F3CFC9; }
 
   .photo-picker{
     display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:22px;
@@ -4313,6 +4357,58 @@ Object.assign(ILLUSTRATIONS, {
     <path d="M44 84c-4 2-6 6-5 10l6 22c2 7 8 12 15 12h28" stroke="#F5C6A3" stroke-width="11" stroke-linecap="round"/>
     <path d="M47 92c0-6 4-10 9-10h4" stroke="#EBB491" stroke-width="7" stroke-linecap="round"/>
   </svg>`,
+  // Escena de bienvenida al regalo de 3 meses gratis
+  trialGift: `
+  <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="glowTrial" x1="200" y1="10" x2="200" y2="300" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#2E4677" stop-opacity=".55"/><stop offset="1" stop-color="#16213E" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <circle cx="200" cy="150" r="140" fill="url(#glowTrial)"/>
+    <!-- confeti -->
+    <circle cx="58" cy="56" r="5" fill="#FFD666"/>
+    <circle cx="344" cy="52" r="4" fill="#E1594C"/>
+    <rect x="88" y="28" width="8" height="8" rx="2" fill="#25D366" transform="rotate(20 92 32)"/>
+    <rect x="312" y="86" width="8" height="8" rx="2" fill="#6C4FCB" transform="rotate(-15 316 90)"/>
+    <circle cx="332" cy="138" r="4" fill="#FFD666"/>
+    <circle cx="42" cy="118" r="4" fill="#2E7DC0"/>
+    <rect x="52" y="158" width="7" height="7" rx="2" fill="#F5BF3C" transform="rotate(30 55 162)"/>
+    <circle cx="366" cy="180" r="4" fill="#25D366"/>
+    <!-- mostrador -->
+    <rect x="0" y="230" width="400" height="70" fill="#F2E2C0"/>
+    <rect x="0" y="230" width="400" height="9" rx="3" fill="#FFF6E2"/>
+    <!-- regalo -->
+    <g>
+      <rect x="228" y="178" width="92" height="68" rx="9" fill="#FFD666"/>
+      <rect x="228" y="178" width="92" height="17" fill="#F5BF3C"/>
+      <rect x="265" y="178" width="18" height="68" fill="#E1594C"/>
+      <path d="M265 178c0-14-9-24-18-24 0 12 8 20 18 24Z" fill="#E1594C"/>
+      <path d="M283 178c0-14 9-24 18-24 0 12-8 20-18 24Z" fill="#E1594C"/>
+    </g>
+    <!-- persona -->
+    <g>
+      <path d="M96 230c0-30 20-48 52-48s52 18 52 48v16H96v-16Z" fill="#FFFFFF"/>
+      <path d="M124 196h48c8 12 11 26 11 50h-70c0-24 3-38 11-50Z" fill="#25D366"/>
+      <path d="M134 190c4 8 9 12 14 12s10-4 14-12" stroke="#25D366" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M138 172h20v18h-20z" fill="#EBB491"/>
+      <ellipse cx="148" cy="150" rx="27" ry="30" fill="#F5C6A3"/>
+      <path d="M148 116c19 0 30 12 30 30 0 7-1 12-3 17-2-12-6-17-10-19-6 4-25 6-38 1-3 4-5 10-6 18-3-6-4-11-4-17 0-18 12-30 31-30Z" fill="#3A2A22"/>
+      <path d="M118 145c-6 4-8 14-5 22 2-9 4-14 8-17l-3-5Z" fill="#3A2A22"/>
+      <path d="M138 148c2-2 5-2 7 0M151 148c2-2 5-2 7 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M138 161c5 5 14 5 19-1" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="125" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
+      <circle cx="171" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
+      <path d="M198 214c14-6 24-14 30-24" stroke="#F5C6A3" stroke-width="11" stroke-linecap="round"/>
+    </g>
+    <!-- burbuja -->
+    <g>
+      <rect x="148" y="62" width="152" height="58" rx="18" fill="#FFFFFF"/>
+      <path d="M186 120l-10 14-6-14Z" fill="#FFFFFF"/>
+      <text x="224" y="90" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="17" font-weight="800" fill="#16213E">3 MESES</text>
+      <text x="224" y="109" text-anchor="middle" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="12.5" font-weight="700" fill="#0E7A3D">totalmente gratis</text>
+    </g>
+  </svg>`,
   // Candado para seguridad / código
   lockShield: `
   <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -4364,7 +4460,31 @@ function newUser(country, phone){
     business: { name:'', type:'', address:'', phone:'' },
     prefs: { notifSales:true, notifStock:true, notifDaily:false, haptics:true, bizOnTicket:true },
     pin: null,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    trialStart: new Date().toISOString(),
+    membershipPaid: false,
+    membershipPaidAt: null
+  };
+}
+
+/* ---------- Prueba gratis de 3 meses ---------- */
+const TRIAL_MESES = 3;
+const TRIAL_PRECIO = 129;
+function trialInfo(u){
+  u = u || currentUser();
+  if(!u) return null;
+  const start = new Date(u.trialStart || u.createdAt || Date.now());
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + TRIAL_MESES);
+  const now = new Date();
+  const totalDays = Math.max(1, Math.round((end - start) / 86400000));
+  const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
+  const daysUsed = Math.min(totalDays, totalDays - daysLeft);
+  return {
+    start, end, totalDays, daysLeft,
+    pct: Math.min(100, Math.max(0, Math.round((daysUsed / totalDays) * 100))),
+    expired: now >= end,
+    paid: !!u.membershipPaid
   };
 }
 
@@ -4451,6 +4571,7 @@ function renderAuth(){
   else if(s === 'signup' || s === 'login') html = authPhoneHTML();
   else if(s === 'otp') html = authOtpHTML();
   else if(s === 'name') html = authNameHTML();
+  else if(s === 'trial') html = authTrialHTML();
   else if(s === 'lock') html = authLockHTML();
   else if(s === 'users') html = authUsersHTML();          // selección de usuario
   else if(s === 'userpin') html = authUserPinHTML();      // NIP de ese usuario
@@ -4807,7 +4928,37 @@ function saveRegistrationName(){
   AUTH.saveUser(u);
   ensureOwnerUser();
   syncOwnerName();
-  finishAuth('¡Tu cuenta está lista, ' + name.split(' ')[0] + '!');
+  authState.pendingWelcomeMsg = '¡Tu cuenta está lista, ' + name.split(' ')[0] + '!';
+  /* Solo se ve esta pantalla la primera vez que alguien crea su cuenta.
+     Si inicia sesión de nuevo o recarga la página, nunca vuelve a aparecer. */
+  authGo('trial');
+}
+
+/* ---------- Pantalla única: regalo de bienvenida (solo primer registro) ---------- */
+function authTrialHTML(){
+  return `
+    <div class="auth-hero">${ILLUSTRATIONS.trialGift}</div>
+    <div class="auth-sheet">
+      <div class="auth-body">
+        <span class="trial-badge">🎁 Regalo de bienvenida</span>
+        <h1 class="auth-title">3 meses de prueba gratis</h1>
+        <p class="auth-sub">Usa Mesa sin costo durante <b style="color:var(--ink)">3 meses completos</b>. Cuando termine tu prueba, la membresía cuesta <b style="color:var(--ink)">$${TRIAL_PRECIO} al mes</b>. Te avisaremos antes de que se acabe.</p>
+        <div class="trial-card">
+          <div class="trial-card-row"><span>Hoy</span><b>Gratis</b></div>
+          <div class="trial-card-row"><span>Durante 3 meses</span><b>$0</b></div>
+          <div class="trial-card-row highlight"><span>Después</span><b>$${TRIAL_PRECIO}/mes</b></div>
+        </div>
+        <div class="auth-actions">
+          <button class="btn dark xl block" onclick="acceptTrialAndEnter()">Empezar mi prueba gratis</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function acceptTrialAndEnter(){
+  const msg = authState.pendingWelcomeMsg || '¡Tu cuenta está lista!';
+  authState.pendingWelcomeMsg = null;
+  finishAuth(msg);
 }
 
 function finishAuth(msg){
@@ -4905,6 +5056,80 @@ function forgotPin(){
 /* =========================================================
    VISTA: MI CUENTA
 ========================================================= */
+
+/* ---------- Mini contador de la prueba gratis ---------- */
+function trialWidgetHTML(u){
+  const t = trialInfo(u);
+  if(!t) return '';
+
+  if(t.paid){
+    return `
+    <div class="section-title">Membresía</div>
+    <div class="trial-widget paid">
+      <div class="trial-widget-top">
+        <span class="trial-widget-ico paid">${icon('shield')}</span>
+        <div class="trial-widget-txt">
+          <span class="trial-widget-label">Membresía activa</span>
+          <span class="trial-widget-sub">$${TRIAL_PRECIO} al mes</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(t.expired){
+    return `
+    <div class="section-title">Membresía</div>
+    <div class="trial-widget expired">
+      <div class="trial-widget-top">
+        <span class="trial-widget-ico warn">${icon('bell')}</span>
+        <div class="trial-widget-txt">
+          <span class="trial-widget-label">Tu prueba gratis terminó</span>
+          <span class="trial-widget-sub">Activa tu membresía para seguir usando Mesa</span>
+        </div>
+      </div>
+      <button class="btn dark block" style="margin-top:12px;" onclick="openMembershipPay()">Pagar membresía · $${TRIAL_PRECIO}/mes</button>
+    </div>`;
+  }
+
+  return `
+    <div class="section-title">Membresía</div>
+    <div class="trial-widget">
+      <div class="trial-widget-top">
+        <span class="trial-widget-ico">🎁</span>
+        <div class="trial-widget-txt">
+          <span class="trial-widget-label">${t.daysLeft} día${t.daysLeft === 1 ? '' : 's'} gratis restantes</span>
+          <span class="trial-widget-sub">Después: $${TRIAL_PRECIO} al mes</span>
+        </div>
+      </div>
+      <div class="trial-bar"><div class="trial-bar-fill" style="width:${t.pct}%"></div></div>
+    </div>`;
+}
+
+function openMembershipPay(){
+  openModal(`
+    <h3 class="sheet-title">Activar membresía</h3>
+    <p class="sheet-text">Esto es un prototipo: aquí no se cobra nada de verdad. En la versión final se conectará una pasarela de pago real.</p>
+    <div class="trial-card" style="margin-bottom:6px;">
+      <div class="trial-card-row highlight"><span>Membresía Mesa</span><b>$${TRIAL_PRECIO}/mes</b></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary block" onclick="confirmMembershipPay()">Confirmar pago (demo)</button>
+    </div>
+  `, { dismissible:true });
+}
+function confirmMembershipPay(){
+  const u = currentUser();
+  if(u){
+    u.membershipPaid = true;
+    u.membershipPaidAt = new Date().toISOString();
+    AUTH.saveUser(u);
+  }
+  closeModal();
+  render();
+  toast('Membresía activada (demo)', { subtitle:'Gracias por confiar en Mesa', variant:'toast-success', icon:icon('check') });
+}
+
 function renderAccount(){
   const u = currentUser() || newUser('MX','');
   const prefs = userPrefs();
@@ -4933,6 +5158,8 @@ function renderAccount(){
       <button class="btn primary block" style="margin-top:14px;" onclick="openEditProfile()">
         ${icon('edit')} Editar perfil
       </button>` : ''}
+
+    ${soyDueno ? trialWidgetHTML(u) : ''}
 
     <div class="section-title">${soyDueno ? 'Mi negocio' : 'El negocio'}</div>
     <div class="acc-list">
