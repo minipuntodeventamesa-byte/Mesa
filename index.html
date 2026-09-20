@@ -1154,6 +1154,35 @@
   .toggle-row .acc-txt{ flex:1; }
   .toggle-row .acc-sub{ white-space:normal; }
 
+  /* ---- Tamaños/presentaciones del producto (medio litro, litro, kilo...) ---- */
+  .size-row{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .size-row .pf-size-label, .size-row .pf-size-price{
+    border:1.5px solid var(--border); border-radius:12px; padding:12px 12px;
+    font-size:14.5px; background:var(--surface); color:var(--ink); font-weight:600;
+  }
+  .size-row .pf-size-label{ flex:1.4; min-width:0; }
+  .size-row .pf-size-price{ flex:1; min-width:0; }
+  .size-row .pf-size-label:focus, .size-row .pf-size-price:focus{ border-color:var(--accent-strong); outline:none; }
+  .size-row .icon-btn{ flex-shrink:0; }
+
+  /* ---- Selector de tamaño al agregar el producto a la venta ---- */
+  .size-picker-list{ margin-top:4px; }
+  .size-picker-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .size-picker-row:last-child{ border-bottom:none; }
+  .size-picker-label{ font-weight:800; font-size:14.5px; color:var(--ink); }
+  .size-picker-price{ font-size:13px; color:var(--ink-soft); font-weight:700; margin-top:2px; }
+
+  /* ---- Foto pequeña del producto dentro del carrito ---- */
+  .cart-item-photo{
+    width:40px; height:40px; border-radius:10px; background:var(--surface-alt);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .cart-item-photo img{ width:100%; height:100%; object-fit:cover; }
+  .cart-item-photo-ph{ color:var(--ink-faint); width:20px; height:20px; }
+
   @media (min-width:700px){
     .profile-hero{ padding:26px 24px; }
   }
@@ -1706,6 +1735,11 @@ function initDB(){
     // dueño lo active desde el formulario del producto.
     if(p.stock === undefined){ p.stock = null; changed = true; }
     if(p.minStock === undefined){ p.minStock = 2; changed = true; }
+    // Tamaños/presentaciones (medio litro, litro, 2 litros, por kilo, etc.):
+    // productos guardados antes de que existiera esta opción quedan sin ella.
+    if(p.sizesOn === undefined){ p.sizesOn = false; changed = true; }
+    if(p.sizeUnit === undefined){ p.sizeUnit = 'litro'; changed = true; }
+    if(!Array.isArray(p.sizes)){ p.sizes = []; changed = true; }
   });
   if(changed) DB.saveProducts(list);
 
@@ -1741,8 +1775,17 @@ function stockInfo(p){
   return { control, stock, min, level, label };
 }
 function inCartQty(productId){
-  const it = cart.find(c => c.productId === productId);
-  return it ? it.qty : 0;
+  // Suma todas las líneas del carrito de este producto, sin importar
+  // el tamaño elegido (medio litro, litro, etc.).
+  return cart.filter(c => c.productId === productId).reduce((a,c) => a + c.qty, 0);
+}
+function cartLinePrice(c){
+  if(c.unitPrice != null) return c.unitPrice;
+  const p = findProduct(c.productId);
+  return p ? p.price : 0;
+}
+function cartAmountForProduct(productId){
+  return cart.filter(c => c.productId === productId).reduce((a,c) => a + (cartLinePrice(c) * c.qty), 0);
 }
 /** Piezas que todavía se pueden agregar al carrito. */
 function freeStock(p){
@@ -1766,7 +1809,7 @@ function stockBadge(p){
 
 /* ---------- Estado en memoria ---------- */
 let currentView = 'home';
-let cart = [];               // { productId, qty }
+let cart = [];               // { productId, qty, sizeId?, unitPrice?, sizeLabel? }
 let checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
 let saleCategoryFilter = 'todos';
 let historyFilters = { search:'', period:'all', service:'all', payment:'all', status:'all' };
@@ -2094,15 +2137,16 @@ function renderSale(){
     ` : `<div class="product-grid">
       ${list.map(p => {
         const cat = categoryOf(p.category);
-        const inCart = cart.find(c => c.productId === p.id);
-        const qty = inCart ? inCart.qty : 0;
+        const hasSizes = !!(p.sizesOn && p.sizes && p.sizes.length);
+        const qty = inCartQty(p.id);
         const st = stockInfo(p);
         const agotado = st.level === 'out';
-        const sinMas = st.control && (st.stock - qty) <= 0;   // ya no quedan piezas libres
+        const sinMas = !hasSizes && st.control && (st.stock - qty) <= 0;   // ya no quedan piezas libres
+        const tapAction = hasSizes ? `openSizePicker('${p.id}')` : `addToCart('${p.id}')`;
         return `<div class="product-card ${qty > 0 ? 'in-cart' : ''} ${agotado ? 'is-out' : ''}">
           ${agotado ? `<span class="pc-flag">Agotado</span>`
             : (st.level === 'low' ? `<span class="pc-flag low">Quedan ${st.stock}</span>` : '')}
-          <div class="pc-tap" onclick="addToCart('${p.id}')">
+          <div class="pc-tap" onclick="${tapAction}">
             <div class="pc-top" style="background:${cat.color}"></div>
             <div class="pc-photo ${p.image ? '' : 'is-placeholder'}">
               ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}">` : icon('plateSet')}
@@ -2113,7 +2157,13 @@ function renderSale(){
               ${st.control ? `<div class="pc-stock ${st.level}">${agotado ? 'Sin existencias' : st.stock + ' en existencia'}</div>` : ''}
             </div>
           </div>
-          ${qty > 0 ? `
+          ${hasSizes ? `
+            <div class="pc-pricebar" onclick="openSizePicker('${p.id}')" style="cursor:pointer;">
+              ${qty > 0
+                ? `<div class="pc-qty-total">${qty} · ${formatMoney(cartAmountForProduct(p.id))}</div>`
+                : `<div class="pc-price">Desde ${formatMoney(Math.min.apply(null, p.sizes.map(s => s.price)))}</div>`}
+            </div>
+          ` : qty > 0 ? `
             <div class="pc-qtybar">
               <div class="qty-control mini">
                 <button class="qty-btn" onclick="changeQtyFromGrid('${p.id}', -1)">−</button>
@@ -2174,6 +2224,7 @@ function setSaleCategory(id){ saleCategoryFilter = id; render(); }
 function addToCart(productId){
   const p = findProduct(productId);
   if(!p) return;
+  if(p.sizesOn && p.sizes && p.sizes.length){ openSizePicker(productId); return; }
   const st = stockInfo(p);
 
   // Sin existencias: no se puede vender.
@@ -2234,13 +2285,63 @@ function changeQtyFromGrid(productId, delta){
 }
 
 function computeTotals(){
-  const subtotal = cart.reduce((a,c) => {
-    const p = findProduct(c.productId);
-    return a + (p ? p.price * c.qty : 0);
-  }, 0);
+  const subtotal = cart.reduce((a,c) => a + (cartLinePrice(c) * c.qty), 0);
   const iva = subtotal * IVA_RATE;
   const total = subtotal + iva;
   return { subtotal: round2(subtotal), iva: round2(iva), total: round2(total) };
+}
+
+/* ---------- Selector de tamaño (medio litro, litro, por kilo, etc.) ---------- */
+function openSizePicker(productId){
+  const p = findProduct(productId);
+  if(!p || !p.sizesOn || !p.sizes || !p.sizes.length) return;
+  const unitWord = p.sizeUnit === 'kilo' ? 'kilos' : 'litros';
+  const html = `
+    <div class="sheet-header">
+      <h2>¿Cuántos ${unitWord}?</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    <p class="page-sub" style="margin-top:-8px;">${escapeHtml(p.name)}</p>
+    <div class="size-picker-list">
+      ${p.sizes.map(s => {
+        const qty = cartQtyForSize(productId, s.id);
+        return `
+        <div class="size-picker-row">
+          <div class="size-picker-info">
+            <div class="size-picker-label">${escapeHtml(s.label)}</div>
+            <div class="size-picker-price">${formatMoney(s.price)}</div>
+          </div>
+          <div class="qty-control mini">
+            <button class="qty-btn" onclick="changeSizeQty('${productId}','${s.id}', -1)">−</button>
+            <span class="qty-val">${qty}</span>
+            <button class="qty-btn" onclick="changeSizeQty('${productId}','${s.id}', 1)">+</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="btn primary block" style="margin-top:16px;" onclick="closeModal(); renderBackgroundIfSale();">Listo</button>
+  `;
+  openModal(html, { dismissible:true });
+}
+function cartQtyForSize(productId, sizeId){
+  const it = cart.find(c => c.productId === productId && c.sizeId === sizeId);
+  return it ? it.qty : 0;
+}
+function changeSizeQty(productId, sizeId, delta){
+  const p = findProduct(productId);
+  const size = p && p.sizes.find(s => s.id === sizeId);
+  if(!size) return;
+  let item = cart.find(c => c.productId === productId && c.sizeId === sizeId);
+  if(!item){
+    if(delta <= 0) return;
+    item = { productId, sizeId, qty:0, unitPrice: size.price, sizeLabel: size.label };
+    cart.push(item);
+  }
+  item.qty += delta;
+  if(item.qty <= 0){ cart = cart.filter(c => c !== item); }
+  vibrate(10);
+  openSizePicker(productId);
+  renderBackgroundIfSale();
 }
 
 /* ---------- Carrito / checkout (modal) ---------- */
@@ -2340,19 +2441,27 @@ function cartSheetHTML(step){
     ` : cart.map(c => {
       const p = findProduct(c.productId);
       if(!p) return '';
+      const linePrice = cartLinePrice(c);
+      const label = c.sizeLabel ? (p.name + ' · ' + c.sizeLabel) : p.name;
+      const st = stockInfo(p);
+      const stockNote = (!c.sizeId && st.control) ? ' · ' + st.stock + ' en existencia' : '';
+      const blockInc = !c.sizeId && st.control && c.qty >= st.stock;
       return `
         <div class="cart-item">
+          <div class="cart-item-photo">
+            ${p.image ? `<img src="${p.image}" alt="">` : `<span class="cart-item-photo-ph">${icon('plate')}</span>`}
+          </div>
           <div class="cart-item-info">
-            <div class="cart-item-name">${escapeHtml(p.name)}</div>
-            <div class="cart-item-price">${formatMoney(p.price)} c/u${stockInfo(p).control ? ' · ' + stockInfo(p).stock + ' en existencia' : ''}</div>
+            <div class="cart-item-name">${escapeHtml(label)}</div>
+            <div class="cart-item-price">${formatMoney(linePrice)} c/u${stockNote}</div>
           </div>
           <div class="qty-control">
-            <button class="qty-btn" onclick="changeQty('${p.id}', -1)">−</button>
+            <button class="qty-btn" onclick="changeQty('${p.id}', '${c.sizeId || ''}', -1)">−</button>
             <span class="qty-val">${c.qty}</span>
-            <button class="qty-btn" ${stockInfo(p).control && c.qty >= stockInfo(p).stock ? 'disabled style="opacity:.35"' : ''} onclick="changeQty('${p.id}', 1)">+</button>
+            <button class="qty-btn" ${blockInc ? 'disabled style="opacity:.35"' : ''} onclick="changeQty('${p.id}', '${c.sizeId || ''}', 1)">+</button>
           </div>
-          <div class="cart-item-subtotal">${formatMoney(p.price * c.qty)}</div>
-          <button class="cart-item-remove" onclick="removeFromCart('${p.id}')">${icon('trash')}</button>
+          <div class="cart-item-subtotal">${formatMoney(linePrice * c.qty)}</div>
+          <button class="cart-item-remove" onclick="removeFromCart('${p.id}', '${c.sizeId || ''}')">${icon('trash')}</button>
         </div>
       `;
     }).join('')}
@@ -2367,24 +2476,28 @@ function cartSheetHTML(step){
   `;
 }
 
-function changeQty(productId, delta){
-  const item = cart.find(c => c.productId === productId);
+function changeQty(productId, sizeId, delta){
+  const sid = sizeId || null;
+  const item = cart.find(c => c.productId === productId && (c.sizeId || null) === sid);
   if(!item) return;
   const p = findProduct(productId);
-  const st = stockInfo(p);
-  if(delta > 0 && st.control && item.qty >= st.stock){
-    vibrate(40);
-    toast('Solo te quedan ' + st.stock, { icon:icon('alert'), variant:'toast-danger toast-top', subtitle: p.name, duration:1800 });
-    return;
+  if(!sid){
+    const st = stockInfo(p);
+    if(delta > 0 && st.control && item.qty >= st.stock){
+      vibrate(40);
+      toast('Solo te quedan ' + st.stock, { icon:icon('alert'), variant:'toast-danger toast-top', subtitle: p.name, duration:1800 });
+      return;
+    }
   }
   item.qty += delta;
-  if(item.qty <= 0){ cart = cart.filter(c => c.productId !== productId); }
+  if(item.qty <= 0){ cart = cart.filter(c => c !== item); }
   vibrate(10);
   openCartSheet('cart');
   renderBackgroundIfSale();
 }
-function removeFromCart(productId){
-  cart = cart.filter(c => c.productId !== productId);
+function removeFromCart(productId, sizeId){
+  const sid = sizeId || null;
+  cart = cart.filter(c => !(c.productId === productId && (c.sizeId || null) === sid));
   vibrate(10);
   openCartSheet('cart');
   renderBackgroundIfSale();
@@ -2438,7 +2551,15 @@ function confirmarCobro(){
     date: new Date().toISOString(),
     items: cart.map(c => {
       const p = findProduct(c.productId);
-      return { productId: p.id, name: p.name, price: p.price, cost: p.cost != null ? p.cost : null, qty: c.qty };
+      const price = cartLinePrice(c);
+      return {
+        productId: p.id,
+        name: p.name + (c.sizeLabel ? ' · ' + c.sizeLabel : ''),
+        price: price,
+        cost: p.cost != null ? p.cost : null,
+        qty: c.qty,
+        sizeLabel: c.sizeLabel || null
+      };
     }),
     subtotal: totals.subtotal,
     iva: totals.iva,
@@ -2994,9 +3115,11 @@ function openSaleDetail(saleId){
       <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
     </div>
     <div id="ticket-print">${ticketHTML(sale)}</div>
-    <div style="display:flex; gap:10px; margin-top:16px;" class="no-print">
+    <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;" class="no-print">
       <button class="btn ghost" onclick="printTicket('${sale.id}')">${icon('print')} Imprimir</button>
-      ${(!sale.cancelled && can('cancelarVentas')) ? `<button class="btn danger block" onclick="cancelSale('${sale.id}')">Cancelar venta</button>` : `<button class="btn dark block" onclick="closeModal()">Cerrar</button>`}
+      ${(!sale.cancelled && can('cancelarVentas')) ? `<button class="btn danger block" onclick="cancelSale('${sale.id}')">Cancelar venta</button>` : ''}
+      ${(sale.cancelled && isOwner()) ? `<button class="btn danger block" onclick="deleteSale('${sale.id}')">${icon('trash')} Eliminar del historial</button>` : ''}
+      ${(sale.cancelled || !can('cancelarVentas')) && !(sale.cancelled && isOwner()) ? `<button class="btn dark block" onclick="closeModal()">Cerrar</button>` : ''}
     </div>
   `;
   openModal(html, { dismissible:true });
@@ -3012,6 +3135,22 @@ function cancelSale(saleId){
   sale.cancelled = true;
   DB.saveSales(sales);
   toast('Venta cancelada');
+  closeModal();
+  render();
+}
+
+/* Eliminar del historial es permanente: solo el Dueño puede hacerlo,
+   y solo sobre ventas que ya estén canceladas. */
+function deleteSale(saleId){
+  if(!requireOwner('Solo el Dueño puede eliminar ventas del historial')) return;
+  const sales = DB.getSales();
+  const sale = sales.find(s => s.id === saleId);
+  if(!sale) return;
+  if(!sale.cancelled){ toast('Primero debes cancelar la venta'); return; }
+  const ok = window.confirm('¿Eliminar esta venta del historial? Esta acción no se puede deshacer.');
+  if(!ok) return;
+  DB.saveSales(sales.filter(s => s.id !== saleId));
+  toast('Venta eliminada del historial');
   closeModal();
   render();
 }
@@ -3345,7 +3484,7 @@ function renderProdRow(p, cat){
       </div>
       <div class="pr-info">
         <div class="pr-name">${escapeHtml(p.name)}</div>
-        <div class="pr-price">${formatMoney(p.price)}${(p.cost != null && can('verGanancias')) ? ' · producción ' + formatMoney(p.cost) : ''}</div>
+        <div class="pr-price">${(p.sizesOn && p.sizes && p.sizes.length) ? ('Desde ' + formatMoney(Math.min.apply(null, p.sizes.map(s => s.price))) + ' · ' + p.sizes.length + ' tamaño' + (p.sizes.length > 1 ? 's' : '')) : formatMoney(p.price)}${(p.cost != null && can('verGanancias')) ? ' · producción ' + formatMoney(p.cost) : ''}</div>
         ${st.control ? `<div class="pr-stock">${stockBadge(p)}</div>` : ''}
       </div>
       ${puedeEditar ? `
@@ -3572,6 +3711,8 @@ function openProductForm(productId){
 
   productFormImage = editing ? (editing.image || null) : null;
   const stockOn = !!editing && editing.stock !== null && editing.stock !== undefined;
+  const sizesOn = !!editing && !!editing.sizesOn;
+  const sizeUnit = (editing && editing.sizeUnit === 'kilo') ? 'kilo' : 'litro';
 
   const html = `
     <div class="sheet-header">
@@ -3630,6 +3771,37 @@ function openProductForm(productId){
         </div>
       </div>
       <div class="field-hint">Si lo dejas apagado, el producto se vende sin límite (por ejemplo la comida que preparas al momento).</div>
+    </div>
+
+    <div class="section-title">Tamaños / presentaciones</div>
+    <div class="toggle-row" style="padding-top:0;">
+      <span class="acc-ico green">${icon('boxes')}</span>
+      <span class="acc-txt">
+        <span class="acc-label">Vender por tamaño</span>
+        <span class="acc-sub">Por ejemplo medio litro, litro o 2 litros. Cada tamaño con su propio precio.</span>
+      </span>
+      <label class="switch">
+        <input id="pfSizesOn" type="checkbox" ${sizesOn ? 'checked' : ''} onchange="toggleSizeFields(this.checked)">
+        <span class="track"></span>
+      </label>
+    </div>
+    <div id="pfSizesBox" style="display:${sizesOn ? 'block' : 'none'}; margin-top:14px;">
+      <div class="field">
+        <label>Se vende por</label>
+        <div class="opt-grid" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+          <button type="button" class="opt-card ${sizeUnit==='litro'?'active':''}" id="pfUnitLitro" onclick="setSizeUnit('litro')">💧 Litro</button>
+          <button type="button" class="opt-card ${sizeUnit==='kilo'?'active':''}" id="pfUnitKilo" onclick="setSizeUnit('kilo')">⚖️ Kilo</button>
+        </div>
+        <input type="hidden" id="pfSizeUnit" value="${sizeUnit}">
+      </div>
+      <div class="field">
+        <label>Tamaños y precios</label>
+        <div id="pfSizeRows">
+          ${(sizesOn && editing && editing.sizes && editing.sizes.length ? editing.sizes : [{}]).map(s => sizeRowHTML(s)).join('')}
+        </div>
+        <button type="button" class="btn ghost block" style="margin-top:2px;" onclick="addSizeRow()">${icon('plus')} Agregar tamaño</button>
+      </div>
+      <div class="field-hint">Cada tamaño tiene su propio precio: el litro no siempre cuesta el doble que el medio litro, tú decides cuánto vale cada uno.</div>
     </div>
 
     <button class="btn primary block" style="margin-top:18px;" onclick="saveProductForm('${editing ? editing.id : ''}')">${editing ? 'Guardar cambios' : 'Agregar producto'}</button>
@@ -3701,6 +3873,47 @@ function toggleStockFields(on){
   }
 }
 
+/* Muestra u oculta los campos de tamaños dentro del formulario. */
+function toggleSizeFields(on){
+  const box = document.getElementById('pfSizesBox');
+  if(box) box.style.display = on ? 'block' : 'none';
+}
+function setSizeUnit(unit){
+  const u = unit === 'kilo' ? 'kilo' : 'litro';
+  const hidden = document.getElementById('pfSizeUnit');
+  if(hidden) hidden.value = u;
+  const litroBtn = document.getElementById('pfUnitLitro');
+  const kiloBtn = document.getElementById('pfUnitKilo');
+  if(litroBtn) litroBtn.classList.toggle('active', u === 'litro');
+  if(kiloBtn) kiloBtn.classList.toggle('active', u === 'kilo');
+}
+function sizeRowHTML(s){
+  s = s || {};
+  return `
+    <div class="size-row" data-id="${s.id || ''}">
+      <input type="text" class="pf-size-label" placeholder="Ej. Medio litro" value="${s.label ? escapeHtml(s.label) : ''}">
+      <input type="number" class="pf-size-price" inputmode="decimal" min="0" step="0.5" placeholder="Precio" value="${s.price != null && s.price !== '' ? s.price : ''}">
+      <button type="button" class="icon-btn" onclick="removeSizeRow(this)">${icon('trash')}</button>
+    </div>`;
+}
+function addSizeRow(){
+  const box = document.getElementById('pfSizeRows');
+  if(box) box.insertAdjacentHTML('beforeend', sizeRowHTML({}));
+}
+function removeSizeRow(btn){
+  const box = document.getElementById('pfSizeRows');
+  const row = btn.closest('.size-row');
+  if(!box || !row) return;
+  if(box.children.length > 1){
+    row.remove();
+  } else {
+    const lbl = row.querySelector('.pf-size-label');
+    const pr = row.querySelector('.pf-size-price');
+    if(lbl) lbl.value = '';
+    if(pr) pr.value = '';
+  }
+}
+
 function saveProductForm(productId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const name = document.getElementById('pfName').value.trim();
@@ -3723,6 +3936,25 @@ function saveProductForm(productId){
     if(isNaN(minStock) || minStock < 0) minStock = 2;
   }
 
+  // Tamaños/presentaciones (opcional): medio litro, litro, 2 litros, por kilo, etc.
+  const sizesOn = document.getElementById('pfSizesOn').checked;
+  let sizeUnit = 'litro', sizes = [];
+  if(sizesOn){
+    sizeUnit = document.getElementById('pfSizeUnit').value === 'kilo' ? 'kilo' : 'litro';
+    const rows = document.querySelectorAll('#pfSizeRows .size-row');
+    let sizeError = false;
+    rows.forEach(row => {
+      const label = row.querySelector('.pf-size-label').value.trim();
+      const priceRaw = row.querySelector('.pf-size-price').value;
+      if(!label && priceRaw === '') return; // fila vacía: se ignora
+      const sPrice = parseFloat(priceRaw);
+      if(!label || isNaN(sPrice) || sPrice < 0){ sizeError = true; return; }
+      sizes.push({ id: row.dataset.id || ('sz' + Date.now() + Math.floor(Math.random()*1000)), label, price: round2(sPrice) });
+    });
+    if(sizeError){ toast('Cada tamaño necesita un nombre y un precio válido'); return; }
+    if(sizes.length === 0){ toast('Agrega al menos un tamaño con su precio'); return; }
+  }
+
   const products = DB.getProducts();
   if(productId){
     const p = products.find(x => x.id === productId);
@@ -3730,8 +3962,9 @@ function saveProductForm(productId){
     p.demo = false; // ya lo personalizó: deja de ser un producto de ejemplo
     dismissDemoHint();
     p.stock = stock; p.minStock = minStock;
+    p.sizesOn = sizesOn; p.sizeUnit = sizeUnit; p.sizes = sizes;
   } else {
-    products.push({ id:'p' + Date.now(), name, price: round2(price), cost: cost === null ? null : round2(cost), category, active:true, image: productFormImage, stock: stock, minStock: minStock });
+    products.push({ id:'p' + Date.now(), name, price: round2(price), cost: cost === null ? null : round2(cost), category, active:true, image: productFormImage, stock: stock, minStock: minStock, sizesOn: sizesOn, sizeUnit: sizeUnit, sizes: sizes });
   }
   DB.saveProducts(products);
   productFormImage = null;
