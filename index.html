@@ -825,14 +825,6 @@
   .pr-note.ok{ background:var(--success-bg); color:#1F7350; }
   .pr-note b{ color:inherit; }
   .pr-note code{ font-family:var(--mono); font-size:11px; }
-  .pr-help{ display:none; margin-top:9px; padding-top:9px; border-top:1px dashed currentColor; }
-  .pr-help.show{ display:block; }
-  .pr-help ul{ margin:7px 0 0; padding-left:17px; }
-  .pr-help li{ margin-bottom:5px; }
-  .pr-help-btn{
-    background:none; border:none; padding:6px 0 0; font-size:11.5px;
-    font-weight:800; color:var(--ink); text-decoration:underline;
-  }
   .pr-wifi{ display:grid; grid-template-columns:1.8fr 1fr; gap:9px; margin-top:12px; }
   .pr-wifi input{
     width:100%; border:1.5px solid var(--border); border-radius:12px;
@@ -3135,15 +3127,6 @@ function printerEnv(){
     secure: !!window.isSecureContext
   };
 }
-/** true si el tipo de conexion elegido se puede usar aqui de verdad. */
-function printerCanUse(tipo){
-  const env = printerEnv();
-  if(env.native) return true;
-  if(tipo === 'bt')   return env.webBT && env.secure;
-  if(tipo === 'usb')  return env.webUSB && env.secure;
-  if(tipo === 'wifi') return true; /* necesita agente/puente: se avisa en pantalla */
-  return false;
-}
 
 /* ---------- Impresoras guardadas ---------- */
 function printerMain(){
@@ -3777,17 +3760,11 @@ function printerRefresh(){
   const sub = document.getElementById('lblPrinterState');
   if(sub) sub.textContent = printerIsConnected() ? 'Conectada' : 'Desconectada';
 }
-function printerToggleHelp(){
-  const h = document.getElementById('prHelp');
-  if(h) h.classList.toggle('show');
-}
 function printerNoBT(){
   toast('Este navegador no permite Bluetooth', {
     icon: icon('alert'), variant:'toast-danger',
-    subtitle:'Mira la nota de abajo', duration: 2600
+    subtitle:'Prueba con Bluefy en iPhone, o Chrome en Android y PC', duration: 3000
   });
-  const h = document.getElementById('prHelp');
-  if(h) h.classList.add('show');
 }
 
 function printerConnIcon(tipo){
@@ -3822,28 +3799,8 @@ function printerNoteHTML(){
     return `<div class="pr-note warn">
       <b>iPhone / iPad:</b> Safari no incluye Web Bluetooth, así que esta página
       no puede hablar con la impresora por Bluetooth. No es un error de la app: es un límite de iOS.
-      El ticket se imprime igual desde el diálogo del sistema.
-      <button class="pr-help-btn" onclick="printerToggleHelp()">Ver por qué y cómo resolverlo</button>
-      <div class="pr-help" id="prHelp">
-        Las térmicas económicas de 58 mm (como la OFICHIDO que aparece como
-        <b>"Bluetooth Printer"</b>) casi siempre usan <b>Bluetooth Classic con perfil SPP</b>,
-        un puerto serie por Bluetooth. iOS solo deja usar SPP a los accesorios
-        certificados <b>MFi</b>, por eso Ajustes → Bluetooth la marca como incompatible:
-        el iPhone la ve, pero se niega a enlazarla. Y aunque el modelo tenga
-        también <b>BLE</b>, Safari no trae la API Web Bluetooth.
-        <ul>
-          <li><b>Comprobar si tiene BLE:</b> instala nRF Connect o LightBlue. Si la impresora
-          aparece ahí con servicios (18F0, FFE0, FF00…), sí habla BLE.</li>
-          <li><b>Si tiene BLE:</b> abre esta misma app en el navegador <b>Bluefy</b> o con
-          la extensión <b>WebBLE</b>; ahí esta pantalla conecta sola, sin cambiar nada del código.</li>
-          <li><b>Solución definitiva:</b> empaquetar Mesa con <b>Capacitor</b> y un plugin
-          iOS en Swift sobre <b>CoreBluetooth</b> (BLE) o <b>ExternalAccessory</b> (solo MFi).
-          La app ya busca ese puente en <code>window.MesaPrinter</code>: en cuanto exista, esta
-          misma pantalla lo usa sin tocar nada más.</li>
-          <li><b>Sin app nativa:</b> usa la impresora por <b>Wi-Fi</b> (puerto 9100) con un
-          agente, o conecta el rollo a un Android/PC con Chrome, donde Bluetooth y USB sí funcionan.</li>
-        </ul>
-      </div>
+      Puedes intentarlo de todas formas; si tu impresora o tu navegador sí lo permiten, conectará.
+      Y si no, el ticket se imprime igual desde el diálogo del sistema.
     </div>`;
   }
   if(cfg.conn === 'bt' && !env.webBT){
@@ -3876,7 +3833,6 @@ function printerBoxHTML(){
   const env = printerEnv();
   const main = printerMain();
   const on  = printerIsConnected();
-  const puede = printerCanUse(cfg.conn);
 
   const connBtn = (id) =>
     `<button class="${cfg.conn === id ? 'active' : ''}" onclick="printerSetConn('${id}')">${printerConnName(id)}</button>`;
@@ -3921,7 +3877,7 @@ function printerBoxHTML(){
         </div>` : ''}
 
       <div class="pr-actions">
-        <button class="btn ghost" onclick="printerScan()" ${puede ? '' : 'disabled'}>
+        <button class="btn ghost" onclick="printerScan()">
           ${icon('search')} ${cfg.conn === 'wifi' ? 'Guardar impresora' : 'Buscar impresoras'}
         </button>
         ${on
