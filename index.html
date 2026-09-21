@@ -784,6 +784,62 @@
     background:var(--surface-alt); border-radius:12px; padding:11px 13px; margin:14px 0 0;
   }
 
+  /* ---- Impresora fisica (vive DENTRO de "Impresion de tickets") ---- */
+  .pr-card{
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:14px; padding:13px 14px; margin-bottom:14px;
+  }
+  .pr-card.on{ border-color:var(--success); }
+  .pr-head{ display:flex; align-items:center; gap:12px; }
+  .pr-head .acc-txt{ flex:1; min-width:0; }
+  .pr-head .acc-sub{ white-space:normal; }
+  .pr-state{
+    display:inline-flex; align-items:center; gap:5px; flex-shrink:0;
+    font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:999px;
+    background:var(--danger-bg); color:var(--accent-2);
+  }
+  .pr-state.on{ background:var(--success-bg); color:var(--success); }
+  .pr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .pr-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .pr-actions .btn{ flex:1 1 45%; padding:11px 10px; font-size:13px; min-width:0; }
+  .pr-actions .btn svg{ width:16px; height:16px; }
+  .pr-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+  .pr-item{
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:13px; padding:10px 11px; color:var(--ink);
+  }
+  .pr-item.active{ border-color:var(--accent-strong); background:var(--accent-soft); }
+  .pr-item .acc-ico{ width:34px; height:34px; border-radius:11px; }
+  .pr-item .acc-ico svg{ width:17px; height:17px; }
+  .pr-item .acc-label{ font-size:13.5px; }
+  .pr-item .acc-sub{ font-size:11.5px; }
+  .pr-forget{ background:none; border:none; color:var(--ink-faint); padding:4px; display:flex; flex-shrink:0; }
+  .pr-forget svg{ width:16px; height:16px; }
+  .tag.ok{ background:var(--success-bg); color:var(--success); margin:0; flex-shrink:0; }
+  .pr-note{
+    font-size:11.5px; font-weight:600; color:var(--ink-soft); line-height:1.5;
+    background:var(--surface-alt); border-radius:12px; padding:10px 12px; margin:0 0 14px;
+  }
+  .pr-note.warn{ background:var(--danger-bg); color:#8A3A32; }
+  .pr-note.ok{ background:var(--success-bg); color:#1F7350; }
+  .pr-note b{ color:inherit; }
+  .pr-note code{ font-family:var(--mono); font-size:11px; }
+  .pr-help{ display:none; margin-top:9px; padding-top:9px; border-top:1px dashed currentColor; }
+  .pr-help.show{ display:block; }
+  .pr-help ul{ margin:7px 0 0; padding-left:17px; }
+  .pr-help li{ margin-bottom:5px; }
+  .pr-help-btn{
+    background:none; border:none; padding:6px 0 0; font-size:11.5px;
+    font-weight:800; color:var(--ink); text-decoration:underline;
+  }
+  .pr-wifi{ display:grid; grid-template-columns:1.8fr 1fr; gap:9px; margin-top:12px; }
+  .pr-wifi input{
+    width:100%; border:1.5px solid var(--border); border-radius:12px;
+    padding:11px 12px; font-size:14px; background:var(--surface); color:var(--ink); font-weight:600;
+  }
+  .pr-actions .btn[disabled]{ opacity:.45; }
+
   @media (min-width:640px){
     .product-grid{ grid-template-columns:1fr 1fr 1fr; }
   }
@@ -2822,7 +2878,13 @@ function printPaperMm(p){
 function printSubtitle(){
   const p = printPrefs();
   const preset = PRINT_PRESETS[p.preset] || PRINT_PRESETS['80'];
-  return preset.label.replace('Termica', 'T\u00e9rmica') + ' \u00b7 ' + p.widthMm + ' mm de ancho';
+  const base = preset.label.replace('Termica', 'T\u00e9rmica') + ' \u00b7 ' + p.widthMm + ' mm de ancho';
+  /* Si ya hay una impresora guardada, se ve aqui mismo si esta conectada. */
+  if(typeof printerMain === 'function'){
+    const d = printerMain();
+    if(d) return d.name + ' \u00b7 ' + (printerIsConnected() ? 'Conectada' : 'Desconectada');
+  }
+  return base;
 }
 
 /** Copia la configuracion a variables CSS y arma la regla @page. */
@@ -2919,12 +2981,32 @@ function printDemoSale(){
   };
 }
 
-/** Imprime el ticket con el tamano configurado. Acepta el id o el objeto. */
-function printTicket(venta){
+/** Encuentra la venta a partir del id o del objeto (como siempre). */
+function resolveSale(venta){
   let sale = null;
   if(venta && typeof venta === 'object') sale = venta;
   else if(venta) sale = DB.getSales().find(s => s.id === venta) || null;
   if(!sale) sale = lastTicketSale;
+  return sale;
+}
+
+/** Puerta de entrada de SIEMPRE. Si hay una impresora fisica conectada
+    manda el ticket por ESC/POS; si no, usa el dialogo del navegador. */
+function printTicket(venta){
+  const sale = resolveSale(venta);
+  if(!sale){ toast('No encontramos ese ticket'); return; }
+  if(typeof printerIsConnected === 'function' && printerIsConnected()){
+    printerPrintSale(sale).then(function(ok){
+      if(!ok) printTicketBrowser(sale);
+    });
+    return;
+  }
+  printTicketBrowser(sale);
+}
+
+/** Impresion por el dialogo del navegador (el metodo original, intacto). */
+function printTicketBrowser(venta){
+  const sale = resolveSale(venta);
   if(!sale){ toast('No encontramos ese ticket'); return; }
 
   const p = printPrefs();
@@ -2956,7 +3038,934 @@ function printTicket(venta){
   }, conLogo ? 400 : 80);
 }
 
-function printTestTicket(){ printTicket(printDemoSale()); }
+function printTestTicket(){ printTicketBrowser(printDemoSale()); }
+
+/* =========================================================
+   IMPRESORA FISICA (ESC/POS)
+   ---------------------------------------------------------
+   Esto NO es una seccion nueva: se pinta DENTRO de la hoja
+   que ya existia (Mi cuenta -> Impresion de tickets) y usa
+   la MISMA configuracion de printPrefs() (papel, ancho,
+   copias, papel extra y mensaje final).
+
+   Nada aqui simula una conexion: el estado "Conectada" sale
+   del objeto real (GATT / interfaz USB / puente nativo). Si
+   no hay comunicacion real, dice Desconectada.
+
+   Rutas reales de impresion, en orden:
+     1) Puente nativo (Capacitor)  -> window.MesaPrinter
+     2) Web Bluetooth (BLE GATT)   -> Chrome/Edge Android y PC
+     3) WebUSB                     -> Chrome PC y Android (OTG)
+     4) Wi-Fi                      -> puente nativo o agente HTTP
+     5) Si no hay ninguna          -> window.print() de siempre
+========================================================= */
+const PRINTER_KEY = 'mesa_printer';
+
+const DEFAULT_PRINTER = {
+  conn:    'bt',     /* bt | wifi | usb */
+  mainId:  null,     /* impresora principal */
+  devices: [],       /* impresoras guardadas EN ESTE dispositivo */
+  cut:     true,     /* corte de papel al final, si la impresora lo trae */
+  charset: 'cp437',  /* cp437 | cp850 | plano */
+  host:    '',       /* Wi-Fi: IP de la impresora o del agente */
+  port:    9100
+};
+
+/* Servicios GATT que anuncian las termicas ESC/POS BLE mas comunes.
+   Web Bluetooth solo deja ver los servicios declarados aqui. */
+const BT_PRINT_SERVICES = [
+  '000018f0-0000-1000-8000-00805f9b34fb', /* el mas usado (char 2AF1) */
+  '0000ff00-0000-1000-8000-00805f9b34fb',
+  '0000ffe0-0000-1000-8000-00805f9b34fb', /* modulos tipo HM-10 */
+  '0000ffb0-0000-1000-8000-00805f9b34fb',
+  '0000fee7-0000-1000-8000-00805f9b34fb',
+  '0000ae30-0000-1000-8000-00805f9b34fb',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455', /* UART transparente (ISSC) */
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+];
+
+/* Estado vivo. No se guarda: si se recarga la pagina, se reconecta. */
+const printerRT = {
+  device:null, chr:null, noResp:false,
+  usb:null, usbEp:0, usbIface:0,
+  nativeOn:false,
+  connected:false, busy:false, error:''
+};
+
+function printerPrefs(){
+  let g = {};
+  try{ g = JSON.parse(localStorage.getItem(PRINTER_KEY) || '{}') || {}; }catch(e){ g = {}; }
+  const cfg = Object.assign({}, DEFAULT_PRINTER, g);
+  if(!Array.isArray(cfg.devices)) cfg.devices = [];
+  return cfg;
+}
+function savePrinterPrefs(cfg){
+  try{ localStorage.setItem(PRINTER_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+function setPrinterPref(key, value){
+  const cfg = printerPrefs();
+  cfg[key] = value;
+  savePrinterPrefs(cfg);
+  printerRefresh();
+}
+function printerSetConn(tipo){
+  const cfg = printerPrefs();
+  if(cfg.conn === tipo) return;
+  cfg.conn = tipo;
+  savePrinterPrefs(cfg);
+  vibrate(10);
+  printerRefresh();
+}
+
+/* ---------- Que puede hacer REALMENTE este dispositivo ---------- */
+function printerNative(){
+  const C = window.Capacitor;
+  const p = (C && C.Plugins && C.Plugins.MesaPrinter) || window.MesaPrinter || null;
+  return (p && typeof p.write === 'function') ? p : null;
+}
+function printerEnv(){
+  const ua = navigator.userAgent || '';
+  const iOS = /iPad|iPhone|iPod/.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return {
+    iOS: iOS,
+    native: !!printerNative(),
+    webBT: !!(navigator.bluetooth && navigator.bluetooth.requestDevice),
+    webUSB: !!(navigator.usb && navigator.usb.requestDevice),
+    secure: !!window.isSecureContext
+  };
+}
+/** true si el tipo de conexion elegido se puede usar aqui de verdad. */
+function printerCanUse(tipo){
+  const env = printerEnv();
+  if(env.native) return true;
+  if(tipo === 'bt')   return env.webBT && env.secure;
+  if(tipo === 'usb')  return env.webUSB && env.secure;
+  if(tipo === 'wifi') return true; /* necesita agente/puente: se avisa en pantalla */
+  return false;
+}
+
+/* ---------- Impresoras guardadas ---------- */
+function printerMain(){
+  const cfg = printerPrefs();
+  return cfg.devices.find(d => d.id === cfg.mainId) || null;
+}
+function printerSetMain(id){
+  const cfg = printerPrefs();
+  cfg.mainId = id;
+  const d = cfg.devices.find(x => x.id === id);
+  if(d && d.conn) cfg.conn = d.conn;
+  savePrinterPrefs(cfg);
+  vibrate(10);
+  printerRefresh();
+}
+function printerRemember(rec){
+  const cfg = printerPrefs();
+  const i = cfg.devices.findIndex(d => d.id === rec.id);
+  if(i >= 0) cfg.devices[i] = Object.assign({}, cfg.devices[i], rec);
+  else cfg.devices.push(rec);
+  cfg.mainId = rec.id;
+  cfg.conn = rec.conn;
+  savePrinterPrefs(cfg);
+}
+function printerForget(id){
+  const cfg = printerPrefs();
+  cfg.devices = cfg.devices.filter(d => d.id !== id);
+  if(cfg.mainId === id){
+    cfg.mainId = cfg.devices.length ? cfg.devices[0].id : null;
+    printerDisconnect(true);
+  }
+  savePrinterPrefs(cfg);
+  toast('Impresora quitada de este dispositivo');
+  printerRefresh();
+}
+/** "Cambiar impresora": suelta la actual y abre la busqueda otra vez. */
+async function printerChange(){
+  await printerDisconnect(true);
+  printerScan();
+}
+
+function printerIsConnected(){ return !!printerRT.connected; }
+function printerLabel(){
+  const d = printerMain();
+  return d ? d.name : 'Sin impresora';
+}
+
+/* =========================================================
+   CONEXION REAL
+========================================================= */
+async function printerScan(){
+  const cfg = printerPrefs();
+  const env = printerEnv();
+  try{
+    if(env.native && typeof printerNative().scan === 'function'){
+      toast('Buscando impresoras…');
+      const r = await printerNative().scan({ type: cfg.conn });
+      const lista = (r && r.devices) || [];
+      if(!lista.length){ toast('No encontramos impresoras cerca', { variant:'toast-danger' }); return; }
+      lista.forEach(d => printerRemember({
+        id: d.id, name: d.name || 'Impresora', conn: cfg.conn, via: 'native'
+      }));
+      printerRefresh();
+      toast('Listo, ya aparece en la lista', { icon:icon('check'), variant:'toast-success' });
+      return;
+    }
+    if(cfg.conn === 'bt')   return await printerScanBT();
+    if(cfg.conn === 'usb')  return await printerScanUSB();
+    if(cfg.conn === 'wifi') return printerSaveWifi();
+  }catch(e){
+    if(e && e.name === 'NotFoundError'){ toast('No elegiste ninguna impresora'); return; }
+    toast('No pudimos buscar', { variant:'toast-danger', subtitle:String(e && e.message || e) });
+  }
+}
+
+async function printerScanBT(){
+  const env = printerEnv();
+  if(!env.webBT){ printerNoBT(); return; }
+  const dev = await navigator.bluetooth.requestDevice({
+    acceptAllDevices: true,
+    optionalServices: BT_PRINT_SERVICES
+  });
+  printerRemember({
+    id: dev.id,
+    name: dev.name || 'Impresora Bluetooth',
+    conn: 'bt', via: 'web'
+  });
+  printerRT.device = dev;
+  printerRefresh();
+  await printerConnect();
+}
+
+async function printerScanUSB(){
+  const env = printerEnv();
+  if(!env.webUSB){
+    toast('Este navegador no permite USB', { variant:'toast-danger', subtitle:'Usa Chrome en PC o Android' });
+    return;
+  }
+  let dev = null;
+  try{
+    dev = await navigator.usb.requestDevice({ filters:[{ classCode:7 }] }); /* clase impresora */
+  }catch(e){
+    if(e && e.name === 'NotFoundError') dev = await navigator.usb.requestDevice({ filters:[] });
+    else throw e;
+  }
+  const id = 'usb:' + dev.vendorId + ':' + dev.productId;
+  printerRemember({
+    id: id,
+    name: dev.productName || ('Impresora USB ' + dev.vendorId.toString(16)),
+    conn: 'usb', via:'web', vendorId: dev.vendorId, productId: dev.productId
+  });
+  printerRT.usb = dev;
+  printerRefresh();
+  await printerConnect();
+}
+
+function printerSaveWifi(){
+  const h = document.getElementById('prHost');
+  const p = document.getElementById('prPort');
+  const host = (h ? h.value : '').trim();
+  const port = Number(p ? p.value : 9100) || 9100;
+  if(!host){ toast('Escribe la IP de la impresora', { variant:'toast-danger' }); return; }
+  printerRemember({
+    id: 'net:' + host + ':' + port,
+    name: 'Impresora en red ' + host,
+    conn: 'wifi', via:'net', host: host, port: port
+  });
+  const cfg = printerPrefs();
+  cfg.host = host; cfg.port = port;
+  savePrinterPrefs(cfg);
+  printerRefresh();
+  printerConnect();
+}
+
+/** Conecta de verdad con la impresora principal. Devuelve true/false. */
+async function printerConnect(){
+  const rec = printerMain();
+  if(!rec){ toast('Primero busca y elige tu impresora'); return false; }
+  if(printerRT.connected) return true;
+  printerRT.error = '';
+  try{
+    if(rec.via === 'native' || printerEnv().native) return await printerConnectNative(rec);
+    if(rec.conn === 'bt')   return await printerConnectBT(rec);
+    if(rec.conn === 'usb')  return await printerConnectUSB(rec);
+    if(rec.conn === 'wifi') return await printerConnectNet(rec);
+    return false;
+  }catch(e){
+    printerRT.connected = false;
+    printerRT.error = String(e && e.message || e);
+    printerRefresh();
+    toast('No se pudo conectar', { variant:'toast-danger', icon:icon('alert'), subtitle: printerRT.error.slice(0, 70) });
+    return false;
+  }
+}
+
+async function printerConnectNative(rec){
+  const nat = printerNative();
+  if(!nat) return false;
+  toast('Conectando…');
+  const r = await nat.connect({ id: rec.id, type: rec.conn, host: rec.host, port: rec.port });
+  printerRT.nativeOn = !!(r && r.connected !== false);
+  printerRT.connected = printerRT.nativeOn;
+  printerRefresh();
+  if(printerRT.connected) toast('Impresora conectada', { icon:icon('check'), variant:'toast-success' });
+  return printerRT.connected;
+}
+
+/** Recupera el objeto BluetoothDevice ya autorizado, sin volver a pedir permiso. */
+async function printerBTDevice(rec){
+  if(printerRT.device && printerRT.device.id === rec.id) return printerRT.device;
+  if(navigator.bluetooth && navigator.bluetooth.getDevices){
+    try{
+      const list = await navigator.bluetooth.getDevices();
+      const hit = list.find(d => d.id === rec.id);
+      if(hit) return hit;
+    }catch(e){ /* el navegador no lo soporta */ }
+  }
+  return null;
+}
+
+async function printerConnectBT(rec){
+  if(!printerEnv().webBT){ printerNoBT(); return false; }
+  let dev = await printerBTDevice(rec);
+  if(!dev){
+    toast('Vuelve a enlazarla', { subtitle:'Toca "Buscar impresoras" y eligela' });
+    return false;
+  }
+  toast('Conectando…');
+  const server = await dev.gatt.connect();
+  const svcs = await server.getPrimaryServices();
+  let chr = null;
+  for(const s of svcs){
+    let chars = [];
+    try{ chars = await s.getCharacteristics(); }catch(e){ continue; }
+    const w = chars.find(c => c.properties.write || c.properties.writeWithoutResponse);
+    if(w){ chr = w; break; }
+  }
+  if(!chr){
+    try{ dev.gatt.disconnect(); }catch(e){}
+    throw new Error('La impresora no expone un canal de escritura BLE');
+  }
+  printerRT.device = dev;
+  printerRT.chr = chr;
+  printerRT.noResp = !!chr.properties.writeWithoutResponse;
+  printerRT.connected = true;
+  dev.removeEventListener('gattserverdisconnected', printerOnDrop);
+  dev.addEventListener('gattserverdisconnected', printerOnDrop);
+  printerRemember(Object.assign({}, rec, { svc: chr.service.uuid, chr: chr.uuid }));
+  printerRefresh();
+  toast('Impresora conectada', { icon:icon('check'), variant:'toast-success', subtitle: rec.name });
+  return true;
+}
+
+async function printerConnectUSB(rec){
+  if(!printerEnv().webUSB) return false;
+  let dev = printerRT.usb;
+  if(!dev){
+    const list = await navigator.usb.getDevices();
+    dev = list.find(d => d.vendorId === rec.vendorId && d.productId === rec.productId) || null;
+  }
+  if(!dev){ toast('Vuelve a enlazarla', { subtitle:'Toca "Buscar impresoras"' }); return false; }
+  await dev.open();
+  if(!dev.configuration) await dev.selectConfiguration(1);
+  let iface = null, ep = 0;
+  for(const i of dev.configuration.interfaces){
+    for(const alt of i.alternates){
+      const out = alt.endpoints.find(e => e.direction === 'out' && e.type === 'bulk');
+      if(out && (alt.interfaceClass === 7 || !iface)){ iface = i.interfaceNumber; ep = out.endpointNumber; }
+      if(out && alt.interfaceClass === 7) break;
+    }
+  }
+  if(iface === null) throw new Error('No encontramos la salida USB de la impresora');
+  await dev.claimInterface(iface);
+  printerRT.usb = dev;
+  printerRT.usbIface = iface;
+  printerRT.usbEp = ep;
+  printerRT.connected = true;
+  printerRefresh();
+  toast('Impresora conectada', { icon:icon('check'), variant:'toast-success', subtitle: rec.name });
+  return true;
+}
+
+/** Wi-Fi: el navegador NO abre sockets TCP. Se comprueba el agente/puente. */
+async function printerConnectNet(rec){
+  const nat = printerNative();
+  if(nat && typeof nat.netProbe === 'function'){
+    const r = await nat.netProbe({ host: rec.host, port: rec.port });
+    printerRT.connected = !!(r && r.ok);
+  }else{
+    const url = 'http://' + rec.host + ':' + rec.port + '/status';
+    const corte = new AbortController();
+    const reloj = setTimeout(function(){ corte.abort(); }, 2500);
+    try{
+      await fetch(url, { method:'GET', mode:'no-cors', cache:'no-store', signal: corte.signal });
+      printerRT.connected = true; /* algo contesto de verdad en esa IP */
+    }catch(e){
+      printerRT.connected = false;
+      throw new Error('No responde el agente en ' + rec.host + ':' + rec.port);
+    }finally{
+      clearTimeout(reloj);
+    }
+  }
+  printerRefresh();
+  if(printerRT.connected) toast('Impresora conectada', { icon:icon('check'), variant:'toast-success' });
+  return printerRT.connected;
+}
+
+function printerOnDrop(){
+  printerRT.chr = null;
+  printerRT.connected = false;
+  printerRefresh();
+  toast('Se perdio la conexion con la impresora', { variant:'toast-danger', icon:icon('alert') });
+}
+
+async function printerDisconnect(silencio){
+  try{
+    const nat = printerNative();
+    if(printerRT.nativeOn && nat && nat.disconnect) await nat.disconnect();
+    if(printerRT.device && printerRT.device.gatt && printerRT.device.gatt.connected){
+      printerRT.device.removeEventListener('gattserverdisconnected', printerOnDrop);
+      printerRT.device.gatt.disconnect();
+    }
+    if(printerRT.usb && printerRT.usb.opened){
+      try{ await printerRT.usb.releaseInterface(printerRT.usbIface); }catch(e){}
+      await printerRT.usb.close();
+    }
+  }catch(e){ /* silencioso */ }
+  printerRT.chr = null;
+  printerRT.nativeOn = false;
+  printerRT.connected = false;
+  printerRefresh();
+  if(!silencio) toast('Impresora desconectada');
+}
+
+/** Reconecta sola al abrir la app, sin molestar si no se puede. */
+async function printerAutoConnect(){
+  const rec = printerMain();
+  if(!rec || printerRT.connected) return;
+  try{
+    if(printerEnv().native){ await printerConnectNative(rec); return; }
+    if(rec.conn === 'bt'){
+      const dev = await printerBTDevice(rec);
+      if(dev) await printerConnectBT(rec);
+    }else if(rec.conn === 'usb'){
+      const list = await navigator.usb.getDevices();
+      if(list.some(d => d.vendorId === rec.vendorId)) await printerConnectUSB(rec);
+    }
+  }catch(e){ /* que el usuario lo haga a mano */ }
+}
+
+/* =========================================================
+   ENVIO DE BYTES
+========================================================= */
+function printerB64(bytes){
+  let s = '';
+  for(let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i] & 0xFF);
+  return btoa(s);
+}
+function printerSleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+async function printerWrite(bytes){
+  const cfg = printerPrefs();
+  const rec = printerMain();
+  const nat = printerNative();
+  const data = Uint8Array.from(bytes);
+
+  if(printerRT.nativeOn && nat){
+    await nat.write({ data: printerB64(data) });
+    return 'native';
+  }
+  if(printerRT.chr){
+    const paso = 20; /* las termicas BLE baratas no aguantan mas por paquete */
+    for(let i = 0; i < data.length; i += paso){
+      const trozo = data.slice(i, i + paso);
+      if(printerRT.noResp && printerRT.chr.writeValueWithoutResponse){
+        await printerRT.chr.writeValueWithoutResponse(trozo);
+      }else{
+        await printerRT.chr.writeValue(trozo);
+      }
+      await printerSleep(printerRT.noResp ? 18 : 6);
+    }
+    return 'ble';
+  }
+  if(printerRT.usb){
+    await printerRT.usb.transferOut(printerRT.usbEp, data);
+    return 'usb';
+  }
+  if(rec && rec.conn === 'wifi'){
+    if(nat && nat.netPrint){
+      await nat.netPrint({ host: rec.host, port: rec.port, data: printerB64(data) });
+      return 'native';
+    }
+    const url = 'http://' + rec.host + ':' + rec.port + '/print';
+    await fetch(url, {
+      method:'POST', mode:'no-cors', cache:'no-store',
+      headers:{ 'Content-Type':'application/octet-stream' },
+      body: data
+    });
+    return 'http';
+  }
+  throw new Error('No hay ninguna impresora conectada');
+}
+
+/* =========================================================
+   ESC/POS  (el MISMO ticket que ya se imprimia, en bytes)
+========================================================= */
+const CP437 = {
+  'Ç':128,'ü':129,'é':130,'â':131,'ä':132,'à':133,'å':134,'ç':135,'ê':136,'ë':137,
+  'è':138,'ï':139,'î':140,'ì':141,'Ä':142,'Å':143,'É':144,'æ':145,'Æ':146,'ô':147,
+  'ö':148,'ò':149,'û':150,'ù':151,'ÿ':152,'Ö':153,'Ü':154,'¢':155,'£':156,'¥':157,
+  'ƒ':159,'á':160,'í':161,'ó':162,'ú':163,'ñ':164,'Ñ':165,'ª':166,'º':167,'¿':168,
+  '¬':170,'½':171,'¼':172,'¡':173,'«':174,'»':175,'°':248,'·':250,'²':253
+};
+const CP850 = {
+  'Á':181,'Â':182,'À':183,'Ã':199,'ã':198,'Í':214,'Ó':224,'Ò':227,'Õ':229,'õ':228,
+  'Ú':233,'Û':234,'Ù':235,'Ê':210,'Ë':211,'È':212,'Î':215,'Ï':216,'Ô':226,'×':158
+};
+const SIN_ACENTO = {
+  'á':'a','é':'e','í':'i','ó':'o','ú':'u','ü':'u','ñ':'n','ç':'c',
+  'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ü':'U','Ñ':'N','Ç':'C',
+  'à':'a','è':'e','ì':'i','ò':'o','ù':'u','â':'a','ê':'e','î':'i','ô':'o','û':'u',
+  '¿':'?','¡':'!','°':'o','·':'-','—':'-','–':'-','’':"'",'‘':"'",'“':'"','”':'"','€':'EUR','\u00a0':' ','\u202f':' ','\u2009':' ','\u2007':' '
+};
+
+function escEncode(txt, cs){
+  const out = [];
+  const s = String(txt == null ? '' : txt);
+  for(const ch of s){
+    const c = ch.codePointAt(0);
+    if(c === 10){ out.push(10); continue; }
+    if(c < 32) continue;
+    if(c < 127){ out.push(c); continue; }
+    if(cs !== 'plano'){
+      const m = (cs === 'cp850' && CP850[ch] !== undefined) ? CP850[ch] : CP437[ch];
+      if(m !== undefined){ out.push(m); continue; }
+    }
+    const p = SIN_ACENTO[ch];
+    if(p){ for(const q of p) out.push(q.charCodeAt(0)); continue; }
+    if(c < 256) out.push(c);
+  }
+  return out;
+}
+
+/** Columnas de texto segun el papel elegido en printPrefs(). */
+function escposColumns(p){
+  p = p || printPrefs();
+  if(p.preset === '58') return 32;
+  if(p.preset === '80') return 48;
+  const n = Math.round((Number(p.widthMm) || 72) * 2 / 3);
+  return Math.max(24, Math.min(56, n));
+}
+/** Puntos horizontales del cabezal (para el logo). */
+function escposDots(p){
+  p = p || printPrefs();
+  if(p.preset === '58') return 384;
+  if(p.preset === '80') return 576;
+  return Math.max(256, Math.min(576, Math.round((Number(p.widthMm) || 72) * 8)));
+}
+function escPad(izq, der, cols){
+  izq = String(izq); der = String(der);
+  let libre = cols - izq.length - der.length;
+  if(libre < 1){
+    izq = izq.slice(0, Math.max(1, cols - der.length - 1));
+    libre = cols - izq.length - der.length;
+  }
+  return izq + ' '.repeat(Math.max(1, libre)) + der;
+}
+function escWrap(txt, cols){
+  const palabras = String(txt || '').split(/\s+/).filter(Boolean);
+  const lineas = [];
+  let l = '';
+  palabras.forEach(w => {
+    while(w.length > cols){
+      if(l){ lineas.push(l); l = ''; }
+      lineas.push(w.slice(0, cols));
+      w = w.slice(cols);
+    }
+    if((l + (l ? ' ' : '') + w).length > cols){ lineas.push(l); l = w; }
+    else l += (l ? ' ' : '') + w;
+  });
+  if(l) lineas.push(l);
+  return lineas.length ? lineas : [''];
+}
+
+/** El logo del negocio como imagen de mapa de bits (GS v 0). */
+function escposRaster(dataUrl, dots){
+  return new Promise(function(res){
+    try{
+      const img = new Image();
+      img.onerror = function(){ res(null); };
+      img.onload = function(){
+        try{
+          const W = Math.max(8, Math.floor((dots * 0.6) / 8) * 8);
+          const H = Math.max(1, Math.min(280, Math.round(img.height * (W / img.width))));
+          const cv = document.createElement('canvas');
+          cv.width = W; cv.height = H;
+          const cx = cv.getContext('2d');
+          cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, H);
+          cx.drawImage(img, 0, 0, W, H);
+          const px = cx.getImageData(0, 0, W, H).data;
+          const bytesPorFila = W / 8;
+          const out = [0x1D, 0x76, 0x30, 0x00,
+                       bytesPorFila & 0xFF, (bytesPorFila >> 8) & 0xFF,
+                       H & 0xFF, (H >> 8) & 0xFF];
+          for(let y = 0; y < H; y++){
+            for(let b = 0; b < bytesPorFila; b++){
+              let byte = 0;
+              for(let bit = 0; bit < 8; bit++){
+                const x = b * 8 + bit;
+                const i = (y * W + x) * 4;
+                const lum = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114);
+                const alpha = px[i + 3];
+                if(alpha > 40 && lum < 165) byte |= (0x80 >> bit);
+              }
+              out.push(byte);
+            }
+          }
+          out.push(0x0A);
+          res(out);
+        }catch(e){ res(null); }
+      };
+      img.src = dataUrl;
+    }catch(e){ res(null); }
+  });
+}
+
+/** Arma el ticket en ESC/POS con el MISMO contenido de ticketPrintHTML(). */
+async function escposTicketBytes(sale){
+  const p    = printPrefs();
+  const cfg  = printerPrefs();
+  const cols = escposColumns(p);
+  const cs   = cfg.charset;
+  const biz  = ticketBusiness();
+  const u    = (typeof currentUser === 'function' ? currentUser() : null) || {};
+  const b    = u.business || {};
+  const service = serviceOf(sale.serviceType);
+  const payment = paymentOf(sale.paymentMethod);
+
+  const out  = [];
+  const raw  = (a) => { for(let i = 0; i < a.length; i++) out.push(a[i]); };
+  const txt  = (s) => raw(escEncode(s, cs));
+  const ln   = (s) => { txt(s == null ? '' : s); out.push(0x0A); };
+  const cen  = () => raw([0x1B, 0x61, 0x01]);
+  const izq  = () => raw([0x1B, 0x61, 0x00]);
+  const neg  = (on) => raw([0x1B, 0x45, on ? 1 : 0]);
+  const gran = (on) => raw([0x1D, 0x21, on ? 0x11 : 0x00]);
+  const sep  = () => ln('-'.repeat(cols));
+  const fila = (a, c) => ln(escPad(a, c, cols));
+
+  raw([0x1B, 0x40]);                                   /* reiniciar */
+  raw([0x1B, 0x74, cs === 'cp850' ? 0x02 : 0x00]);     /* tabla de caracteres */
+  raw([0x1B, 0x52, 0x0C]);                             /* juego: Latinoamerica */
+
+  /* ----- Encabezado ----- */
+  cen();
+  if(p.logo && b.logo){
+    const img = await escposRaster(b.logo, escposDots(p));
+    if(img) raw(img);
+  }
+  neg(true); gran(true);
+  escWrap(stripEmoji(biz.title), Math.floor(cols / 2)).forEach(ln);
+  gran(false); neg(false);
+  escWrap(stripEmoji(biz.sub), cols).forEach(ln);
+  if(b.address && biz.address) escWrap(b.address, cols).forEach(ln);
+  if(b.phone) ln('Tel. ' + b.phone);
+  izq(); sep();
+
+  /* ----- Datos de la venta ----- */
+  fila('Pedido',   orderNumberLabel(sale.number));
+  fila('Fecha',    formatDateTime(sale.date));
+  fila('Servicio', stripEmoji(service.name));
+  if(sale.table) fila('Mesa', sale.table);
+  if(sale.userName) fila('Atendio', sale.userName);
+  sep();
+
+  /* ----- Productos ----- */
+  sale.items.forEach(it => {
+    const importe = formatMoney(it.price * it.qty);
+    const lineas  = escWrap(it.name, cols - importe.length - 1);
+    neg(true);
+    fila(lineas[0], importe);
+    neg(false);
+    for(let i = 1; i < lineas.length; i++) ln(lineas[i]);
+    ln('  ' + it.qty + ' x ' + formatMoney(it.price));
+  });
+  sep();
+
+  /* ----- Totales ----- */
+  fila('Subtotal',  formatMoney(sale.subtotal));
+  fila('IVA (16%)', formatMoney(sale.iva));
+  neg(true); gran(true);
+  ln(escPad('TOTAL', formatMoney(sale.total), Math.floor(cols / 2)));
+  gran(false); neg(false);
+  sep();
+
+  /* ----- Pago ----- */
+  fila('Pago', stripEmoji(payment.name));
+  if(sale.paymentMethod === 'efectivo'){
+    fila('Recibido', formatMoney(sale.cash));
+    fila('Cambio',   formatMoney(sale.change));
+  }
+  if(sale.cancelled){
+    cen(); neg(true); ln(''); ln('*** VENTA CANCELADA ***'); neg(false); izq();
+  }
+
+  /* ----- Mensaje final ----- */
+  if(p.footer){
+    ln('');
+    cen();
+    escWrap(p.footer, cols).forEach(ln);
+    izq();
+  }
+
+  /* ----- Papel extra y corte ----- */
+  const lineasFeed = Math.max(1, Math.min(12, Math.round((Number(p.feedMm) || 0) / 3.75) + 1));
+  raw([0x1B, 0x64, lineasFeed]);
+  if(cfg.cut) raw([0x1D, 0x56, 66, 0]);                /* corte parcial */
+  return out;
+}
+
+/* =========================================================
+   IMPRIMIR DE VERDAD
+========================================================= */
+async function printerPrintSale(sale, opts){
+  opts = opts || {};
+  if(printerRT.busy){ toast('Espera, se esta imprimiendo'); return false; }
+  if(!printerIsConnected()){
+    const ok = await printerConnect();
+    if(!ok) return false;
+  }
+  printerRT.busy = true;
+  try{
+    const p = printPrefs();
+    const copias = Math.max(1, Math.min(3, Number(p.copies) || 1));
+    let bytes = [];
+    for(let i = 0; i < copias; i++){
+      const t = await escposTicketBytes(sale);
+      bytes = bytes.concat(t);
+    }
+    const ruta = await printerWrite(bytes);
+    vibrate(12);
+    /* Por agente HTTP no hay acuse de la impresora: se dice "enviado", no "impreso". */
+    const seguro = ruta !== 'http';
+    toast(opts.testing ? 'Ticket de prueba enviado' : (seguro ? 'Ticket impreso' : 'Ticket enviado al agente'),
+          { icon:icon('print'), variant:'toast-success', subtitle: printerLabel() });
+    return true;
+  }catch(e){
+    printerRT.connected = false;
+    printerRefresh();
+    toast('No se pudo imprimir', {
+      icon: icon('alert'), variant:'toast-danger',
+      subtitle: String(e && e.message || e).slice(0, 70), duration: 2600
+    });
+    return false;
+  }finally{
+    printerRT.busy = false;
+  }
+}
+
+/** Prueba real por la impresora fisica (no abre el dialogo del navegador). */
+function printerTestPrint(){
+  printerPrintSale(printDemoSale(), { testing:true });
+}
+
+/* =========================================================
+   PANTALLA: bloque de impresora dentro de "Impresion de tickets"
+========================================================= */
+function printerRefresh(){
+  const box = document.getElementById('printerBox');
+  if(box) box.innerHTML = printerBoxHTML();
+  const sub = document.getElementById('lblPrinterState');
+  if(sub) sub.textContent = printerIsConnected() ? 'Conectada' : 'Desconectada';
+}
+function printerToggleHelp(){
+  const h = document.getElementById('prHelp');
+  if(h) h.classList.toggle('show');
+}
+function printerNoBT(){
+  toast('Este navegador no permite Bluetooth', {
+    icon: icon('alert'), variant:'toast-danger',
+    subtitle:'Mira la nota de abajo', duration: 2600
+  });
+  const h = document.getElementById('prHelp');
+  if(h) h.classList.add('show');
+}
+
+function printerConnIcon(tipo){
+  if(tipo === 'wifi') return icon('wifi');
+  if(tipo === 'usb')  return icon('usb');
+  return icon('bluetooth');
+}
+function printerConnName(tipo){
+  if(tipo === 'wifi') return 'Wi-Fi';
+  if(tipo === 'usb')  return 'USB';
+  return 'Bluetooth';
+}
+
+/** Nota honesta segun lo que este dispositivo puede hacer de verdad. */
+function printerNoteHTML(){
+  const cfg = printerPrefs();
+  const env = printerEnv();
+
+  if(env.native){
+    return `<div class="pr-note ok">
+      <b>Puente nativo activo.</b> Esta app corre dentro del contenedor nativo,
+      así que se conecta directo con la impresora y manda ESC/POS sin pasar por el navegador.
+    </div>`;
+  }
+  if(!env.secure){
+    return `<div class="pr-note warn">
+      <b>Falta HTTPS.</b> El navegador solo deja usar Bluetooth y USB en páginas
+      seguras (https:// o localhost). Abre la app desde una dirección https y vuelve a intentar.
+    </div>`;
+  }
+  if(env.iOS && cfg.conn === 'bt'){
+    return `<div class="pr-note warn">
+      <b>iPhone / iPad:</b> Safari no incluye Web Bluetooth, así que esta página
+      no puede hablar con la impresora por Bluetooth. No es un error de la app: es un límite de iOS.
+      El ticket se imprime igual desde el diálogo del sistema.
+      <button class="pr-help-btn" onclick="printerToggleHelp()">Ver por qué y cómo resolverlo</button>
+      <div class="pr-help" id="prHelp">
+        Las térmicas económicas de 58 mm (como la OFICHIDO que aparece como
+        <b>"Bluetooth Printer"</b>) casi siempre usan <b>Bluetooth Classic con perfil SPP</b>,
+        un puerto serie por Bluetooth. iOS solo deja usar SPP a los accesorios
+        certificados <b>MFi</b>, por eso Ajustes → Bluetooth la marca como incompatible:
+        el iPhone la ve, pero se niega a enlazarla. Y aunque el modelo tenga
+        también <b>BLE</b>, Safari no trae la API Web Bluetooth.
+        <ul>
+          <li><b>Comprobar si tiene BLE:</b> instala nRF Connect o LightBlue. Si la impresora
+          aparece ahí con servicios (18F0, FFE0, FF00…), sí habla BLE.</li>
+          <li><b>Si tiene BLE:</b> abre esta misma app en el navegador <b>Bluefy</b> o con
+          la extensión <b>WebBLE</b>; ahí esta pantalla conecta sola, sin cambiar nada del código.</li>
+          <li><b>Solución definitiva:</b> empaquetar Mesa con <b>Capacitor</b> y un plugin
+          iOS en Swift sobre <b>CoreBluetooth</b> (BLE) o <b>ExternalAccessory</b> (solo MFi).
+          La app ya busca ese puente en <code>window.MesaPrinter</code>: en cuanto exista, esta
+          misma pantalla lo usa sin tocar nada más.</li>
+          <li><b>Sin app nativa:</b> usa la impresora por <b>Wi-Fi</b> (puerto 9100) con un
+          agente, o conecta el rollo a un Android/PC con Chrome, donde Bluetooth y USB sí funcionan.</li>
+        </ul>
+      </div>
+    </div>`;
+  }
+  if(cfg.conn === 'bt' && !env.webBT){
+    return `<div class="pr-note warn">
+      <b>Este navegador no tiene Web Bluetooth.</b> Usa Chrome o Edge en Android o PC,
+      o conecta la impresora por Wi-Fi o USB.
+    </div>`;
+  }
+  if(cfg.conn === 'usb' && !env.webUSB){
+    return `<div class="pr-note warn">
+      <b>Este navegador no tiene WebUSB.</b> Funciona en Chrome o Edge (PC y Android con OTG).
+    </div>`;
+  }
+  if(cfg.conn === 'wifi'){
+    return `<div class="pr-note">
+      <b>Wi-Fi:</b> un navegador no puede abrir el puerto 9100 directo. Escribe la IP y el
+      puerto de tu impresora: si Mesa corre dentro del contenedor nativo, se envía por socket;
+      si corre en el navegador, necesita un pequeño agente en la red que reciba los bytes
+      ESC/POS en <code>/print</code>.
+    </div>`;
+  }
+  return `<div class="pr-note">
+    Toca <b>Buscar impresoras</b> y elige la tuya. Se guarda en este dispositivo,
+    porque la impresora cambia en cada caja o celular.
+  </div>`;
+}
+
+function printerBoxHTML(){
+  const cfg = printerPrefs();
+  const env = printerEnv();
+  const main = printerMain();
+  const on  = printerIsConnected();
+  const puede = printerCanUse(cfg.conn);
+
+  const connBtn = (id) =>
+    `<button class="${cfg.conn === id ? 'active' : ''}" onclick="printerSetConn('${id}')">${printerConnName(id)}</button>`;
+
+  const item = (d) => `
+    <div class="pr-item ${cfg.mainId === d.id ? 'active' : ''}">
+      <button class="acc-ico ${d.conn === 'wifi' ? 'blue' : (d.conn === 'usb' ? 'violet' : 'green')}"
+              style="border:none;" onclick="printerSetMain('${d.id}')">${printerConnIcon(d.conn)}</button>
+      <button class="acc-txt" style="background:none;border:none;text-align:left;padding:0;"
+              onclick="printerSetMain('${d.id}')">
+        <span class="acc-label">${escapeHtml(d.name)}</span>
+        <span class="acc-sub">${printerConnName(d.conn)}${d.host ? ' · ' + escapeHtml(d.host) + ':' + d.port : ''}</span>
+      </button>
+      ${cfg.mainId === d.id ? `<span class="tag ok">Principal</span>` : ''}
+      <button class="pr-forget" onclick="printerForget('${d.id}')" title="Quitar">${icon('trash')}</button>
+    </div>`;
+
+  return `
+    <div class="pr-card ${on ? 'on' : ''}">
+      <div class="pr-head">
+        <span class="acc-ico ${on ? 'green' : ''}">${icon('print')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">${main ? escapeHtml(main.name) : 'Sin impresora principal'}</span>
+          <span class="acc-sub">${main
+            ? printerConnName(main.conn) + (main.chr ? ' · ESC/POS' : '')
+            : 'Elige la impresora que usa esta caja'}</span>
+        </span>
+        <span class="pr-state ${on ? 'on' : ''}">
+          <span class="pr-dot"></span><span id="lblPrinterState">${on ? 'Conectada' : 'Desconectada'}</span>
+        </span>
+      </div>
+
+      <div class="seg" style="max-width:none; margin:13px 0 0;">
+        ${connBtn('bt')}${connBtn('wifi')}${connBtn('usb')}
+      </div>
+
+      ${cfg.conn === 'wifi' ? `
+        <div class="pr-wifi">
+          <input id="prHost" type="text" inputmode="decimal" placeholder="192.168.1.50"
+                 value="${escapeHtml(cfg.host || '')}">
+          <input id="prPort" type="number" placeholder="9100" value="${cfg.port || 9100}">
+        </div>` : ''}
+
+      <div class="pr-actions">
+        <button class="btn ghost" onclick="printerScan()" ${puede ? '' : 'disabled'}>
+          ${icon('search')} ${cfg.conn === 'wifi' ? 'Guardar impresora' : 'Buscar impresoras'}
+        </button>
+        ${on
+          ? `<button class="btn ghost" onclick="printerDisconnect()">${icon('close')} Desconectar</button>`
+          : `<button class="btn dark" onclick="printerConnect()" ${main ? '' : 'disabled'}>${printerConnIcon(cfg.conn)} Enlazar</button>`}
+        <button class="btn ghost" onclick="printerChange()" ${main ? '' : 'disabled'}>
+          ${icon('swap')} Cambiar impresora
+        </button>
+        <button class="btn primary" onclick="printerTestPrint()" ${main ? '' : 'disabled'}>
+          ${icon('print')} Ticket de prueba
+        </button>
+      </div>
+
+      ${cfg.devices.length ? `<div class="pr-list">${cfg.devices.map(item).join('')}</div>` : ''}
+    </div>
+
+    ${printerNoteHTML()}
+
+    <div class="toggle-row">
+      <span class="acc-ico blue">${icon('sliders')}</span>
+      <span class="acc-txt">
+        <span class="acc-label">Cortar el papel al terminar</span>
+        <span class="acc-sub">Solo si tu impresora trae cortador automático.</span>
+      </span>
+      <label class="switch">
+        <input type="checkbox" ${cfg.cut ? 'checked' : ''} onchange="setPrinterPref('cut', this.checked)">
+        <span class="track"></span>
+      </label>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>Acentos y ñ en la impresora</label>
+      <div class="seg" style="max-width:none; margin-bottom:0;">
+        <button class="${cfg.charset === 'cp437' ? 'active' : ''}" onclick="setPrinterPref('charset','cp437')">CP437</button>
+        <button class="${cfg.charset === 'cp850' ? 'active' : ''}" onclick="setPrinterPref('charset','cp850')">CP850</button>
+        <button class="${cfg.charset === 'plano' ? 'active' : ''}" onclick="setPrinterPref('charset','plano')">Sin acentos</button>
+      </div>
+      <div class="field-hint">Si en el papel salen símbolos raros donde va la ñ o un acento, cambia de tabla.</div>
+    </div>
+  `;
+}
+
+/* Reconexion silenciosa al abrir la app. */
+setTimeout(function(){ try{ printerAutoConnect(); }catch(e){} }, 1500);
 
 /* =========================================================
    TICKET
@@ -4333,7 +5342,10 @@ Object.assign(ICONS, {
   logout: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M10 8 6 12l4 4M6 12h9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   key: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="4.2" stroke="currentColor" stroke-width="1.9"/><path d="m11 11 8 8m-3 0 2-2m-4-2 2-2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3.1" stroke="currentColor" stroke-width="1.9"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5m13-6l-1.6 1.6M9.1 14.9 7.5 16.5m0-9 1.6 1.6m5.8 5.8 1.6 1.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`,
-  shieldOff: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.2 5 6v6c0 4.2 3 7.4 7 8.8 4-1.4 7-4.6 7-8.8V6l-7-2.8Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 8.5v4m0 2.6v.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`
+  shieldOff: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3.2 5 6v6c0 4.2 3 7.4 7 8.8 4-1.4 7-4.6 7-8.8V6l-7-2.8Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 8.5v4m0 2.6v.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  bluetooth: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 7.5 17 16l-5 4V4l5 4L7 16.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  wifi: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 9.3a14 14 0 0 1 19 0M5.8 12.7a9.2 9.2 0 0 1 12.4 0M9.2 16.1a4.4 4.4 0 0 1 5.6 0" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="19.4" r="1.3" fill="currentColor"/></svg>`,
+  usb: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="m9.4 8.6 2.6-5 2.6 5" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 15.5 8 13v-2m4 .5 4-2.5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="10.4" r="1.2" fill="currentColor"/><rect x="14.6" y="5.6" width="2.8" height="2.4" rx=".6" fill="currentColor"/></svg>`
 });
 
 /* ---------- Ilustraciones del acceso ---------- */
@@ -5484,7 +6496,10 @@ function printSettingsHTML(){
       es lo que sale impreso; se guarda en este dispositivo.
     </p>
 
-    <div class="section-title" style="margin-top:0;">Tama\u00f1o del papel</div>
+    <div class="section-title" style="margin-top:0;">Mi impresora</div>
+    <div id="printerBox">${printerBoxHTML()}</div>
+
+    <div class="section-title">Tama\u00f1o del papel</div>
     <div class="print-grid">
       ${presetBtn('58')}
       ${presetBtn('80')}
@@ -5559,7 +6574,7 @@ function printSettingsHTML(){
     </p>
 
     <div class="sheet-actions">
-      <button class="btn ghost block" onclick="printTestTicket()">${icon('print')} Imprimir prueba</button>
+      <button class="btn ghost block" onclick="printTestTicket()">${icon('print')} Prueba en hoja</button>
       <button class="btn primary block" onclick="closeModal(); render();">Listo</button>
     </div>
     <button class="btn ghost block" style="margin-top:10px;" onclick="resetPrintPrefs()">Restablecer valores</button>
