@@ -3169,13 +3169,14 @@ async function printerChange(){
   printerScan();
 }
 
-/** false solo cuando NO existe forma real de buscar por Bluetooth
+/** false cuando NO existe forma real de buscar con ese tipo de conexion
     (Safari en iPhone/iPad). En Bluefy o con el puente nativo sigue activo. */
 function printerCanScan(tipo){
   const env = printerEnv();
   if(env.native) return true;
-  if(tipo === 'bt') return env.webBT;
-  return true;
+  if(tipo === 'bt')  return env.webBT;
+  if(tipo === 'usb') return env.webUSB;
+  return true; /* Wi-Fi siempre: solo hace falta escribir la IP */
 }
 
 function printerIsConnected(){ return !!printerRT.connected; }
@@ -3820,7 +3821,8 @@ function printerNoteHTML(){
   }
   if(cfg.conn === 'usb' && !env.webUSB){
     return `<div class="pr-note warn">
-      <b>Este navegador no tiene WebUSB.</b> Funciona en Chrome o Edge (PC y Android con OTG).
+      <b>Este navegador no permite USB.</b> Funciona en Chrome o Edge, en PC y en Android con OTG.
+      El ticket se imprime igual desde el diálogo del sistema.
     </div>`;
   }
   if(cfg.conn === 'wifi'){
