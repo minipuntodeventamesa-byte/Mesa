@@ -802,6 +802,7 @@
   .pr-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; }
   .pr-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
   .pr-actions .btn{ flex:1 1 45%; padding:11px 10px; font-size:13px; min-width:0; }
+  .pr-actions .btn[disabled]{ opacity:.45; }
   .pr-actions .btn svg{ width:16px; height:16px; }
   .pr-list{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
   .pr-item{
@@ -3168,6 +3169,15 @@ async function printerChange(){
   printerScan();
 }
 
+/** false solo cuando NO existe forma real de buscar por Bluetooth
+    (Safari en iPhone/iPad). En Bluefy o con el puente nativo sigue activo. */
+function printerCanScan(tipo){
+  const env = printerEnv();
+  if(env.native) return true;
+  if(tipo === 'bt') return env.webBT;
+  return true;
+}
+
 function printerIsConnected(){ return !!printerRT.connected; }
 function printerLabel(){
   const d = printerMain();
@@ -3799,8 +3809,7 @@ function printerNoteHTML(){
     return `<div class="pr-note warn">
       <b>iPhone / iPad:</b> Safari no incluye Web Bluetooth, así que esta página
       no puede hablar con la impresora por Bluetooth. No es un error de la app: es un límite de iOS.
-      Puedes intentarlo de todas formas; si tu impresora o tu navegador sí lo permiten, conectará.
-      Y si no, el ticket se imprime igual desde el diálogo del sistema.
+      El ticket se imprime igual desde el diálogo del sistema.
     </div>`;
   }
   if(cfg.conn === 'bt' && !env.webBT){
@@ -3833,6 +3842,7 @@ function printerBoxHTML(){
   const env = printerEnv();
   const main = printerMain();
   const on  = printerIsConnected();
+  const puedeBuscar = printerCanScan(cfg.conn);
 
   const connBtn = (id) =>
     `<button class="${cfg.conn === id ? 'active' : ''}" onclick="printerSetConn('${id}')">${printerConnName(id)}</button>`;
@@ -3877,12 +3887,12 @@ function printerBoxHTML(){
         </div>` : ''}
 
       <div class="pr-actions">
-        <button class="btn ghost" onclick="printerScan()">
+        <button class="btn ghost" onclick="printerScan()" ${puedeBuscar ? '' : 'disabled'}>
           ${icon('search')} ${cfg.conn === 'wifi' ? 'Guardar impresora' : 'Buscar impresoras'}
         </button>
         ${on
           ? `<button class="btn ghost" onclick="printerDisconnect()">${icon('close')} Desconectar</button>`
-          : `<button class="btn dark" onclick="printerConnect()" ${main ? '' : 'disabled'}>${printerConnIcon(cfg.conn)} Enlazar</button>`}
+          : `<button class="btn dark" onclick="printerConnect()" ${(main && puedeBuscar) ? '' : 'disabled'}>${printerConnIcon(cfg.conn)} Enlazar</button>`}
         <button class="btn ghost" onclick="printerChange()" ${main ? '' : 'disabled'}>
           ${icon('swap')} Cambiar impresora
         </button>
