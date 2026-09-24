@@ -1499,45 +1499,12 @@
   body[data-section="menu"] h1.page-title::before{ background:var(--sec-menu); }
   body[data-section="menu"] #view .section-title::before{ background:var(--sec-menu); }
   .navbtn.active[data-view="menu"]{ background:var(--sec-menu-soft); color:var(--sec-menu-ink); }
-  .navbtn{ position:relative; }
-  .nav-badge{
-    position:absolute; top:3px; left:calc(50% + 5px);
-    min-width:18px; height:18px; padding:0 5px; border-radius:999px;
-    background:var(--accent-2); color:#fff; font-size:10.5px; font-weight:800;
-    display:none; align-items:center; justify-content:center; line-height:1;
-    border:2px solid var(--nav-bg);
-  }
-  .nav-badge.show{ display:inline-flex; animation:mdPulse 1.4s ease-in-out infinite; }
-  @keyframes mdPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.18); } }
   /* Con seis botones en el celular, las etiquetas pueden ir en dos renglones */
   @media (max-width:520px){
     .bottomnav{ padding-left:4px; padding-right:4px; }
     .navbtn{ padding:7px 1px; gap:3px; }
     .navbtn span:last-child{ font-size:10px; line-height:1.15; text-align:center; letter-spacing:-.1px; }
   }
-
-  /* ---- Aviso fijo de pedido nuevo (visible en cualquier sección) ---- */
-  .md-alert{
-    position:fixed; left:50%; top:calc(var(--topbar-h, 74px) + 8px); transform:translateX(-50%);
-    z-index:350; width:calc(100% - 28px); max-width:520px;
-    display:none; align-items:center; gap:12px;
-    background:var(--ink); color:#fff; border-radius:18px; padding:11px 12px 11px 11px;
-    box-shadow:0 14px 34px rgba(22,33,62,.38); border:2px solid var(--accent-2);
-    text-align:left; font-family:inherit;
-  }
-  .md-alert.show{ display:flex; animation:mdAlertIn .35s cubic-bezier(.34,1.56,.64,1); }
-  @keyframes mdAlertIn{ from{ transform:translate(-50%,-14px); opacity:0; } to{ transform:translate(-50%,0); opacity:1; } }
-  .md-alert-ico{
-    width:40px; height:40px; border-radius:13px; background:var(--accent-2); flex-shrink:0;
-    display:flex; align-items:center; justify-content:center; animation:mdRing 1.2s ease-in-out infinite;
-  }
-  .md-alert-ico svg{ width:20px; height:20px; color:#fff; }
-  @keyframes mdRing{ 0%,100%{ transform:rotate(0); } 15%{ transform:rotate(-14deg); } 30%{ transform:rotate(12deg); } 45%{ transform:rotate(-8deg); } 60%{ transform:rotate(0); } }
-  .md-alert-txt{ flex:1; min-width:0; }
-  .md-alert-title{ display:block; font-size:14px; font-weight:800; }
-  .md-alert-sub{ display:block; font-size:12px; font-weight:600; color:rgba(255,255,255,.72); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .md-alert-btn{ background:#fff; color:var(--ink); border:none; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:800; flex-shrink:0; }
-  @media (min-width:700px){ .md-alert{ left:calc(50% + 54px); top:18px; } }
 
   /* ---- Configuración ---- */
   .md-status-card{
@@ -1563,12 +1530,6 @@
   .md-pill::before{ content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
   .md-pill.on{ background:var(--success-bg); color:var(--success); }
   .md-pill.paused{ background:var(--accent-soft); color:#8A6A18; }
-  .md-pill.st-pendiente{ background:var(--danger-bg); color:var(--accent-2); }
-  .md-pill.st-aceptado{ background:var(--accent-soft); color:#8A6A18; }
-  .md-pill.st-preparacion{ background:var(--sec-history-soft); color:var(--sec-history-ink); }
-  .md-pill.st-listo{ background:var(--sec-stats-soft); color:var(--sec-stats-ink); }
-  .md-pill.st-entregado{ background:var(--success-bg); color:var(--success); }
-  .md-pill.st-rechazado, .md-pill.st-cancelado{ background:var(--surface-alt); color:var(--ink-soft); }
 
   .md-checklist .acc-row{ padding:13px 14px; }
   .md-check{
@@ -1600,87 +1561,23 @@
   .md-sub-actions .btn{ flex:1; padding:11px 10px; font-size:13px; }
   .md-toggles{ margin-top:6px; }
   .md-toggles .toggle-row:last-child{ border-bottom:none; padding-bottom:0; }
-
-  /* ---- Pedidos ---- */
-  .md-orders-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin:26px 0 4px; }
-  .md-orders-head .section-title{ margin:0; }
-  .md-orders-sub{ font-size:13px; color:var(--ink-soft); font-weight:600; margin:0 0 14px; }
-  .seg.md-seg button.active{ color:var(--sec-menu-ink); }
-  .seg .seg-n{ display:inline-block; min-width:18px; margin-left:4px; padding:1px 6px; border-radius:999px; background:var(--accent-2); color:#fff; font-size:10.5px; }
-  .md-order-grid{ display:grid; gap:10px; }
-  @media (min-width:900px){ .md-order-grid{ grid-template-columns:1fr 1fr; } }
-  .md-order{
-    display:block; width:100%; text-align:left; font-family:inherit; color:var(--ink);
-    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card);
-    box-shadow:var(--shadow-card); padding:14px 15px; position:relative; overflow:hidden;
+  .md-flow .acc-row{ padding:13px 14px; cursor:default; }
+  .md-flow .acc-row:active{ background:none; }
+  .md-flow .acc-sub{ white-space:normal; }
+  .md-num{
+    width:28px; height:28px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--sec-menu-soft); color:var(--sec-menu-ink); font-size:13px; font-weight:800;
   }
-  .md-order:active{ transform:scale(.99); }
-  .md-order::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--border); }
-  .md-order.st-pendiente::before{ background:var(--accent-2); }
-  .md-order.st-aceptado::before{ background:var(--accent-strong); }
-  .md-order.st-preparacion::before{ background:var(--sec-history); }
-  .md-order.st-listo::before{ background:var(--sec-stats); }
-  .md-order.st-entregado::before{ background:var(--success); }
-  .md-order.is-new{ border-color:var(--accent-2); box-shadow:0 0 0 3px rgba(225,89,76,.14), var(--shadow-card); animation:mdGlow 1.6s ease-in-out infinite; }
-  @keyframes mdGlow{ 0%,100%{ box-shadow:0 0 0 3px rgba(225,89,76,.10), var(--shadow-card); } 50%{ box-shadow:0 0 0 6px rgba(225,89,76,.22), var(--shadow-card); } }
-  .md-new-flag{ font-size:10px; font-weight:800; color:#fff; background:var(--accent-2); border-radius:999px; padding:3px 8px; letter-spacing:.3px; }
-  .md-order-top{ display:flex; align-items:center; gap:8px; }
-  .md-code{ font-size:13px; font-weight:800; font-family:var(--mono); }
-  .md-order-top .md-pill{ margin-left:auto; }
-  .md-order-name{ font-size:15.5px; font-weight:800; margin-top:7px; }
-  .md-order-meta{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-top:3px; }
-  .md-order-meta svg{ width:14px; height:14px; }
-  .md-order-items{ font-size:12.5px; font-weight:600; color:var(--ink); margin-top:8px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .md-order-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); }
-  .md-ago{ font-size:11.5px; font-weight:700; color:var(--ink-soft); }
-  .md-total{ font-size:16px; font-weight:800; }
-
-  /* Detalle del pedido (hoja) */
-  .md-detail-head{ display:flex; align-items:center; gap:10px; }
-  .md-detail-head h2{ font-family:var(--mono); }
-  .md-info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-  .md-info{ background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:11px 12px; }
-  .md-info-k{ font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px; }
-  .md-info-v{ font-size:14.5px; font-weight:800; margin-top:3px; }
-  .md-lines{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card); padding:2px 14px; }
-  .md-line{ display:flex; gap:10px; padding:11px 0; border-bottom:1px solid var(--border); }
-  .md-line:last-child{ border-bottom:none; }
-  .md-line-qty{ font-size:12.5px; font-weight:800; background:var(--sec-menu-soft); color:var(--sec-menu-ink); border-radius:8px; padding:4px 7px; height:fit-content; white-space:nowrap; }
-  .md-line-main{ flex:1; min-width:0; }
-  .md-line-name{ font-size:13.5px; font-weight:700; }
-  .md-line-sub{ font-size:12px; font-weight:600; color:var(--ink-soft); margin-top:2px; }
-  .md-line-note{ font-size:12px; font-weight:600; background:var(--surface-soft); border-radius:8px; padding:4px 8px; margin-top:5px; display:inline-block; }
-  .md-line-amt{ font-size:13.5px; font-weight:800; white-space:nowrap; }
-  .md-step-note{
-    display:flex; gap:10px; align-items:flex-start; margin:14px 0 0;
-    background:var(--accent-soft); border-radius:13px; padding:11px 12px;
-    font-size:12.5px; font-weight:600; line-height:1.5;
-  }
-  .md-step-note svg{ width:17px; height:17px; flex-shrink:0; margin-top:1px; color:#8A6A18; }
-  .md-step-note.blue{ background:var(--sec-history-soft); }
-  .md-step-note.blue svg{ color:var(--sec-history-ink); }
-  .md-timeline{ margin:14px 0 0; padding:0; list-style:none; }
-  .md-timeline li{ display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:var(--ink-soft); padding:3px 0; }
-  .md-timeline li b{ color:var(--ink); font-weight:700; }
-
-  /* Etiqueta "Encargo" en historial y ventas */
-  .tag.encargo{ background:var(--sec-menu-soft); color:var(--sec-menu-ink); margin-right:4px; }
-  .sale-row-badge.encargo{ background:var(--sec-menu-soft); }
-  .scope-encargos .vbar{ background:var(--sec-menu); }
-  body[data-section="stats"] #view .scope-encargos .stat-card,
-  body[data-section="stats"] #view .scope-encargos .card{ border-top-color:var(--sec-menu); }
-  body[data-section="stats"] #view .scope-encargos .section-title::before,
-  body[data-section="stats"] .scope-encargos h1.page-title::before{ background:var(--sec-menu); }
-  .scope-encargos .seg button.active{ color:var(--sec-menu-ink); }
-  .seg.stats-scope{ max-width:320px; }
-  .seg.stats-scope button.active{ color:var(--ink); }
+  .md-num.wa{ background:var(--whatsapp); color:#fff; }
+  .md-num svg{ width:15px; height:15px; }
 
   /* =========================================================
      MENÚ DIGITAL — VISTA DEL CLIENTE (se abre con el link)
      Mismo diseño del menú: tokens de Mesa, café claro y botones
      de acción en verde.
   ========================================================= */
-  body.dm-mode .app, body.dm-mode #splash, body.dm-mode .bottomnav, body.dm-mode .md-alert{ display:none !important; }
+  body.dm-mode .app, body.dm-mode #splash, body.dm-mode .bottomnav{ display:none !important; }
   body.dm-mode{ background:var(--bg); }
   body.dm-lock{ overflow:hidden; }
   :root{ --dm-main:#CFAE8B; --dm-soft:#F8F1E9; --dm-ink:#8A6440; }
@@ -1712,18 +1609,8 @@
   .dm-banner{ display:flex; gap:11px; align-items:flex-start; background:var(--accent-soft); border-radius:14px; padding:12px 13px; margin-bottom:14px; font-size:13px; font-weight:600; line-height:1.45; }
   .dm-banner svg{ width:18px; height:18px; flex-shrink:0; color:#8A6A18; margin-top:1px; }
   .dm-banner b{ display:block; font-size:13.5px; font-weight:800; }
-  .dm-mine{
-    display:flex; align-items:center; gap:11px; width:100%; text-align:left;
-    background:var(--surface); border:1.5px solid var(--dm-main); border-radius:16px; padding:11px 13px; margin-bottom:14px;
-    box-shadow:var(--shadow-card); color:var(--ink);
-  }
-  .dm-mine-ico{ width:36px; height:36px; border-radius:11px; background:var(--dm-soft); color:var(--dm-ink); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .dm-mine-ico svg{ width:18px; height:18px; }
-  .dm-mine-txt{ flex:1; min-width:0; }
-  .dm-mine-t{ display:block; font-size:13.5px; font-weight:800; }
-  .dm-mine-s{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-top:1px; }
-  .dm-mine .md-pill{ margin-left:auto; }
-
+  .dm-banner.wa{ background:#E5FAEC; }
+  .dm-banner.wa svg{ color:#0E7A3D; }
   .dm-chips{
     display:flex; gap:8px; overflow-x:auto; position:sticky; top:var(--dm-top-h, 74px); z-index:19;
     margin:0 -18px 14px; padding:8px 18px 10px; background:var(--bg); box-shadow:0 1px 0 var(--border); scrollbar-width:none;
@@ -1828,40 +1715,6 @@
   .dm-totals div.g{ color:var(--ink); font-size:18px; font-weight:800; padding-top:8px; }
   .dm-actions{ display:flex; gap:10px; margin-top:18px; }
   .dm-actions .btn{ flex:1; }
-  .dm-steps{ display:flex; gap:6px; margin:0 0 16px; }
-  .dm-steps span{ flex:1; height:4px; border-radius:99px; background:var(--border); }
-  .dm-steps span.on{ background:var(--dm-main); }
-  .dm-field-err{ font-size:12px; font-weight:700; color:var(--accent-2); margin-top:6px; display:none; }
-  .dmx .field.err input, .dmx .field.err select{ border-color:var(--accent-2); background:var(--danger-bg); }
-  .dmx .field.err .dm-field-err{ display:block; }
-
-  /* Seguimiento del pedido del cliente */
-  .dm-track-hero{ text-align:center; padding:8px 0 16px; }
-  .dm-track-ico{ width:64px; height:64px; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; background:var(--dm-soft); color:var(--dm-ink); }
-  .dm-track-ico svg{ width:30px; height:30px; }
-  .dm-track-ico.ok{ background:var(--success-bg); color:var(--success); }
-  .dm-track-ico.bad{ background:var(--danger-bg); color:var(--accent-2); }
-  .dm-track-code{ font-family:var(--mono); font-size:13px; font-weight:800; color:var(--ink-soft); }
-  .dm-track-title{ font-size:20px; font-weight:800; margin:4px 0 4px; }
-  .dm-track-sub{ font-size:13.5px; font-weight:500; color:var(--ink-soft); line-height:1.5; margin:0 auto; max-width:340px; }
-  .dm-progress{ list-style:none; margin:0 0 16px; padding:14px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card); }
-  .dm-progress li{ display:flex; align-items:center; gap:11px; padding:7px 0; font-size:13.5px; font-weight:700; color:var(--ink-faint); position:relative; }
-  .dm-progress li .dot{ width:22px; height:22px; border-radius:50%; border:2px solid var(--border); background:var(--surface); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-  .dm-progress li .dot svg{ width:12px; height:12px; }
-  .dm-progress li.done{ color:var(--ink); }
-  .dm-progress li.done .dot{ background:var(--success); border-color:var(--success); color:#fff; }
-  .dm-progress li.cur{ color:var(--ink); }
-  .dm-progress li.cur .dot{ border-color:var(--dm-main); background:var(--dm-soft); box-shadow:0 0 0 4px rgba(207,174,139,.25); }
-  .dm-bank{ background:var(--surface); border:1.5px solid var(--dm-main); border-radius:var(--radius-card); padding:6px 14px; margin-bottom:12px; }
-  .dm-bank-h{ font-size:13px; font-weight:800; padding:10px 0 4px; display:flex; align-items:center; gap:8px; }
-  .dm-bank-h svg{ width:17px; height:17px; color:var(--dm-ink); }
-  .dm-bank-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
-  .dm-bank-row:last-child{ border-bottom:none; }
-  .dm-bank-k{ font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px; }
-  .dm-bank-v{ font-size:14.5px; font-weight:800; margin-top:2px; font-family:var(--mono); overflow-wrap:anywhere; }
-  .dm-bank-row > div{ flex:1; min-width:0; }
-  .dm-copy{ border:none; background:var(--dm-soft); color:var(--dm-ink); border-radius:10px; padding:8px 11px; font-size:12px; font-weight:800; display:flex; align-items:center; gap:5px; flex-shrink:0; }
-  .dm-copy svg{ width:14px; height:14px; }
   .dm-empty{ text-align:center; padding:60px 24px; }
   .dm-empty svg{ width:60px; height:60px; margin:0 auto 14px; color:var(--ink-faint); }
   .dm-empty h2{ font-size:19px; margin:0 0 6px; }
@@ -1890,7 +1743,6 @@
   }
   @media (max-width:360px){ .dm-sub{ display:none; } }
 
-  body.auth-open .md-alert{ display:none !important; }
   .md-textarea{
     width:100%; border:1.5px solid var(--border); border-radius:12px; padding:13px 14px;
     font-size:15px; background:var(--surface); color:var(--ink); font-weight:600;
@@ -1958,7 +1810,7 @@
     <button class="navbtn" data-view="history" data-icon="receipt" onclick="goTo('history')"><span class="navicon"></span><span>Historial</span></button>
     <button class="navbtn" data-view="stats" data-icon="chart" onclick="goTo('stats')"><span class="navicon"></span><span>Ventas</span></button>
     <button class="navbtn" data-view="products" data-icon="box" onclick="goTo('products')"><span class="navicon"></span><span>Productos</span></button>
-    <button class="navbtn" data-view="menu" data-icon="menuBook" onclick="goTo('menu')"><span class="nav-badge" id="navMenuBadge"></span><span class="navicon"></span><span>Menú Digital</span></button>
+    <button class="navbtn" data-view="menu" data-icon="menuBook" onclick="goTo('menu')"><span class="navicon"></span><span>Menú Digital</span></button>
     <button class="navbtn" data-view="account" data-icon="person" onclick="goTo('account')"><span class="navicon"></span><span>Mi cuenta</span></button>
   </nav>
 </div>
@@ -1966,7 +1818,6 @@
 <div id="modal-layer"></div>
 <div class="auth-layer" id="authLayer"></div>
 <div class="toast" id="toast"></div>
-<button class="md-alert" id="mdAlert" type="button" aria-live="assertive"></button>
 
 <script>
 /* Mide el alto real del encabezado y de la barra inferior (en iPhone cambia
@@ -2433,7 +2284,7 @@ let currentView = 'home';
 let cart = [];               // { productId, qty, sizeId?, unitPrice?, sizeLabel? }
 let checkout = { serviceType:'comer', table:'', paymentMethod:'efectivo', cash:'' };
 let saleCategoryFilter = 'todos';
-let historyFilters = { search:'', period:'all', service:'all', payment:'all', status:'all', origin:'all' };
+let historyFilters = { search:'', period:'all', service:'all', payment:'all', status:'all' };
 let productFormImage = null; // dataURL temporal mientras se edita el formulario de producto
 
 /* ---------- Helpers ---------- */
@@ -4411,9 +4262,6 @@ function ticketHTML(sale){
       <div class="ticket-sub">${ticketBusiness().sub}</div>
       ${ticketBusiness().address ? `<div class="ticket-meta">${ticketBusiness().address}</div>` : ''}
       <div class="ticket-meta">Pedido ${orderNumberLabel(sale.number)}</div>
-      ${sale.origin === 'encargo' ? `<div class="ticket-meta">ENCARGO ${escapeHtml(sale.orderCode || '')} · Menú Digital</div>
-      ${sale.customerName ? `<div class="ticket-meta">Cliente: ${escapeHtml(sale.customerName)}</div>` : ''}
-      ${sale.pickupAt ? `<div class="ticket-meta">Recoge: ${formatDateTime(sale.pickupAt)}</div>` : ''}` : ''}
       <div class="ticket-meta">${formatDateTime(sale.date)}</div>
       ${sale.userName ? `<div class="ticket-meta">Atendió: ${escapeHtml(sale.userName)}</div>` : ''}
       <hr>
@@ -4421,7 +4269,7 @@ function ticketHTML(sale){
         ${sale.items.map(it => `
           <div class="ticket-item-row">
             <div class="ti-name"><span>${escapeHtml(it.name)}</span><span>${formatMoney(it.price * it.qty)}</span></div>
-            <div class="ticket-item-qty">${(it.unit && typeof unitOf === 'function' && unitOf(it.unit).frac) ? fmtQty(it.qty, it.unit) + ' x ' + formatMoney(it.price) + '/' + unitOf(it.unit).short : it.qty + ' x ' + formatMoney(it.price)}</div>
+            <div class="ticket-item-qty">${it.qty} x ${formatMoney(it.price)}</div>
           </div>
         `).join('')}
       </div>
@@ -4489,12 +4337,11 @@ function renderSaleRow(sale){
   const payment = paymentOf(sale.paymentMethod);
   return `
     <button class="sale-row ${sale.cancelled?'cancelled':''}" onclick="openSaleDetail('${sale.id}')">
-      <div class="sale-row-badge ${sale.origin === 'encargo' ? 'encargo' : ''}">${sale.origin === 'encargo' ? '🛍️' : service.emoji}</div>
+      <div class="sale-row-badge">${service.emoji}</div>
       <div class="sale-row-main">
         <div class="sale-row-num">${orderNumberLabel(sale.number)}</div>
         <div class="sale-row-meta">${formatDateTime(sale.date)} · ${payment.name}</div>
         ${saleWho(sale) ? `<div class="sale-row-who">Cobró: ${escapeHtml(saleWho(sale))}</div>` : ''}
-        ${sale.origin === 'encargo' ? `<span class="tag encargo">Encargo${sale.orderCode ? ' ' + escapeHtml(sale.orderCode) : ''}</span>` : ''}${sale.origin === 'encargo' && sale.customerName ? `<span class="sale-row-who" style="display:inline; margin-left:2px;">${escapeHtml(sale.customerName)}</span>` : ''}
         ${sale.cancelled ? `<span class="tag cancel">Cancelada</span>` : ''}
       </div>
       <div class="sale-row-right">
@@ -4505,7 +4352,7 @@ function renderSaleRow(sale){
 }
 
 function renderHistoryShell(){
-  const activeCount = ['period','status','service','payment','origin'].filter(k => historyFilters[k] !== 'all').length;
+  const activeCount = ['period','status','service','payment'].filter(k => historyFilters[k] !== 'all').length;
   return `
     <h1 class="page-title">Historial</h1>
     <p class="page-sub">${can('verTodasVentas') ? 'Todas las ventas registradas' : 'Tus ventas registradas'}</p>
@@ -4576,15 +4423,6 @@ function openHistoryFilters(){
         </div>
       </div>
 
-      <div class="filter-modal-group">
-        <div class="filter-modal-label"><span class="fml-icon">${icon('menuBook')}</span>Origen</div>
-        <div class="filter-pill-row">
-          <button class="filter-chip ${historyFilters.origin==='all'?'active':''}" onclick="setHistoryFilter('origin','all')">Todo origen</button>
-          <button class="filter-chip ${historyFilters.origin==='mostrador'?'active':''}" onclick="setHistoryFilter('origin','mostrador')">🧾 Mostrador</button>
-          <button class="filter-chip ${historyFilters.origin==='encargo'?'active':''}" onclick="setHistoryFilter('origin','encargo')">🛍️ Encargos</button>
-        </div>
-      </div>
-
       <button class="btn dark block" onclick="closeModal()">Ver resultados</button>
     </div>
   `;
@@ -4596,7 +4434,6 @@ function clearHistoryFilters(){
   historyFilters.status = 'all';
   historyFilters.service = 'all';
   historyFilters.payment = 'all';
-  historyFilters.origin = 'all';
   render();
   if(document.getElementById('historyFilterModal')) openHistoryFilters();
 }
@@ -4611,15 +4448,12 @@ function matchesHistoryFilters(sale){
   if(historyFilters.status === 'cancelada' && !sale.cancelled) return false;
   if(historyFilters.service !== 'all' && sale.serviceType !== historyFilters.service) return false;
   if(historyFilters.payment !== 'all' && sale.paymentMethod !== historyFilters.payment) return false;
-  if(historyFilters.origin === 'encargo' && sale.origin !== 'encargo') return false;
-  if(historyFilters.origin === 'mostrador' && sale.origin === 'encargo') return false;
   if(historyFilters.search){
     const q = historyFilters.search.toLowerCase();
     const inNumber = String(sale.number).includes(q) || orderNumberLabel(sale.number).toLowerCase().includes(q);
     const inItems = sale.items.some(it => it.name.toLowerCase().includes(q));
     const inTable = (sale.table || '').toLowerCase().includes(q);
-    const inEncargo = (sale.orderCode || '').toLowerCase().includes(q) || (sale.customerName || '').toLowerCase().includes(q);
-    if(!inNumber && !inItems && !inTable && !inEncargo) return false;
+    if(!inNumber && !inItems && !inTable) return false;
   }
   return true;
 }
@@ -4754,7 +4588,7 @@ function deleteSale(saleId){
 /* =========================================================
    VISTA: VENTAS (dashboard)
 ========================================================= */
-function renderStatsGeneral(){
+function renderStats(){
   const all = visibleSales();
   const active = all.filter(s => !s.cancelled);
   const now = new Date();
@@ -4941,7 +4775,7 @@ function buildStatsBuckets(sales, period){
 }
 
 function statsChartsHTML(){
-  const rows = buildStatsBuckets(statsScopeSales(), statsPeriod);
+  const rows = buildStatsBuckets(visibleSales().filter(s => !s.cancelled), statsPeriod);
   const n = rows.length;
   const sel = (statsSel !== null && statsSel < n) ? statsSel : n - 1;
   const cur = rows[sel];
@@ -4961,7 +4795,7 @@ function statsChartsHTML(){
     <div class="chart-grid">
       <div class="card">
         <div class="chart-head">
-          <div><div class="chart-title">${statsScope === 'encargos' ? 'Encargos' : 'Ventas'}</div><div class="chart-sub">${cur.long}</div></div>
+          <div><div class="chart-title">Ventas</div><div class="chart-sub">${cur.long}</div></div>
           <div class="chart-value">${formatMoney(cur.total)}</div>
         </div>
         <div class="chart-plot">
@@ -8338,16 +8172,13 @@ setInterval(tickClock, 30000);
 </script>
 <script>
 /* =========================================================================
-   BLOQUE NUEVO — MENÚ DIGITAL, PEDIDOS PENDIENTES Y ENCARGOS
+   BLOQUE NUEVO — MENÚ DIGITAL
    -------------------------------------------------------------------------
-   Todo vive en este mismo archivo:
-   · En Mesa: sección "Menú Digital" (configuración + pedidos pendientes),
-     aviso sonoro "Pedido entrante", encargos dentro de Ventas e Historial.
+   · En Mesa: sección "Menú Digital" para configurarlo, activarlo y
+     obtener el link único del negocio.
    · Para el cliente: el mismo archivo abierto con el link  #menu/<id>
-     muestra el Menú Digital (sin entrar a Mesa).
-   Los datos se guardan igual que el resto de Mesa (localStorage). El
-   intercambio de pedidos está aislado en MenuSync: para recibir pedidos
-   desde otros teléfonos basta con cambiar esas funciones por un servidor.
+     muestra el Menú Digital. El pedido se manda al WhatsApp del negocio
+     (Enviar por WhatsApp → Confirmar). Mesa no guarda los pedidos.
 ========================================================================= */
 
 /* ---------- Íconos nuevos (mismo trazo que los de Mesa) ---------- */
@@ -8362,6 +8193,7 @@ Object.assign(ICONS, {
   bag: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 8h14l-1 12H6L5 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   forkDark: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 2.5v6a3.5 3.5 0 0 0 7 0v-6M8 2.5v19M19 21.5V2.5c-2.3.6-4 2.6-4 5.5v4c0 1 .8 1.8 1.8 1.8H19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   refresh: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  whatsapp: `<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.2A9.7 9.7 0 0 0 3.7 16.9L2.5 21.5l4.7-1.2A9.7 9.7 0 1 0 12 2.2Zm0 17.7a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A8 8 0 1 1 12 19.9Zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2.1 4.9 4.9 0 0 0 1 2.6 11.2 11.2 0 0 0 4.3 3.8c1.6.7 2.2.7 3 .6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3Z"/></svg>`,
   pause: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6v12M15 6v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`
 });
 
@@ -8411,84 +8243,263 @@ function mdUnitSuffix(p){
 }
 
 /* =========================================================
-   CONFIGURACIÓN Y DATOS DEL MENÚ DIGITAL
+   CONFIGURACIÓN DEL MENÚ DIGITAL
+   Solo guarda si está activo, su link y el WhatsApp del negocio.
+   Los pedidos NO se guardan en Mesa: el cliente los manda
+   directo al WhatsApp del negocio.
 ========================================================= */
 const MD_CFG_KEY = 'mesa_menu';
-const MD_ORDERS_KEY = 'mesa_orders';
-const MD_COUNTER_KEY = 'mesa_order_counter';
-const MD_MINE_KEY = 'mesa_menu_mine';
-const MD_ACTIVE = ['pendiente','aceptado','preparacion','listo'];
-const ORDER_STATUS = {
-  pendiente:   { label:'Por aceptar' },
-  aceptado:    { label:'Esperando pago' },
-  preparacion: { label:'En preparación' },
-  listo:       { label:'Listo para recoger' },
-  entregado:   { label:'Entregado' },
-  rechazado:   { label:'Rechazado' },
-  cancelado:   { label:'Cancelado' },
-};
-function orderStatusLabel(s){ return (ORDER_STATUS[s] || ORDER_STATUS.pendiente).label; }
 
 function mdDefaultCfg(){
-  return {
-    active:false, id:null, activatedAt:null, paused:false, sound:true,
-    pickup:{ from:'09:00', to:'20:00', lead:30, interval:15 },
-    bank:{ bank:'', holder:'', clabe:'', card:'', note:'' }
-  };
+  return { active:false, id:null, activatedAt:null, paused:false, whatsapp:{ country:'', number:'' } };
 }
 function mdCfg(){
-  const d = mdDefaultCfg();
   let c = {};
   try{ c = JSON.parse(localStorage.getItem(MD_CFG_KEY) || '{}') || {}; }catch(e){ c = {}; }
-  const out = Object.assign(d, c);
-  out.pickup = Object.assign(mdDefaultCfg().pickup, c.pickup || {});
-  out.bank = Object.assign(mdDefaultCfg().bank, c.bank || {});
+  const out = Object.assign(mdDefaultCfg(), c);
+  out.whatsapp = Object.assign(mdDefaultCfg().whatsapp, c.whatsapp || {});
   return out;
 }
 function mdSaveCfg(c){
-  try{ localStorage.setItem(MD_CFG_KEY, JSON.stringify(c)); }catch(e){}
-  mdBroadcast('cfg');
+  const limpio = { active:!!c.active, id:c.id || null, activatedAt:c.activatedAt || null, paused:!!c.paused, whatsapp:c.whatsapp || { country:'', number:'' } };
+  try{ localStorage.setItem(MD_CFG_KEY, JSON.stringify(limpio)); }catch(e){}
+}
+/* Limpia lo que dejó la versión anterior (pedidos guardados en Mesa). */
+(function(){
+  try{
+    ['mesa_orders','mesa_order_counter','mesa_menu_mine'].forEach(k => localStorage.removeItem(k));
+    const raw = localStorage.getItem(MD_CFG_KEY);
+    if(raw){ const c = JSON.parse(raw); if(c && (c.bank || c.pickup || 'sound' in c)) mdSaveCfg(c); }
+  }catch(e){}
+})();
+
+/* ---------- WhatsApp del negocio ----------
+   Si no se configura uno distinto, se usa el número de la cuenta de Mesa. */
+function mdWhatsapp(){
+  const cfg = mdCfg();
+  const u = (typeof currentUser === 'function' ? currentUser() : null) || {};
+  const own = (cfg.whatsapp.number || '').replace(/\D/g, '');
+  if(own) return { country:cfg.whatsapp.country || u.country || 'MX', number:own, fromAccount:false };
+  const acc = (u.phone || '').replace(/\D/g, '');
+  if(acc) return { country:u.country || 'MX', number:acc, fromAccount:true };
+  return null;
+}
+function mdWhatsappDigits(){
+  const w = mdWhatsapp();
+  if(!w) return '';
+  return countryOf(w.country).dial.replace(/\D/g, '') + w.number;
+}
+function mdWhatsappLabel(){
+  const w = mdWhatsapp();
+  return w ? countryOf(w.country).dial + ' ' + formatPhone(w.number, w.country) : '';
 }
 
-/* ---------- Intercambio de pedidos (punto único para conectar un servidor) ---------- */
-const MenuSync = {
-  getOrders(){
-    try{ return JSON.parse(localStorage.getItem(MD_ORDERS_KEY) || '[]') || []; }
-    catch(e){ return []; }
-  },
-  saveOrders(list){
-    localStorage.setItem(MD_ORDERS_KEY, JSON.stringify(list));
-    mdBroadcast('orders');
-  },
-  nextCode(){
-    const n = parseInt(localStorage.getItem(MD_COUNTER_KEY) || '0', 10) + 1;
-    localStorage.setItem(MD_COUNTER_KEY, String(n));
-    return 'E-' + String(n).padStart(4, '0');
-  }
-};
-let mdChannel = null;
-try{ mdChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('mesa_menu_digital') : null; }catch(e){ mdChannel = null; }
-function mdBroadcast(kind){ try{ if(mdChannel) mdChannel.postMessage({ kind, at:Date.now() }); }catch(e){} }
-/* Llama a fn cuando cambian pedidos o menú (otra pestaña, otra ventana o cada pocos segundos). */
+function mdTotals(lines){
+  const subtotal = lines.reduce((a, l) => a + l.price * l.qty, 0);
+  const iva = subtotal * IVA_RATE;
+  return { subtotal:round2(subtotal), iva:round2(iva), total:round2(subtotal + iva) };
+}
+
+/* Actualiza el menú abierto en otra pestaña del mismo navegador. */
 function mdOnSync(fn){
   window.addEventListener('storage', e => { if(!e.key || e.key.indexOf('mesa_') === 0) fn(); });
-  if(mdChannel) mdChannel.addEventListener('message', () => fn());
-  setInterval(fn, 4000);
   document.addEventListener('visibilitychange', () => { if(!document.hidden) fn(); });
 }
-function mdGetOrder(id){ return MenuSync.getOrders().find(o => o.id === id) || null; }
-function mdUpdateOrder(id, patch){
-  const list = MenuSync.getOrders();
-  const o = list.find(x => x.id === id);
-  if(!o) return null;
-  Object.assign(o, patch);
-  o.updatedAt = new Date().toISOString();
-  if(patch.status){
-    o.log = o.log || [];
-    o.log.push({ status:patch.status, at:o.updatedAt });
+
+/* =========================================================
+   VISTA EN MESA: MENÚ DIGITAL
+========================================================= */
+let mdCfgOpen = false;
+function mdToggleCfg(){ mdCfgOpen = !mdCfgOpen; vibrate(8); render(); }
+
+function renderMenuDigital(){
+  const cfg = mdCfg();
+  return `
+    <h1 class="page-title">Menú Digital</h1>
+    <p class="page-sub">Tus clientes ven tu menú y te mandan su pedido por WhatsApp</p>
+
+    <div class="section-title">Configuración del Menú Digital</div>
+    ${mdConfigHTML(cfg)}
+
+    <div class="section-title">Cómo llegan los pedidos</div>
+    <div class="acc-list md-flow">
+      <div class="acc-row"><span class="md-num">1</span><span class="acc-txt"><span class="acc-label">El cliente abre tu link</span><span class="acc-sub">Ve tus productos con foto, precio, descripción y unidad.</span></span></div>
+      <div class="acc-row"><span class="md-num">2</span><span class="acc-txt"><span class="acc-label">Elige y toca "Enviar por WhatsApp"</span><span class="acc-sub">Revisa su pedido y lo confirma.</span></span></div>
+      <div class="acc-row"><span class="md-num wa">${icon('whatsapp')}</span><span class="acc-txt"><span class="acc-label">Te llega el pedido a tu WhatsApp</span><span class="acc-sub">${mdWhatsapp() ? escapeHtml(mdWhatsappLabel()) + ' · con productos, cantidades, notas y total' : 'Configura el WhatsApp del negocio'}</span></span></div>
+    </div>
+  `;
+}
+
+function mdChecklist(){
+  const u = currentUser() || {};
+  const b = u.business || {};
+  const prods = DB.getProducts().filter(p => p.active);
+  const sinDesc = prods.filter(p => !(p.description || '').trim()).length;
+  const wa = mdWhatsapp();
+  return [
+    { label:'Nombre del negocio', ok:!!(b.name || '').trim(),
+      sub:(b.name || '').trim() ? escapeHtml(b.name) + ' · aparece arriba de tu menú' : 'Aparece arriba de tu menú', action:'openBusinessForm()' },
+    { label:'Logo del negocio', ok:!!u.photo, optional:true,
+      sub:u.photo ? 'Tu foto de perfil se muestra arriba a la derecha' : 'Opcional · se usa tu foto de perfil de Mesa', action:'openEditProfile()' },
+    { label:'WhatsApp del negocio', ok:!!wa,
+      sub:wa ? escapeHtml(mdWhatsappLabel()) + (wa.fromAccount ? ' · el de tu cuenta de Mesa' : ' · aquí llegan los pedidos') : 'Aquí te llegarán los pedidos', action:'mdOpenWhatsappForm()' },
+    { label:'Productos del menú', ok:prods.length > 0,
+      sub:prods.length ? prods.length + ' activo' + (prods.length === 1 ? '' : 's') + (sinDesc ? ' · ' + sinDesc + ' sin descripción' : ' · todos con descripción') : 'Activa al menos un producto', action:"goTo('products')" },
+  ];
+}
+
+function mdConfigHTML(cfg){
+  const list = mdChecklist();
+  const ready = list.every(x => x.ok || x.optional);
+  const estado = !cfg.active ? { cls:'', txt:'Inactivo' } : (cfg.paused ? { cls:'paused', txt:'Pausado' } : { cls:'on', txt:'Activo' });
+  const rows = list.map(x => `
+    <button class="acc-row" onclick="${x.action}">
+      <span class="md-check ${x.ok ? '' : (x.optional ? 'opt' : 'miss')}">${x.ok ? icon('check') : (x.optional ? '–' : '!')}</span>
+      <span class="acc-txt">
+        <span class="acc-label">${x.label}</span>
+        <span class="acc-sub">${x.sub}</span>
+      </span>
+      <span class="acc-chev">${icon('chevronRight')}</span>
+    </button>`).join('');
+
+  return `
+    <div class="md-status-card">
+      <div class="md-status-top">
+        <span class="md-status-ico ${cfg.active ? 'on' : ''}">${icon('menuBook')}</span>
+        <span class="md-status-txt">
+          <span class="md-status-title">${cfg.active ? 'Tu Menú Digital está activo' : 'Menú Digital desactivado'}</span>
+          <span class="md-status-sub">${cfg.active ? (cfg.paused ? 'Tus clientes ven el menú, pero no pueden enviar pedidos' : 'Los pedidos llegan a tu WhatsApp') : 'Confirma estas opciones y actívalo'}</span>
+        </span>
+        <span class="md-pill ${estado.cls}">${estado.txt}</span>
+      </div>
+      ${cfg.active ? `
+        <div class="md-link-box">${icon('link')}<span class="md-link-url" title="${escapeHtml(mdLink(cfg))}">${escapeHtml(mdShortLink(cfg))}</span></div>
+        <div class="md-link-actions">
+          <button class="btn ghost" onclick="mdCopyLink()">${icon('copy')} Copiar</button>
+          <button class="btn ghost" onclick="mdOpenLink()">${icon('external')} Abrir</button>
+          <button class="btn ghost" onclick="mdShareLink()">${icon('share')} Compartir</button>
+        </div>
+        <p class="md-hint">Este es el link único de tu negocio. Compártelo con tus clientes para que vean tus productos y te manden su pedido por WhatsApp.</p>
+      ` : ''}
+    </div>
+
+    ${cfg.active ? `
+      <div class="acc-list">
+        <button class="acc-row" onclick="mdToggleCfg()" aria-expanded="${mdCfgOpen}">
+          <span class="acc-ico">${icon('gear')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Opciones del Menú Digital</span>
+            <span class="acc-sub">${ready ? 'Todo listo' : 'Falta completar algo'} · WhatsApp, logo y pedidos</span>
+          </span>
+          <span class="acc-chev" style="transform:rotate(${mdCfgOpen ? 180 : 0}deg); transition:transform .2s;">${icon('chevronDown')}</span>
+        </button>
+      </div>` : ''}
+
+    ${(!cfg.active || mdCfgOpen) ? `<div class="acc-list md-checklist" ${cfg.active ? 'style="margin-top:10px;"' : ''}>${rows}</div>` : ''}
+
+    ${!cfg.active ? `
+      <button class="btn md-green block" style="margin-top:14px;" onclick="mdActivate()" ${ready ? '' : 'disabled'}>${icon('check')} Activar Menú Digital</button>
+      <p class="md-hint">${ready ? 'Al activarlo se genera el link único de tu negocio con tus productos.' : 'Completa lo marcado con <b>!</b> para poder activarlo.'}</p>
+    ` : (mdCfgOpen ? `
+      <div class="card md-toggles" style="margin-top:14px; padding-top:4px; padding-bottom:14px;">
+        <div class="toggle-row">
+          <span class="acc-ico green">${icon('whatsapp')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Recibir pedidos</span>
+            <span class="acc-sub">Apágalo para pausar los pedidos sin quitar tu menú.</span>
+          </span>
+          <label class="switch"><input type="checkbox" ${cfg.paused ? '' : 'checked'} onchange="mdSetPaused(!this.checked)"><span class="track"></span></label>
+        </div>
+      </div>
+      <div class="md-sub-actions">
+        <button class="btn ghost" onclick="mdRegenerate()">${icon('refresh')} Generar link nuevo</button>
+        <button class="btn danger" onclick="mdDeactivate()">Desactivar</button>
+      </div>
+    ` : '')}
+  `;
+}
+
+function mdRerenderIfMenu(){ if(currentView === 'menu') render(); }
+function mdSetPaused(value){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')){ mdRerenderIfMenu(); return; }
+  const c = mdCfg(); c.paused = !!value; mdSaveCfg(c);
+  toast(value ? 'Pedidos pausados' : 'Recibiendo pedidos');
+  mdRerenderIfMenu();
+}
+function mdActivate(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para activar el Menú Digital')) return;
+  if(!mdChecklist().every(x => x.ok || x.optional)){ toast('Completa la configuración primero'); return; }
+  const c = mdCfg();
+  c.active = true; c.paused = false;
+  if(!c.id) c.id = mdNewId();
+  c.activatedAt = new Date().toISOString();
+  mdSaveCfg(c);
+  vibrate([15, 60, 15]);
+  toast('Menú Digital activado', { icon:icon('check'), subtitle:'Ya tienes el link único de tu negocio' });
+  render();
+}
+function mdDeactivate(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para desactivar el Menú Digital')) return;
+  if(!window.confirm('¿Desactivar el Menú Digital? El link dejará de mostrar tu menú hasta que lo actives otra vez.')) return;
+  const c = mdCfg(); c.active = false; mdSaveCfg(c);
+  mdCfgOpen = false;
+  toast('Menú Digital desactivado');
+  render();
+}
+function mdRegenerate(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el link')) return;
+  if(!window.confirm('¿Generar un link nuevo? El link anterior dejará de funcionar.')) return;
+  const c = mdCfg(); c.id = mdNewId(); mdSaveCfg(c);
+  toast('Link nuevo generado');
+  render();
+}
+function mdCopyLink(){ mdCopy(mdLink(mdCfg()), 'Link copiado'); }
+function mdOpenLink(){ window.open(mdLink(mdCfg()), '_blank'); }
+function mdShareLink(){
+  const b = ((currentUser() || {}).business || {});
+  const data = { title:(b.name || 'Nuestro menú'), text:'Mira nuestro menú y haz tu pedido por WhatsApp:', url:mdLink(mdCfg()) };
+  if(navigator.share){ navigator.share(data).catch(() => {}); }
+  else mdCopy(data.url, 'Link copiado para compartir');
+}
+
+/* ---------- WhatsApp del negocio (formulario) ---------- */
+function mdOpenWhatsappForm(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')) return;
+  const w = mdWhatsapp() || { country:((currentUser() || {}).country) || 'MX', number:'' };
+  openModal(`
+    <div class="sheet-header">
+      <h2>WhatsApp del negocio</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    <p class="sheet-text" style="margin-bottom:16px;">A este número llegarán los pedidos de tu Menú Digital. Debe tener WhatsApp.</p>
+    <div class="field">
+      <label for="mdWaCountry">País</label>
+      <select id="mdWaCountry">
+        ${COUNTRIES.map(c => `<option value="${c.code}" ${c.code === w.country ? 'selected' : ''}>${c.flag} ${c.name} (${c.dial})</option>`).join('')}
+      </select>
+    </div>
+    <div class="field" id="mdWaField">
+      <label for="mdWaNumber">Número de WhatsApp</label>
+      <input id="mdWaNumber" type="tel" inputmode="numeric" maxlength="16" placeholder="Ej. 981 123 4567" value="${escapeHtml(w.number)}">
+    </div>
+    <button class="btn primary block" onclick="mdSaveWhatsapp()">Guardar número</button>
+  `, { dismissible:true });
+}
+function mdSaveWhatsapp(){
+  clearFieldError('mdWaField');
+  const country = document.getElementById('mdWaCountry').value;
+  const number = document.getElementById('mdWaNumber').value.replace(/\D/g, '');
+  const c = countryOf(country);
+  if(number.length !== c.digits){
+    setFieldError('mdWaField', 'El número de ' + c.name + ' tiene ' + c.digits + ' dígitos (sin el ' + c.dial + ')');
+    return;
   }
-  MenuSync.saveOrders(list);
-  return o;
+  const cfg = mdCfg();
+  cfg.whatsapp = { country, number };
+  mdSaveCfg(cfg);
+  closeModal();
+  toast('WhatsApp guardado', { subtitle:c.dial + ' ' + formatPhone(number, country) });
+  mdRerenderIfMenu();
 }
 
 /* ---------- Link único del negocio ---------- */
@@ -8520,812 +8531,6 @@ function mdCopyFallback(text, done){
   try{ document.execCommand('copy'); }catch(e){}
   ta.remove(); done();
 }
-function mdAgo(iso){
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if(m < 1) return 'Hace un momento';
-  if(m < 60) return 'Hace ' + m + ' min';
-  const h = Math.floor(m / 60);
-  if(h < 24) return 'Hace ' + h + ' h';
-  return formatDateShort ? formatDateShort(iso) : new Date(iso).toLocaleDateString('es-MX');
-}
-function mdHM(d){ return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
-function mdPickupLabel(iso){
-  if(!iso) return '—';
-  const d = new Date(iso), now = new Date();
-  const tom = new Date(now); tom.setDate(now.getDate() + 1);
-  const day = isSameDay(d, now) ? 'Hoy' : (isSameDay(d, tom) ? 'Mañana' : d.toLocaleDateString('es-MX', { weekday:'short', day:'numeric', month:'short' }));
-  return day + ' ' + mdHM(d);
-}
-function mdCustomerName(o){ return ((o.customer && o.customer.first) || '') + ' ' + ((o.customer && o.customer.last) || ''); }
-function mdItemsSummary(o){ return o.items.map(it => lineQtyLabel(it) + ' ' + it.name + (it.sizeLabel ? ' (' + it.sizeLabel + ')' : '')).join(', '); }
-function mdTotals(lines){
-  const subtotal = lines.reduce((a, l) => a + l.price * l.qty, 0);
-  const iva = subtotal * IVA_RATE;
-  return { subtotal:round2(subtotal), iva:round2(iva), total:round2(subtotal + iva) };
-}
-
-/* Horarios de recogida: hoy (desde ahora + anticipación) y mañana. */
-function mdPickupSlots(cfg){
-  const p = cfg.pickup;
-  const step = Math.max(5, parseInt(p.interval, 10) || 15);
-  const lead = Math.max(0, parseInt(p.lead, 10) || 0);
-  const at = (base, hm) => { const [h, m] = String(hm).split(':').map(Number); const x = new Date(base); x.setHours(h || 0, m || 0, 0, 0); return x; };
-  const groups = [];
-  const now = new Date();
-  for(let dayOff = 0; dayOff < 2; dayOff++){
-    const base = new Date(now); base.setDate(now.getDate() + dayOff);
-    const open = at(base, p.from), close = at(base, p.to);
-    const min = new Date(now.getTime() + lead * 60000);
-    const slots = [];
-    for(let t = new Date(open); t <= close; t = new Date(t.getTime() + step * 60000)){
-      if(t >= min) slots.push(t.toISOString());
-    }
-    if(slots.length) groups.push({ label: dayOff === 0 ? 'Hoy' : 'Mañana', slots });
-  }
-  return groups;
-}
-
-/* =========================================================
-   AUDIO "PEDIDO ENTRANTE"
-   Campanita + voz. Los navegadores solo dejan sonar audio después de
-   que el usuario tocó la pantalla una vez: por eso se "desbloquea" en
-   el primer toque dentro de Mesa.
-========================================================= */
-let mdAudioCtx = null;
-function mdUnlockAudio(){
-  try{
-    if(!mdAudioCtx){
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(AC) mdAudioCtx = new AC();
-    }
-    if(mdAudioCtx && mdAudioCtx.state === 'suspended') mdAudioCtx.resume();
-    if('speechSynthesis' in window) speechSynthesis.getVoices();
-  }catch(e){}
-}
-function mdChime(){
-  mdUnlockAudio();
-  const ctx = mdAudioCtx;
-  if(!ctx) return;
-  const t = ctx.currentTime + 0.02;
-  [[880, 0], [1175, 0.17], [1568, 0.34]].forEach(([f, d]) => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'sine'; o.frequency.value = f;
-    g.gain.setValueAtTime(0.0001, t + d);
-    g.gain.exponentialRampToValueAtTime(0.32, t + d + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.55);
-    o.connect(g); g.connect(ctx.destination);
-    o.start(t + d); o.stop(t + d + 0.6);
-  });
-}
-function mdSpeak(text){
-  try{
-    if(!('speechSynthesis' in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'es-MX'; u.rate = 0.98; u.volume = 1;
-    const voices = speechSynthesis.getVoices() || [];
-    const v = voices.find(v => /^es[-_]MX/i.test(v.lang)) || voices.find(v => /^es/i.test(v.lang));
-    if(v) u.voice = v;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }catch(e){}
-}
-function mdPlayIncoming(force){
-  if(!force && mdCfg().sound === false) return;
-  mdChime();
-  setTimeout(() => mdSpeak('Pedido entrante'), 750);
-}
-
-/* =========================================================
-   VIGILANTE DE PEDIDOS (dentro de Mesa)
-========================================================= */
-let mdKnownIds = null;
-let mdLastSig = '';
-function mdCheckIncoming(){
-  const orders = MenuSync.getOrders();
-  const sig = orders.map(o => o.id + ':' + o.status + ':' + (o.seen ? 1 : 0)).join('|');
-  if(mdKnownIds === null){
-    mdKnownIds = new Set(orders.map(o => o.id));
-    mdLastSig = sig;
-    mdPaintIndicators();
-    return;
-  }
-  const fresh = orders.filter(o => !mdKnownIds.has(o.id));
-  fresh.forEach(o => mdKnownIds.add(o.id));
-  const nuevos = fresh.filter(o => o.status === 'pendiente');
-  if(nuevos.length){
-    mdPlayIncoming();
-    vibrate([120, 60, 120]);
-  }
-  if(sig !== mdLastSig){
-    mdLastSig = sig;
-    mdPaintIndicators();
-    mdRefreshOrders();
-    if(currentView === 'stats') render();
-  }
-}
-function mdPaintIndicators(){
-  if(document.body.classList.contains('dm-mode')) return;
-  const orders = MenuSync.getOrders();
-  const pend = orders.filter(o => o.status === 'pendiente');
-  const unseen = pend.filter(o => !o.seen);
-  const badge = document.getElementById('navMenuBadge');
-  if(badge){
-    badge.textContent = pend.length;
-    badge.classList.toggle('show', pend.length > 0);
-    badge.style.animation = unseen.length ? '' : 'none';
-  }
-  const al = document.getElementById('mdAlert');
-  if(al){
-    const show = unseen.length > 0 && currentView !== 'menu';
-    if(show){
-      const o = unseen[unseen.length - 1];
-      al.innerHTML = `
-        <span class="md-alert-ico">${icon('bell')}</span>
-        <span class="md-alert-txt">
-          <span class="md-alert-title">${unseen.length === 1 ? 'Nuevo pedido pendiente' : unseen.length + ' pedidos nuevos pendientes'}</span>
-          <span class="md-alert-sub">${escapeHtml(o.code)} · ${escapeHtml(mdCustomerName(o))} · ${formatMoney(o.total)}</span>
-        </span>
-        <span class="md-alert-btn">Revisar</span>`;
-      al.onclick = () => { goTo('menu'); if(unseen.length === 1) mdOpenOrder(o.id); };
-    }
-    al.classList.toggle('show', show);
-  }
-  const base = document.title.replace(/^\(\d+\)\s*/, '');
-  document.title = unseen.length ? '(' + unseen.length + ') ' + base : base;
-}
-
-/* =========================================================
-   VISTA EN MESA: MENÚ DIGITAL
-========================================================= */
-let mdTab = 'activos';
-let mdCfgOpen = false;
-function mdToggleCfg(){ mdCfgOpen = !mdCfgOpen; vibrate(8); render(); }
-
-function renderMenuDigital(){
-  const cfg = mdCfg();
-  return `
-    <h1 class="page-title">Menú Digital</h1>
-    <p class="page-sub">Tus clientes ven tu menú y te encargan pedidos desde su teléfono</p>
-
-    <div class="section-title">Configuración del Menú Digital</div>
-    ${mdConfigHTML(cfg)}
-
-    <div id="mdOrders">${mdOrdersHTML()}</div>
-  `;
-}
-
-function mdChecklist(){
-  const u = currentUser() || {};
-  const b = u.business || {};
-  const cfg = mdCfg();
-  const prods = DB.getProducts().filter(p => p.active);
-  const sinDesc = prods.filter(p => !(p.description || '').trim()).length;
-  const clabe = (cfg.bank.clabe || '').replace(/\D/g, '');
-  const card = (cfg.bank.card || '').replace(/\D/g, '');
-  const bankOk = !!((cfg.bank.bank || '').trim() && (cfg.bank.holder || '').trim() && (clabe.length === 18 || card.length >= 15));
-  return [
-    { label:'Nombre del negocio', ok:!!(b.name || '').trim(),
-      sub:(b.name || '').trim() ? escapeHtml(b.name) + ' · aparece arriba de tu menú' : 'Aparece arriba de tu menú', action:'openBusinessForm()' },
-    { label:'Logo del negocio', ok:!!u.photo, optional:true,
-      sub:u.photo ? 'Tu foto de perfil se muestra arriba a la derecha' : 'Opcional · se usa tu foto de perfil de Mesa', action:'openEditProfile()' },
-    { label:'Horario de recogida', ok:true,
-      sub:`${cfg.pickup.from} a ${cfg.pickup.to} · ${cfg.pickup.lead} min de anticipación`, action:'mdOpenPickupForm()' },
-    { label:'Datos de transferencia', ok:bankOk,
-      sub:bankOk ? escapeHtml(cfg.bank.bank) + ' · ' + escapeHtml(cfg.bank.holder) + ' · ' + (clabe.length === 18 ? 'CLABE ····' + clabe.slice(-4) : 'Tarjeta ····' + card.slice(-4)) : 'El cliente los verá cuando aceptes su pedido', action:'mdOpenBankForm()' },
-    { label:'Productos del menú', ok:prods.length > 0,
-      sub:prods.length ? prods.length + ' activo' + (prods.length === 1 ? '' : 's') + (sinDesc ? ' · ' + sinDesc + ' sin descripción' : ' · todos con descripción') : 'Activa al menos un producto', action:"goTo('products')" },
-  ];
-}
-
-function mdConfigHTML(cfg){
-  const list = mdChecklist();
-  const ready = list.every(x => x.ok || x.optional);
-  const estado = !cfg.active ? { cls:'', txt:'Inactivo' } : (cfg.paused ? { cls:'paused', txt:'Pausado' } : { cls:'on', txt:'Activo' });
-  const rows = list.map(x => `
-    <button class="acc-row" onclick="${x.action}">
-      <span class="md-check ${x.ok ? '' : (x.optional ? 'opt' : 'miss')}">${x.ok ? icon('check') : (x.optional ? '–' : '!')}</span>
-      <span class="acc-txt">
-        <span class="acc-label">${x.label}</span>
-        <span class="acc-sub">${x.sub}</span>
-      </span>
-      <span class="acc-chev">${icon('chevronRight')}</span>
-    </button>`).join('');
-
-  return `
-    <div class="md-status-card">
-      <div class="md-status-top">
-        <span class="md-status-ico ${cfg.active ? 'on' : ''}">${icon('menuBook')}</span>
-        <span class="md-status-txt">
-          <span class="md-status-title">${cfg.active ? 'Tu Menú Digital está activo' : 'Menú Digital desactivado'}</span>
-          <span class="md-status-sub">${cfg.active ? (cfg.paused ? 'Tus clientes ven el menú, pero no pueden encargar' : 'Recibiendo encargos') : 'Confirma estas opciones y actívalo'}</span>
-        </span>
-        <span class="md-pill ${estado.cls}">${estado.txt}</span>
-      </div>
-      ${cfg.active ? `
-        <div class="md-link-box">${icon('link')}<span class="md-link-url" id="mdLinkUrl" title="${escapeHtml(mdLink(cfg))}">${escapeHtml(mdShortLink(cfg))}</span></div>
-        <div class="md-link-actions">
-          <button class="btn ghost" onclick="mdCopyLink()">${icon('copy')} Copiar</button>
-          <button class="btn ghost" onclick="mdOpenLink()">${icon('external')} Abrir</button>
-          <button class="btn ghost" onclick="mdShareLink()">${icon('share')} Compartir</button>
-        </div>
-        <p class="md-hint">Este es el link único de tu negocio. Compártelo con tus clientes para que vean tus productos y te encarguen.</p>
-      ` : ''}
-    </div>
-
-    ${cfg.active ? `
-      <div class="acc-list">
-        <button class="acc-row" onclick="mdToggleCfg()" aria-expanded="${mdCfgOpen}">
-          <span class="acc-ico">${icon('gear')}</span>
-          <span class="acc-txt">
-            <span class="acc-label">Opciones del Menú Digital</span>
-            <span class="acc-sub">${list.every(x => x.ok || x.optional) ? 'Todo listo' : 'Falta completar algo'} · horario, transferencia y avisos</span>
-          </span>
-          <span class="acc-chev" style="transform:rotate(${mdCfgOpen ? 180 : 0}deg); transition:transform .2s;">${icon('chevronDown')}</span>
-        </button>
-      </div>` : ''}
-
-    ${(!cfg.active || mdCfgOpen) ? `<div class="acc-list md-checklist" ${cfg.active ? 'style="margin-top:10px;"' : ''}>${rows}</div>` : ''}
-
-    ${!cfg.active ? `
-      <button class="btn md-green block" style="margin-top:14px;" onclick="mdActivate()" ${ready ? '' : 'disabled'}>${icon('check')} Activar Menú Digital</button>
-      <p class="md-hint">${ready ? 'Al activarlo se genera el link único de tu negocio con tus productos.' : 'Completa lo marcado con <b>!</b> para poder activarlo.'}</p>
-    ` : `
-      ${mdCfgOpen ? `<div class="card md-toggles" style="margin-top:14px; padding-top:4px; padding-bottom:14px;">
-        <div class="toggle-row">
-          <span class="acc-ico green">${icon('bag')}</span>
-          <span class="acc-txt">
-            <span class="acc-label">Recibir encargos</span>
-            <span class="acc-sub">Apágalo para pausar los pedidos sin quitar tu menú.</span>
-          </span>
-          <label class="switch"><input type="checkbox" ${cfg.paused ? '' : 'checked'} onchange="mdSetCfg('paused', !this.checked)"><span class="track"></span></label>
-        </div>
-        <div class="toggle-row">
-          <span class="acc-ico gold">${icon('speaker')}</span>
-          <span class="acc-txt">
-            <span class="acc-label">Aviso "Pedido entrante"</span>
-            <span class="acc-sub">Mesa lo dice en voz alta cuando llega un pedido.</span>
-          </span>
-          <label class="switch"><input type="checkbox" ${cfg.sound === false ? '' : 'checked'} onchange="mdSetCfg('sound', this.checked)"><span class="track"></span></label>
-        </div>
-      </div>
-      <div class="md-sub-actions">
-        <button class="btn ghost" onclick="mdPlayIncoming(true)">${icon('speaker')} Probar sonido</button>
-        <button class="btn ghost" onclick="mdTestOrder()">${icon('bag')} Pedido de prueba</button>
-      </div>
-      <div class="md-sub-actions">
-        <button class="btn ghost" onclick="mdRegenerate()">${icon('refresh')} Generar link nuevo</button>
-        <button class="btn danger" onclick="mdDeactivate()">Desactivar</button>
-      </div>` : ''}
-    `}
-  `;
-}
-
-function mdRerenderIfMenu(){ if(currentView === 'menu') render(); }
-function mdSetCfg(key, value){
-  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')){ mdRerenderIfMenu(); return; }
-  const c = mdCfg(); c[key] = value; mdSaveCfg(c);
-  if(key === 'paused') toast(value ? 'Encargos pausados' : 'Recibiendo encargos');
-  if(key === 'sound') toast(value ? 'Aviso de voz activado' : 'Aviso de voz desactivado');
-  mdRerenderIfMenu();
-}
-function mdActivate(){
-  if(!requirePerm('gestionarProductos', 'No tienes permiso para activar el Menú Digital')) return;
-  if(!mdChecklist().every(x => x.ok || x.optional)){ toast('Completa la configuración primero'); return; }
-  const c = mdCfg();
-  c.active = true; c.paused = false;
-  if(!c.id) c.id = mdNewId();
-  c.activatedAt = new Date().toISOString();
-  mdSaveCfg(c);
-  mdUnlockAudio();
-  vibrate([15, 60, 15]);
-  toast('Menú Digital activado', { icon:icon('check'), subtitle:'Ya tienes el link único de tu negocio' });
-  render();
-}
-function mdDeactivate(){
-  if(!requirePerm('gestionarProductos', 'No tienes permiso para desactivar el Menú Digital')) return;
-  if(!window.confirm('¿Desactivar el Menú Digital? El link dejará de mostrar tu menú hasta que lo actives otra vez.')) return;
-  const c = mdCfg(); c.active = false; mdSaveCfg(c);
-  toast('Menú Digital desactivado');
-  render();
-}
-function mdRegenerate(){
-  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el link')) return;
-  if(!window.confirm('¿Generar un link nuevo? El link anterior dejará de funcionar.')) return;
-  const c = mdCfg(); c.id = mdNewId(); mdSaveCfg(c);
-  toast('Link nuevo generado');
-  render();
-}
-function mdCopyLink(){ mdCopy(mdLink(mdCfg()), 'Link copiado'); }
-function mdOpenLink(){ window.open(mdLink(mdCfg()), '_blank'); }
-function mdShareLink(){
-  const c = mdCfg();
-  const b = ((currentUser() || {}).business || {});
-  const data = { title:(b.name || 'Nuestro menú'), text:'Mira nuestro menú y encarga tu pedido:', url:mdLink(c) };
-  if(navigator.share){ navigator.share(data).catch(() => {}); }
-  else mdCopy(data.url, 'Link copiado para compartir');
-}
-
-/* ---------- Horario de recogida ---------- */
-function mdOpenPickupForm(){
-  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')) return;
-  const p = mdCfg().pickup;
-  const leads = [0, 15, 30, 45, 60, 90, 120, 180];
-  openModal(`
-    <div class="sheet-header">
-      <h2>Horario de recogida</h2>
-      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
-    </div>
-    <p class="sheet-text" style="margin-bottom:16px;">Tus clientes eligen una hora dentro de este horario para pasar por su pedido.</p>
-    <div class="two-fields" style="margin-bottom:16px;">
-      <div class="field" id="mdFromField"><label>Desde</label><input type="time" id="mdFrom" value="${p.from}"></div>
-      <div class="field" id="mdToField"><label>Hasta</label><input type="time" id="mdTo" value="${p.to}"></div>
-    </div>
-    <div class="field">
-      <label>Anticipación mínima</label>
-      <select id="mdLead">${leads.map(v => `<option value="${v}" ${Number(p.lead) === v ? 'selected' : ''}>${v === 0 ? 'Sin anticipación' : (v < 60 ? v + ' minutos' : (v / 60) + (v === 60 ? ' hora' : ' horas'))}</option>`).join('')}</select>
-    </div>
-    <div class="field">
-      <label>Horarios cada</label>
-      <select id="mdInterval">${[10, 15, 30, 60].map(v => `<option value="${v}" ${Number(p.interval) === v ? 'selected' : ''}>${v} minutos</option>`).join('')}</select>
-    </div>
-    <button class="btn primary block" onclick="mdSavePickup()">Guardar horario</button>
-  `, { dismissible:true });
-}
-function mdSavePickup(){
-  const from = document.getElementById('mdFrom').value, to = document.getElementById('mdTo').value;
-  clearFieldError('mdToField');
-  if(!from || !to || to <= from){ setFieldError('mdToField', 'La hora final debe ser después de la inicial'); return; }
-  const c = mdCfg();
-  c.pickup = { from, to, lead:parseInt(document.getElementById('mdLead').value, 10) || 0, interval:parseInt(document.getElementById('mdInterval').value, 10) || 15 };
-  mdSaveCfg(c);
-  closeModal(); toast('Horario guardado'); mdRerenderIfMenu();
-}
-
-/* ---------- Datos de transferencia ---------- */
-function mdOpenBankForm(){
-  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')) return;
-  const b = mdCfg().bank;
-  const holder = b.holder || (((currentUser() || {}).name) || '');
-  openModal(`
-    <div class="sheet-header">
-      <h2>Datos de transferencia</h2>
-      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
-    </div>
-    <p class="sheet-text" style="margin-bottom:16px;">Tu cliente solo los verá después de que aceptes su pedido. Tú confirmas el pago a mano cuando veas el dinero.</p>
-    <div class="field" id="mdBankField"><label>Banco</label><input id="mdBank" type="text" placeholder="Ej. BBVA" value="${escapeHtml(b.bank)}"></div>
-    <div class="field" id="mdHolderField"><label>Titular de la cuenta</label><input id="mdHolder" type="text" placeholder="Nombre como aparece en el banco" value="${escapeHtml(holder)}"></div>
-    <div class="field" id="mdClabeField"><label>CLABE interbancaria (18 dígitos)</label><input id="mdClabe" type="text" inputmode="numeric" maxlength="22" placeholder="000000000000000000" value="${escapeHtml(b.clabe)}"></div>
-    <div class="field" id="mdCardField"><label>Número de tarjeta (opcional)</label><input id="mdCard" type="text" inputmode="numeric" maxlength="23" placeholder="Para depósitos en OXXO o transferencia a tarjeta" value="${escapeHtml(b.card)}"></div>
-    <div class="field"><label>Indicaciones para el cliente (opcional)</label><input id="mdBankNote" type="text" maxlength="140" placeholder="Ej. Envía tu comprobante por WhatsApp" value="${escapeHtml(b.note)}"></div>
-    <button class="btn primary block" onclick="mdSaveBank()">Guardar datos</button>
-  `, { dismissible:true });
-}
-function mdSaveBank(){
-  ['mdBankField','mdHolderField','mdClabeField','mdCardField'].forEach(clearFieldError);
-  const bank = document.getElementById('mdBank').value.trim();
-  const holder = document.getElementById('mdHolder').value.trim();
-  const clabe = document.getElementById('mdClabe').value.replace(/\D/g, '');
-  const card = document.getElementById('mdCard').value.replace(/\D/g, '');
-  let ok = true;
-  if(!bank){ setFieldError('mdBankField', 'Escribe el nombre del banco'); ok = false; }
-  if(!holder){ setFieldError('mdHolderField', 'Escribe el titular de la cuenta'); ok = false; }
-  if(clabe && clabe.length !== 18){ setFieldError('mdClabeField', 'La CLABE tiene 18 dígitos'); ok = false; }
-  if(card && (card.length < 15 || card.length > 19)){ setFieldError('mdCardField', 'Revisa el número de tarjeta'); ok = false; }
-  if(!clabe && !card){ setFieldError('mdClabeField', 'Escribe tu CLABE o un número de tarjeta'); ok = false; }
-  if(!ok) return;
-  const c = mdCfg();
-  c.bank = { bank, holder, clabe, card, note:document.getElementById('mdBankNote').value.trim() };
-  mdSaveCfg(c);
-  closeModal(); toast('Datos de transferencia guardados'); mdRerenderIfMenu();
-}
-
-/* ---------- Pedidos pendientes ---------- */
-function mdSetTab(t){ mdTab = t; mdRefreshOrders(); }
-function mdRefreshOrders(){
-  const el = document.getElementById('mdOrders');
-  if(el && currentView === 'menu') el.innerHTML = mdOrdersHTML();
-}
-function mdOrdersHTML(){
-  const all = MenuSync.getOrders();
-  const rank = { pendiente:0, aceptado:1, preparacion:2, listo:3 };
-  const act = all.filter(o => MD_ACTIVE.includes(o.status)).sort((a, b) =>
-    (rank[a.status] - rank[b.status]) || ((a.seen ? 1 : 0) - (b.seen ? 1 : 0)) || (new Date(a.pickupAt) - new Date(b.pickupAt)));
-  const done = all.filter(o => !MD_ACTIVE.includes(o.status))
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)).slice(0, 40);
-  const list = mdTab === 'activos' ? act : done;
-  return `
-    <div class="md-orders-head"><div class="section-title">Pedidos pendientes</div></div>
-    <p class="md-orders-sub">Aquí llegarán los pedidos realizados desde el Menú Digital.</p>
-    <div class="seg md-seg" role="tablist">
-      <button class="${mdTab === 'activos' ? 'active' : ''}" onclick="mdSetTab('activos')">Pendientes${act.length ? `<span class="seg-n">${act.length}</span>` : ''}</button>
-      <button class="${mdTab === 'terminados' ? 'active' : ''}" onclick="mdSetTab('terminados')">Terminados</button>
-    </div>
-    ${list.length ? `<div class="md-order-grid">${list.map(mdOrderCardHTML).join('')}</div>` : `
-      <div class="empty-state">
-        ${illustration('docsEmpty')}
-        <div class="empty-title">${mdTab === 'activos' ? 'Sin pedidos pendientes' : 'Aún no hay pedidos terminados'}</div>
-        <div class="empty-text">${mdTab === 'activos' ? 'Aquí llegarán los pedidos realizados desde el Menú Digital. Te avisaremos con el sonido "Pedido entrante".' : 'Los pedidos entregados o rechazados aparecerán aquí.'}</div>
-      </div>`}
-  `;
-}
-function mdOrderCardHTML(o){
-  const isNew = o.status === 'pendiente' && !o.seen;
-  const n = o.items.length;
-  return `
-    <button class="md-order st-${o.status} ${isNew ? 'is-new' : ''}" onclick="mdOpenOrder('${o.id}')">
-      <div class="md-order-top">
-        <span class="md-code">${escapeHtml(o.code)}</span>
-        ${isNew ? '<span class="md-new-flag">NUEVO</span>' : ''}
-        ${o.test ? '<span class="md-pill">Prueba</span>' : ''}
-        <span class="md-pill st-${o.status}">${orderStatusLabel(o.status)}</span>
-      </div>
-      <div class="md-order-name">${escapeHtml(mdCustomerName(o))}</div>
-      <div class="md-order-meta">${icon('clock')} Recoge ${mdPickupLabel(o.pickupAt)} · ${n} producto${n === 1 ? '' : 's'}</div>
-      <div class="md-order-items">${escapeHtml(mdItemsSummary(o))}</div>
-      <div class="md-order-bottom">
-        <span class="md-ago">${mdAgo(o.createdAt)}</span>
-        <span class="md-total">${formatMoney(o.total)}</span>
-      </div>
-    </button>`;
-}
-
-function mdOpenOrder(id){
-  let o = mdGetOrder(id);
-  if(!o) return;
-  if(o.status === 'pendiente' && !o.seen){
-    o = mdUpdateOrder(id, { seen:true, seenAt:new Date().toISOString() });
-    mdLastSig = '';
-    mdCheckIncoming();
-  }
-  openModal(mdOrderDetailHTML(o), { dismissible:true });
-}
-function mdOrderDetailHTML(o){
-  const sale = o.saleId ? DB.getSales().find(s => s.id === o.saleId) : null;
-  const lines = o.items.map(it => `
-    <div class="md-line">
-      <span class="md-line-qty">${escapeHtml(lineQtyLabel(it))}</span>
-      <div class="md-line-main">
-        <div class="md-line-name">${escapeHtml(it.name)}${it.sizeLabel ? ' · ' + escapeHtml(it.sizeLabel) : ''}</div>
-        <div class="md-line-sub">${formatMoney(it.price)} ${it.sizeLabel || !it.unit || it.unit === 'pieza' ? 'c/u' : 'por ' + unitOf(it.unit).short}</div>
-        ${it.note ? `<div class="md-line-note">📝 ${escapeHtml(it.note)}</div>` : ''}
-      </div>
-      <span class="md-line-amt">${formatMoney(it.price * it.qty)}</span>
-    </div>`).join('');
-
-  let note = '', actions = '';
-  if(o.status === 'pendiente'){
-    note = `<div class="md-step-note">${icon('alert')}<span>Revisa que puedas preparar el pedido a esa hora. Al aceptarlo, el cliente podrá ver tus datos de transferencia.</span></div>`;
-    actions = `<button class="btn danger" onclick="mdRejectSheet('${o.id}')">Rechazar</button>
-               <button class="btn md-green" onclick="mdAccept('${o.id}')">${icon('check')} Aceptar pedido</button>`;
-  }else if(o.status === 'aceptado'){
-    note = `<div class="md-step-note">${icon('bank')}<span>Pedido aceptado. El cliente ya puede consultar tus datos de transferencia. Cuando veas <b>${formatMoney(o.total)}</b> en tu cuenta con el concepto <b>${escapeHtml(o.code)}</b>, confirma el pago.</span></div>`;
-    actions = `<button class="btn ghost" onclick="mdCancelOrder('${o.id}')">Cancelar</button>
-               <button class="btn md-green" onclick="mdConfirmPayment('${o.id}')">${icon('check')} Confirmar pago</button>`;
-  }else if(o.status === 'preparacion'){
-    note = `<div class="md-step-note blue">${icon('utensils')}<span>Pago confirmado${sale ? ' · registrado como venta ' + orderNumberLabel(sale.number) + ' (Encargo)' : ''}. El pedido está en preparación.</span></div>`;
-    actions = `${sale ? `<button class="btn ghost" onclick="openSaleDetail('${sale.id}')">${icon('receipt')} Ver venta</button>` : ''}
-               <button class="btn md-cafe" onclick="mdSetStatus('${o.id}','listo')">Listo para recoger</button>`;
-  }else if(o.status === 'listo'){
-    note = `<div class="md-step-note blue">${icon('bag')}<span>El cliente ve que su pedido ya está listo.</span></div>`;
-    actions = `<button class="btn md-green" onclick="mdSetStatus('${o.id}','entregado')">${icon('check')} Marcar como entregado</button>`;
-  }else{
-    if(o.status === 'rechazado' && o.rejectReason) note = `<div class="md-step-note">${icon('alert')}<span>Motivo: ${escapeHtml(o.rejectReason)}</span></div>`;
-    actions = `${sale ? `<button class="btn ghost" onclick="openSaleDetail('${sale.id}')">${icon('receipt')} Ver venta</button>` : ''}<button class="btn dark" onclick="closeModal()">Cerrar</button>`;
-  }
-
-  return `
-    <div class="sheet-header">
-      <div class="sheet-header-left md-detail-head">
-        <h2>${escapeHtml(o.code)}</h2>
-        <span class="md-pill st-${o.status}">${orderStatusLabel(o.status)}</span>
-        ${o.test ? '<span class="md-pill">Prueba</span>' : ''}
-      </div>
-      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
-    </div>
-    <div class="md-info-grid">
-      <div class="md-info"><div class="md-info-k">Cliente</div><div class="md-info-v">${escapeHtml(mdCustomerName(o))}</div></div>
-      <div class="md-info"><div class="md-info-k">Recoge</div><div class="md-info-v">${mdPickupLabel(o.pickupAt)}</div></div>
-      <div class="md-info"><div class="md-info-k">Recibido</div><div class="md-info-v" style="font-size:13px;">${formatDateTime(o.createdAt)}</div></div>
-      <div class="md-info"><div class="md-info-k">Pago</div><div class="md-info-v" style="font-size:13px;">📲 Transferencia · ${o.paidAt ? 'Confirmado' : 'Pendiente'}</div></div>
-    </div>
-    <div class="md-lines">${lines}</div>
-    <div class="totals">
-      <div class="totals-row"><span>Subtotal</span><span class="v">${formatMoney(o.subtotal)}</span></div>
-      <div class="totals-row"><span>IVA (16%)</span><span class="v">${formatMoney(o.iva)}</span></div>
-      <div class="totals-row grand"><span>Total</span><span>${formatMoney(o.total)}</span></div>
-    </div>
-    ${note}
-    <div class="sheet-actions">${actions}</div>
-    ${(o.log && o.log.length) ? `<ul class="md-timeline">${o.log.map(l => `<li><span>${orderStatusLabel(l.status)}</span><b>${formatDateTime(l.at)}</b></li>`).join('')}</ul>` : ''}
-  `;
-}
-function mdReopen(id){ const o = mdGetOrder(id); if(o) openModal(mdOrderDetailHTML(o), { dismissible:true }); mdRefreshOrders(); mdPaintIndicators(); }
-
-function mdAccept(id){
-  const o = mdGetOrder(id); if(!o || o.status !== 'pendiente') return;
-  const faltan = [];
-  o.items.forEach(it => {
-    const p = findProduct(it.productId);
-    const st = stockInfo(p);
-    if(!p) faltan.push(it.name + ' ya no existe');
-    else if(st.control && it.qty > st.stock) faltan.push(it.name + ': ' + (st.stock <= 0 ? 'agotado' : 'solo hay ' + st.stock));
-  });
-  if(faltan.length && !window.confirm('Ojo con las existencias:\n\n' + faltan.join('\n') + '\n\n¿Aceptar el pedido de todas formas?')) return;
-  mdUpdateOrder(id, { status:'aceptado', acceptedAt:new Date().toISOString(), seen:true });
-  vibrate([15, 60, 15]);
-  toast('Pedido aceptado', { icon:icon('check'), subtitle:'El cliente ya puede ver tus datos de transferencia' });
-  mdReopen(id);
-}
-
-function mdRejectSheet(id){
-  const o = mdGetOrder(id); if(!o) return;
-  const reasons = ['Se agotó un producto', 'No alcanzamos a esa hora', 'Estamos cerrados', 'Pedido duplicado'];
-  openModal(`
-    <div class="sheet-header">
-      <h2>Rechazar ${escapeHtml(o.code)}</h2>
-      <button class="sheet-close" onclick="mdReopen('${id}')">${icon('close')}</button>
-    </div>
-    <p class="sheet-text" style="margin-bottom:14px;">El cliente verá el motivo en su pedido.</p>
-    <div class="filter-pill-row" style="margin-bottom:14px;">
-      ${reasons.map(r => `<button class="filter-chip" onclick="document.getElementById('mdReason').value='${r}'">${r}</button>`).join('')}
-    </div>
-    <div class="field"><label>Motivo</label><input id="mdReason" type="text" maxlength="140" placeholder="Escribe el motivo (opcional)"></div>
-    <div class="sheet-actions" style="margin-top:6px;">
-      <button class="btn ghost" onclick="mdReopen('${id}')">Volver</button>
-      <button class="btn danger" onclick="mdReject('${id}')">Rechazar pedido</button>
-    </div>
-  `, { dismissible:true });
-}
-function mdReject(id){
-  const reason = (document.getElementById('mdReason') || {}).value || '';
-  mdUpdateOrder(id, { status:'rechazado', rejectReason:reason.trim(), seen:true });
-  toast('Pedido rechazado');
-  mdReopen(id);
-}
-function mdCancelOrder(id){
-  if(!window.confirm('¿Cancelar este pedido? El cliente verá que fue cancelado.')) return;
-  mdUpdateOrder(id, { status:'cancelado', rejectReason:'Cancelado por el negocio' });
-  toast('Pedido cancelado');
-  mdReopen(id);
-}
-function mdSetStatus(id, status){
-  mdUpdateOrder(id, { status });
-  toast(status === 'listo' ? 'Pedido listo para recoger' : 'Pedido entregado', { icon:icon('check') });
-  mdReopen(id);
-}
-
-/* El negocio confirma el pago a mano: se registra la venta (Encargo)
-   y el pedido pasa a "En preparación". */
-function mdConfirmPayment(id){
-  const o = mdGetOrder(id); if(!o || o.status !== 'aceptado') return;
-  if(!window.confirm('¿Ya recibiste ' + formatMoney(o.total) + ' por transferencia (concepto ' + o.code + ')?')) return;
-  let saleId = null;
-  if(!o.test){
-    const sale = mdCreateSaleFromOrder(o);
-    saleId = sale.id;
-  }
-  mdUpdateOrder(id, { status:'preparacion', paidAt:new Date().toISOString(), saleId });
-  vibrate([15, 60, 15]);
-  toast('Pago confirmado', { icon:icon('check'), subtitle: o.test ? 'Pedido de prueba: no se registra venta' : 'Se registró como venta (Encargo)' });
-  mdReopen(id);
-}
-function mdCreateSaleFromOrder(o){
-  const inventario = DB.getProducts();
-  const sale = {
-    id:'v' + Date.now(),
-    number:DB.nextSaleNumber(),
-    date:new Date().toISOString(),
-    items:o.items.map(it => {
-      const p = inventario.find(x => x.id === it.productId);
-      const size = (it.sizeId && p && p.sizes) ? p.sizes.find(s => s.id === it.sizeId) : null;
-      const factor = (size && size.unitQty != null) ? size.unitQty : 1;
-      return {
-        productId:it.productId,
-        name:it.name + (it.sizeLabel ? ' · ' + it.sizeLabel : ''),
-        price:it.price,
-        cost:(p && p.cost != null) ? round2(p.cost * factor) : null,
-        qty:it.qty,
-        sizeLabel:it.sizeLabel || null,
-        unit:it.sizeLabel ? null : (it.unit || null)
-      };
-    }),
-    subtotal:o.subtotal, iva:o.iva, total:o.total,
-    serviceType:'llevar', table:'',
-    paymentMethod:'transferencia', cash:null, change:null,
-    cancelled:false,
-    origin:'encargo', orderId:o.id, orderCode:o.code,
-    customerName:mdCustomerName(o).trim(), pickupAt:o.pickupAt
-  };
-  if(typeof multiUser === 'function' && multiUser()){
-    const me = activeUser(), sh = currentShift();
-    if(me){ sale.userId = me.id; sale.userName = me.name; sale.userRole = me.role; }
-    if(sh) sale.shiftId = sh.id;
-  }
-  const sales = DB.getSales(); sales.push(sale); DB.saveSales(sales);
-  let cambio = false;
-  o.items.forEach(it => {
-    const prod = inventario.find(x => x.id === it.productId);
-    const st = stockInfo(prod);
-    if(!st.control) return;
-    prod.stock = Math.max(0, round2(st.stock - it.qty));
-    cambio = true;
-  });
-  if(cambio) DB.saveProducts(inventario);
-  return sale;
-}
-
-/* Pedido de prueba: para probar el aviso sin otro teléfono. */
-function mdTestOrder(){
-  const prods = DB.getProducts().filter(p => p.active).slice(0, 2);
-  if(!prods.length){ toast('Activa al menos un producto'); return; }
-  const lines = prods.map((p, i) => {
-    const size = hasSizes(p) ? p.sizes[0] : null;
-    return { productId:p.id, name:p.name, unit:size ? 'pieza' : productUnit(p).id, qty:size ? 1 : productStep(p) * (i + 1),
-             price:size ? size.price : p.price, sizeId:size ? size.id : null, sizeLabel:size ? size.label : null, note:i === 0 ? 'Sin azúcar, por favor' : '' };
-  });
-  const slots = mdPickupSlots(mdCfg());
-  const t = mdTotals(lines);
-  const now = new Date().toISOString();
-  const list = MenuSync.getOrders();
-  list.push(Object.assign({
-    id:'o' + Date.now(), code:MenuSync.nextCode(), menuId:mdCfg().id, test:true,
-    createdAt:now, updatedAt:now, status:'pendiente', seen:false,
-    customer:{ first:'Cliente', last:'de prueba' },
-    pickupAt:(slots[0] && slots[0].slots[0]) || now,
-    items:lines, log:[{ status:'pendiente', at:now }]
-  }, t));
-  MenuSync.saveOrders(list);
-  toast('Pedido de prueba enviado', { subtitle:'En unos segundos sonará "Pedido entrante"' });
-  setTimeout(mdCheckIncoming, 900);
-}
-
-/* =========================================================
-   VENTAS: GENERAL / ENCARGOS
-========================================================= */
-let statsScope = 'general';
-function isEncargo(s){ return !!s && s.origin === 'encargo'; }
-function statsScopeSales(){
-  const base = visibleSales().filter(s => !s.cancelled);
-  return statsScope === 'encargos' ? base.filter(isEncargo) : base;
-}
-function setStatsScope(s){ statsScope = s; statsSel = null; vibrate(8); render(); }
-function statsScopeTabs(){
-  return `<div class="seg stats-scope" role="tablist" aria-label="Tipo de ventas">
-    <button class="${statsScope === 'general' ? 'active' : ''}" onclick="setStatsScope('general')">General</button>
-    <button class="${statsScope === 'encargos' ? 'active' : ''}" onclick="setStatsScope('encargos')">🛍️ Encargos</button>
-  </div>`;
-}
-function renderStats(){
-  if(statsScope === 'encargos') return `<div class="scope-encargos">${mdEncargosStatsHTML()}</div>`;
-  let html = renderStatsGeneral();
-  html = html.replace('</p>', '</p>' + statsScopeTabs());
-  html = html.replace('<div class="section-title">Ventas por método de pago</div>', mdOriginCardHTML() + '<div class="section-title">Ventas por método de pago</div>');
-  return html;
-}
-/* Dentro de las ventas generales: cuánto fue en mostrador y cuánto por Encargo. */
-function mdOriginCardHTML(){
-  const act = visibleSales().filter(s => !s.cancelled);
-  const enc = act.filter(isEncargo), mos = act.filter(s => !isEncargo(s));
-  const sum = a => a.reduce((x, s) => x + s.total, 0);
-  const max = Math.max(1, sum(enc), sum(mos));
-  return `
-    <div class="section-title">Ventas por origen</div>
-    <div class="card">
-      <div class="bar-row">
-        <div class="bar-row-top"><span>🧾 Mostrador</span><span class="bv">${formatMoney(sum(mos))} · ${mos.length}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${sum(mos) / max * 100}%; background:var(--sec-stats);"></div></div>
-      </div>
-      <div class="bar-row">
-        <div class="bar-row-top"><span>🛍️ Encargo (Menú Digital)</span><span class="bv">${formatMoney(sum(enc))} · ${enc.length}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${sum(enc) / max * 100}%; background:var(--sec-menu);"></div></div>
-      </div>
-    </div>`;
-}
-function mdEncargosStatsHTML(){
-  const sales = visibleSales().filter(s => !s.cancelled && isEncargo(s));
-  const orders = MenuSync.getOrders().filter(o => !o.test);
-  const now = new Date();
-  const sum = a => a.reduce((x, s) => x + s.total, 0);
-  const hoy = sales.filter(s => isSameDay(new Date(s.date), now));
-  const semana = sales.filter(s => isSameWeek(new Date(s.date), now));
-  const mes = sales.filter(s => isSameMonth(new Date(s.date), now));
-  const prom = sales.length ? sum(sales) / sales.length : 0;
-
-  const head = `
-    <h1 class="page-title">Ventas</h1>
-    <p class="page-sub">Encargos hechos desde tu Menú Digital</p>
-    ${statsScopeTabs()}`;
-
-  // Estado de los encargos (todos los pedidos recibidos)
-  const statusRows = ['pendiente','aceptado','preparacion','listo','entregado','rechazado','cancelado']
-    .map(s => ({ s, n:orders.filter(o => o.status === s).length }));
-  const decididos = orders.filter(o => o.status !== 'pendiente');
-  const aceptados = decididos.filter(o => !['rechazado'].includes(o.status));
-  const tasa = decididos.length ? Math.round(aceptados.length / decididos.length * 100) : 0;
-  const maxSt = Math.max(1, ...statusRows.map(r => r.n));
-
-  const statusCard = `
-    <div class="section-title">Estado de los encargos</div>
-    <div class="card">
-      ${statusRows.map(r => `<div class="bar-row">
-        <div class="bar-row-top"><span>${orderStatusLabel(r.s)}</span><span class="bv">${r.n}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${r.n / maxSt * 100}%; background:var(--sec-menu);"></div></div>
-      </div>`).join('')}
-      <div class="stat-label" style="margin-top:6px;">${orders.length} pedido${orders.length === 1 ? '' : 's'} recibido${orders.length === 1 ? '' : 's'} · ${tasa}% aceptados</div>
-    </div>`;
-
-  if(sales.length === 0){
-    return head + `
-      <div class="empty-state">
-        ${illustration('chartEmpty')}
-        <div class="empty-title">Aún no hay encargos cobrados</div>
-        <div class="empty-text">Cuando confirmes el pago de un pedido del Menú Digital, verás aquí sus estadísticas.</div>
-      </div>` + (orders.length ? statusCard : '');
-  }
-
-  // Horas de recogida
-  const byHour = {};
-  sales.forEach(s => { if(!s.pickupAt) return; const h = new Date(s.pickupAt).getHours(); byHour[h] = (byHour[h] || 0) + 1; });
-  const hours = Object.keys(byHour).map(Number).sort((a, b) => a - b);
-  const maxH = Math.max(1, ...hours.map(h => byHour[h]));
-
-  // Productos más encargados (respetando su unidad)
-  const pm = {};
-  sales.forEach(s => s.items.forEach(it => {
-    const k = it.productId + '|' + (it.sizeLabel || it.unit || 'pieza');
-    if(!pm[k]) pm[k] = { name:it.name, unit:it.unit, size:it.sizeLabel, qty:0, rev:0 };
-    pm[k].qty += it.qty; pm[k].rev += it.price * it.qty;
-  }));
-  const top = Object.values(pm).sort((a, b) => b.rev - a.rev).slice(0, 5);
-
-  // Clientes frecuentes
-  const cm = {};
-  sales.forEach(s => { const n = (s.customerName || 'Sin nombre').trim(); if(!cm[n]) cm[n] = { n, c:0, t:0 }; cm[n].c++; cm[n].t += s.total; });
-  const clientes = Object.values(cm).sort((a, b) => b.c - a.c || b.t - a.t).slice(0, 5);
-
-  return head + `
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Hoy</div><div class="stat-value">${formatMoney(sum(hoy))}</div><div class="stat-label" style="margin-top:4px;">${hoy.length} encargo${hoy.length === 1 ? '' : 's'}</div></div>
-      <div class="stat-card"><div class="stat-label">Esta semana</div><div class="stat-value">${formatMoney(sum(semana))}</div><div class="stat-label" style="margin-top:4px;">${semana.length} encargo${semana.length === 1 ? '' : 's'}</div></div>
-      <div class="stat-card"><div class="stat-label">Este mes</div><div class="stat-value">${formatMoney(sum(mes))}</div><div class="stat-label" style="margin-top:4px;">${mes.length} encargo${mes.length === 1 ? '' : 's'}</div></div>
-      <div class="stat-card"><div class="stat-label">Ticket promedio</div><div class="stat-value">${formatMoney(prom)}</div><div class="stat-label" style="margin-top:4px;">${sales.length} encargos en total</div></div>
-    </div>
-
-    <div class="section-title">Gráficas de encargos</div>
-    <div id="statsCharts">${statsChartsHTML()}</div>
-
-    ${statusCard}
-
-    <div class="section-title">Horas de recogida</div>
-    <div class="card">
-      ${hours.map(h => `<div class="bar-row">
-        <div class="bar-row-top"><span>🕒 ${String(h).padStart(2, '0')}:00 – ${String(h).padStart(2, '0')}:59</span><span class="bv">${byHour[h]}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${byHour[h] / maxH * 100}%; background:var(--sec-menu);"></div></div>
-      </div>`).join('')}
-    </div>
-
-    <div class="section-title">Productos más encargados</div>
-    <div class="card">
-      ${top.map((p, i) => `
-        <div class="top-product-row">
-          <div class="top-product-rank">${i + 1}</div>
-          <div class="top-product-name">${escapeHtml(p.name)}<div class="top-product-qty">${p.size || !p.unit || p.unit === 'pieza' ? fmtNum(p.qty) + ' encargados' : fmtQty(p.qty, p.unit)}</div></div>
-          <div class="top-product-rev">${formatMoney(p.rev)}</div>
-        </div>`).join('')}
-    </div>
-
-    <div class="section-title">Clientes frecuentes</div>
-    <div class="card">
-      ${clientes.map((c, i) => `
-        <div class="top-product-row">
-          <div class="top-product-rank">${i + 1}</div>
-          <div class="top-product-name">${escapeHtml(c.n)}<div class="top-product-qty">${c.c} encargo${c.c === 1 ? '' : 's'}</div></div>
-          <div class="top-product-rev">${formatMoney(c.t)}</div>
-        </div>`).join('')}
-    </div>
-  `;
-}
-
 /* =========================================================
    PRODUCTOS: descripción breve + unidad de venta
    (se agregan al formulario existente sin cambiar lo demás)
@@ -9413,20 +8618,16 @@ saveProductForm = function(productId){
   render();
 };
 
-/* Mesa vuelve a pintar indicadores después de cada render */
-const _mdRender = render;
-render = function(){ _mdRender(); mdPaintIndicators(); };
-
 
 /* =========================================================================
    MENÚ DIGITAL — VISTA DEL CLIENTE
    Se abre con el link  …#menu/<id>. No entra a Mesa ni pide cuenta.
 ========================================================================= */
-const dm = { id:null, cart:[], sheet:null, pd:null, trackId:null, form:{ first:'', last:'', pickup:'' }, sig:'' };
+const dm = { id:null, cart:[], sheet:null, pd:null, sig:'' };
 
 function dmRoute(){
-  const m = location.hash.match(/^#menu\/([^\/?#]+)(?:\/pedido\/([^\/?#]+))?/);
-  return m ? { id:decodeURIComponent(m[1]), order:m[2] ? decodeURIComponent(m[2]) : null } : null;
+  const m = location.hash.match(/^#menu\/([^\/?#]+)/);
+  return m ? { id:decodeURIComponent(m[1]) } : null;
 }
 function dmData(){
   const cfg = mdCfg();
@@ -9449,16 +8650,6 @@ function dmToast(msg){
   clearTimeout(dmToast._t);
   dmToast._t = setTimeout(() => t.classList.remove('show'), 2400);
 }
-function dmMine(){
-  try{ return (JSON.parse(localStorage.getItem(MD_MINE_KEY) || '[]') || []).filter(x => x.menuId === dm.id); }catch(e){ return []; }
-}
-function dmAddMine(orderId){
-  let all = [];
-  try{ all = JSON.parse(localStorage.getItem(MD_MINE_KEY) || '[]') || []; }catch(e){}
-  all.push({ menuId:dm.id, orderId, at:new Date().toISOString() });
-  localStorage.setItem(MD_MINE_KEY, JSON.stringify(all.slice(-30)));
-}
-
 /* ---------- Carrito del cliente ---------- */
 function dmQtyOf(pid){ return dm.cart.filter(l => l.productId === pid).reduce((a, l) => a + l.qty, 0); }
 function dmAmountOf(pid){ return dm.cart.filter(l => l.productId === pid).reduce((a, l) => a + l.qty * l.price, 0); }
@@ -9554,21 +8745,12 @@ function dmRender(){
   const cats = d.cats.filter(c => d.prods.some(p => p.category === c.id));
   const sinCat = d.prods.filter(p => !d.cats.some(c => c.id === p.category));
   if(sinCat.length) cats.push(UNCATEGORIZED);
-  const mine = dmMine().map(x => mdGetOrder(x.orderId)).filter(Boolean)
-    .filter(o => MD_ACTIVE.includes(o.status) || (Date.now() - new Date(o.updatedAt || o.createdAt).getTime()) < 6 * 3600000)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   root.innerHTML = top + `
     <main class="dm-view">
       <h1 class="dm-title">Nuestro menú</h1>
-      <p class="dm-lead">Elige tus productos y encarga tu pedido para pasar por él.</p>
-      ${d.cfg.paused ? `<div class="dm-banner">${icon('pause')}<span><b>Por ahora no estamos recibiendo encargos</b>Puedes ver el menú; vuelve a intentarlo más tarde.</span></div>` : ''}
-      ${mine.map(o => `
-        <button class="dm-mine" onclick="dmOpenTrack('${o.id}')">
-          <span class="dm-mine-ico">${icon('bag')}</span>
-          <span class="dm-mine-txt"><span class="dm-mine-t">Tu pedido ${escapeHtml(o.code)}</span><span class="dm-mine-s">Recoges ${mdPickupLabel(o.pickupAt)} · ${formatMoney(o.total)}</span></span>
-          <span class="md-pill st-${o.status}">${o.status === 'pendiente' ? 'En revisión' : orderStatusLabel(o.status)}</span>
-        </button>`).join('')}
+      <p class="dm-lead">Elige tus productos y envía tu pedido por WhatsApp.</p>
+      ${d.cfg.paused ? `<div class="dm-banner">${icon('pause')}<span><b>Por ahora no estamos recibiendo pedidos</b>Puedes ver el menú; vuelve a intentarlo más tarde.</span></div>` : ''}
       ${cats.length ? `
         <nav class="dm-chips" id="dmChips">${cats.map((c, i) => `<button class="dm-chip ${i === 0 ? 'active' : ''}" data-target="dms-${c.id}" onclick="dmGoSection('dms-${c.id}')">${c.emoji} ${escapeHtml(c.name)}</button>`).join('')}</nav>
         ${cats.map(c => {
@@ -9658,15 +8840,12 @@ function dmOpenSheet(kind){
   if(kind === 'product') html = dmProductHTML();
   else if(kind === 'cart') html = dmCartHTML();
   else if(kind === 'confirm') html = dmConfirmHTML();
-  else if(kind === 'details') html = dmDetailsHTML();
-  else if(kind === 'track') html = dmTrackHTML();
   layer.innerHTML = `<div class="dm-overlay" id="dmOverlay"><div class="dm-sheet" role="dialog" aria-modal="true"><div class="sheet-grip"></div>${html}</div></div>`;
   document.getElementById('dmOverlay').addEventListener('click', e => { if(e.target.id === 'dmOverlay') dmCloseSheet(); });
   document.body.classList.add('dm-lock');
   dmRenderCartbar();
 }
 function dmCloseSheet(){
-  if(dm.sheet === 'track' && dm.id) history.replaceState(null, '', '#menu/' + encodeURIComponent(dm.id));
   dm.sheet = null;
   document.getElementById('dmLayer').innerHTML = '';
   document.body.classList.remove('dm-lock');
@@ -9713,7 +8892,7 @@ function dmProductHTML(){
         <span>${qtyTxt}</span>
         <button onclick="dmPdQty(1)" ${dmQtyOf(p.id) + dm.pd.qty + step > dmMaxFor(p) + 1e-9 ? 'disabled' : ''} aria-label="Más">+</button>
       </div>
-      <button class="btn dm-green" onclick="dmAddFromSheet()" ${disabled ? 'disabled' : ''}>${out ? 'Agotado' : (d.cfg.paused ? 'Encargos pausados' : icon('bag') + ' Agregar · ' + formatMoney(price * dm.pd.qty))}</button>
+      <button class="btn dm-green" onclick="dmAddFromSheet()" ${disabled ? 'disabled' : ''}>${out ? 'Agotado' : (d.cfg.paused ? 'Pedidos pausados' : icon('bag') + ' Agregar · ' + formatMoney(price * dm.pd.qty))}</button>
     </div>`;
 }
 function dmPickSize(id){ dm.pd.sizeId = id; dmOpenSheet('product'); }
@@ -9773,148 +8952,56 @@ function dmCartHTML(){
     </div>
     ${dmLinesHTML(true)}
     ${dmTotalsHTML()}
-    ${paused ? `<div class="dm-banner" style="margin:14px 0 0;">${icon('pause')}<span><b>Encargos pausados</b>El negocio no está recibiendo pedidos en este momento.</span></div>` : ''}
+    ${paused ? `<div class="dm-banner" style="margin:14px 0 0;">${icon('pause')}<span><b>Pedidos pausados</b>El negocio no está recibiendo pedidos en este momento.</span></div>` : ''}
     <div class="dm-actions">
-      <button class="btn dm-green block" onclick="dmOpenSheet('confirm')" ${paused ? 'disabled' : ''}>${icon('bag')} Encargar pedido</button>
+      <button class="btn dm-green block" onclick="dmOpenSheet('confirm')" ${paused ? 'disabled' : ''}>${icon('whatsapp')} Enviar por WhatsApp</button>
     </div>`;
 }
 function dmConfirmHTML(){
+  const nombre = ((((currentUser() || {}).business) || {}).name || '').trim();
   return `
     <div class="sheet-header">
       <h2>Confirmar pedido</h2>
       <button class="sheet-close" onclick="dmCloseSheet()" aria-label="Cerrar">${icon('close')}</button>
     </div>
-    <div class="dm-steps"><span class="on"></span><span></span></div>
     ${dmLinesHTML(false)}
     ${dmTotalsHTML()}
-    <div class="dm-banner" style="margin:14px 0 0;">${icon('bank')}<span><b>Pago por transferencia</b>Cuando el negocio acepte tu pedido, aquí verás sus datos para transferir.</span></div>
+    <div class="dm-banner wa" style="margin:14px 0 0;">${icon('whatsapp')}<span><b>Se abrirá WhatsApp</b>Tu pedido irá listo para enviarlo${nombre ? ' a ' + escapeHtml(nombre) : ' al negocio'}. Solo toca enviar en WhatsApp.</span></div>
     <div class="dm-actions">
       <button class="btn" onclick="dmOpenSheet('cart')">Volver</button>
-      <button class="btn dm-green" onclick="dmOpenSheet('details')">${icon('check')} Confirmar pedido</button>
+      <button class="btn dm-green" onclick="dmSendWhatsApp()">${icon('check')} Confirmar</button>
     </div>`;
 }
-function dmDetailsHTML(){
-  const cfg = mdCfg();
-  const groups = mdPickupSlots(cfg);
-  const f = dm.form;
-  return `
-    <div class="sheet-header">
-      <h2>Tus datos</h2>
-      <button class="sheet-close" onclick="dmCloseSheet()" aria-label="Cerrar">${icon('close')}</button>
-    </div>
-    <div class="dm-steps"><span class="on"></span><span class="on"></span></div>
-    <div class="two-fields" style="margin-bottom:16px;">
-      <div class="field" id="dmFirstF"><label style="display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:7px;">Nombre</label>
-        <input id="dmFirst" type="text" autocomplete="given-name" maxlength="40" value="${escapeHtml(f.first)}" oninput="dm.form.first=this.value"><div class="dm-field-err">Escribe tu nombre</div></div>
-      <div class="field" id="dmLastF"><label style="display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:7px;">Apellido</label>
-        <input id="dmLast" type="text" autocomplete="family-name" maxlength="40" value="${escapeHtml(f.last)}" oninput="dm.form.last=this.value"><div class="dm-field-err">Escribe tu apellido</div></div>
-    </div>
-    <div class="field" id="dmPickF">
-      <label style="display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:7px;">Hora de recogida</label>
-      ${groups.length ? `<select id="dmPick" onchange="dm.form.pickup=this.value">
-        <option value="">Elige una hora</option>
-        ${groups.map(g => `<optgroup label="${g.label}">${g.slots.map(s => `<option value="${s}" ${f.pickup === s ? 'selected' : ''}>${g.label} · ${mdHM(new Date(s))}</option>`).join('')}</optgroup>`).join('')}
-      </select>` : `<div class="dm-banner" style="margin:0;">${icon('clock')}<span>No hay horarios disponibles por ahora.</span></div>`}
-      <div class="dm-field-err">Elige a qué hora pasas por tu pedido</div>
-      <div style="font-size:12px; font-weight:600; color:var(--ink-soft); margin-top:7px;">Horario de recogida: ${cfg.pickup.from} a ${cfg.pickup.to}${Number(cfg.pickup.lead) ? ' · mínimo ' + cfg.pickup.lead + ' min de anticipación' : ''}</div>
-    </div>
-    <div class="dm-totals" style="margin-top:4px;"><div class="g"><span>Total a pagar</span><span>${formatMoney(mdTotals(dm.cart).total)}</span></div></div>
-    <div class="dm-actions">
-      <button class="btn" onclick="dmOpenSheet('confirm')">Volver</button>
-      <button class="btn dm-green" onclick="dmSubmit()" ${groups.length ? '' : 'disabled'}>${icon('bag')} Enviar pedido</button>
-    </div>`;
+/* Arma el mensaje y abre el WhatsApp del negocio. */
+function dmWhatsappMessage(){
+  const t = mdTotals(dm.cart);
+  let msg = 'Hola, quiero hacer el siguiente pedido:\n\n';
+  dm.cart.forEach(l => {
+    const p = dmFind(l.productId);
+    const nombre = (p ? p.name : 'Producto') + (l.sizeLabel ? ' (' + l.sizeLabel + ')' : '');
+    const cant = (l.sizeLabel || !l.unit || l.unit === 'pieza') ? 'x' + fmtNum(l.qty) : fmtQty(l.qty, l.unit);
+    msg += '• ' + nombre + ' ' + cant + ' - ' + formatMoney(l.price * l.qty) + '\n';
+    if(l.note) msg += '   📝 Nota: ' + l.note + '\n';
+  });
+  msg += '\nSubtotal: ' + formatMoney(t.subtotal);
+  msg += '\nIVA (16%): ' + formatMoney(t.iva);
+  msg += '\n*Total: ' + formatMoney(t.total) + ' MXN*';
+  return msg;
 }
-function dmSubmit(){
-  const first = (dm.form.first || '').trim(), last = (dm.form.last || '').trim(), pickup = dm.form.pickup;
-  const set = (id, bad) => document.getElementById(id).classList.toggle('err', bad);
-  set('dmFirstF', !first); set('dmLastF', !last); set('dmPickF', !pickup);
-  if(!first || !last || !pickup) return;
+function dmSendWhatsApp(){
   const cfg = mdCfg();
-  if(!cfg.active || cfg.id !== dm.id || cfg.paused){ dmToast('El negocio no está recibiendo encargos'); return; }
-  const prods = DB.getProducts();
-  const lines = dm.cart.filter(l => { const p = prods.find(x => x.id === l.productId); return p && p.active; });
-  if(!lines.length){ dmToast('Los productos ya no están disponibles'); return; }
-  const now = new Date().toISOString();
-  const t = mdTotals(lines);
-  const order = Object.assign({
-    id:'o' + Date.now() + Math.random().toString(36).slice(2, 5),
-    code:MenuSync.nextCode(), menuId:dm.id,
-    createdAt:now, updatedAt:now, status:'pendiente', seen:false,
-    customer:{ first, last }, pickupAt:pickup,
-    items:lines.map(l => ({ productId:l.productId, name:(prods.find(x => x.id === l.productId) || {}).name || 'Producto',
-      unit:l.unit, qty:l.qty, price:l.price, sizeId:l.sizeId, sizeLabel:l.sizeLabel, note:l.note })),
-    log:[{ status:'pendiente', at:now }]
-  }, t);
-  const list = MenuSync.getOrders(); list.push(order); MenuSync.saveOrders(list);
-  dmAddMine(order.id);
-  dm.cart = [];
+  if(!cfg.active || cfg.id !== dm.id || cfg.paused){ dmToast('El negocio no está recibiendo pedidos'); return; }
+  const tel = mdWhatsappDigits();
+  if(!tel){ dmToast('El negocio aún no configura su WhatsApp'); return; }
+  if(!dm.cart.length) return;
+  const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(dmWhatsappMessage());
   if(navigator.vibrate) try{ navigator.vibrate([60, 40, 60]); }catch(e){}
-  dmRender();
-  dmOpenTrack(order.id);
-}
-
-function dmOpenTrack(id){
-  const o = mdGetOrder(id);
-  if(!o || o.menuId !== dm.id){ dmToast('No encontramos ese pedido'); return; }
-  dm.trackId = id;
-  history.replaceState(null, '', '#menu/' + encodeURIComponent(dm.id) + '/pedido/' + encodeURIComponent(id));
-  dmOpenSheet('track');
-}
-function dmTrackHTML(){
-  const o = mdGetOrder(dm.trackId);
-  if(!o) return '<p>No encontramos tu pedido.</p>';
-  const cfg = mdCfg();
-  const b = cfg.bank;
-  const steps = [
-    { k:'pendiente',   t:'Pedido enviado' },
-    { k:'aceptado',    t:'Aceptado · paga por transferencia' },
-    { k:'preparacion', t:'Pago confirmado · en preparación' },
-    { k:'listo',       t:'Listo para recoger' },
-    { k:'entregado',   t:'Entregado' },
-  ];
-  const order = steps.map(s => s.k);
-  const idx = order.indexOf(o.status);
-  const bad = o.status === 'rechazado' || o.status === 'cancelado';
-  const hero = {
-    pendiente:   { i:'clock', c:'',   t:'¡Pedido enviado!', s:'El negocio lo está revisando. Aquí verás cuando lo acepte.' },
-    aceptado:    { i:'bank',  c:'',   t:'Pedido aceptado', s:'Transfiere el total con los datos de abajo. El negocio confirmará tu pago.' },
-    preparacion: { i:'utensils', c:'ok', t:'Pago confirmado', s:'Tu pedido está en preparación.' },
-    listo:       { i:'bag',   c:'ok', t:'¡Tu pedido está listo!', s:'Ya puedes pasar por él.' },
-    entregado:   { i:'check', c:'ok', t:'Pedido entregado', s:'¡Gracias por tu compra!' },
-    rechazado:   { i:'close', c:'bad', t:'Pedido no aceptado', s:o.rejectReason ? 'Motivo: ' + escapeHtml(o.rejectReason) : 'El negocio no pudo aceptar tu pedido.' },
-    cancelado:   { i:'close', c:'bad', t:'Pedido cancelado', s:escapeHtml(o.rejectReason || 'El pedido fue cancelado.') },
-  }[o.status] || { i:'clock', c:'', t:'', s:'' };
-  const copyBtn = (v, lbl) => `<button class="dm-copy" onclick="mdCopy('${escapeHtml(v)}','${lbl} copiado', dmToast)">${icon('copy')} Copiar</button>`;
-  const bankRow = (k, v, copy) => v ? `<div class="dm-bank-row"><div><div class="dm-bank-k">${k}</div><div class="dm-bank-v">${escapeHtml(v)}</div></div>${copy ? copyBtn(String(v).replace(/\s/g, ''), k) : ''}</div>` : '';
-  return `
-    <div class="sheet-header">
-      <span class="dm-track-code">${escapeHtml(o.code)}</span>
-      <button class="sheet-close" onclick="dmCloseSheet()" aria-label="Cerrar">${icon('close')}</button>
-    </div>
-    <div class="dm-track-hero">
-      <div class="dm-track-ico ${hero.c}">${icon(hero.i)}</div>
-      <div class="dm-track-title">${hero.t}</div>
-      <p class="dm-track-sub">${hero.s}</p>
-    </div>
-    ${o.status === 'aceptado' ? `
-      <div class="dm-bank">
-        <div class="dm-bank-h">${icon('bank')} Datos para transferir</div>
-        ${bankRow('Monto', formatMoney(o.total), true)}
-        ${bankRow('Banco', b.bank)}
-        ${bankRow('Titular', b.holder)}
-        ${bankRow('CLABE', b.clabe, true)}
-        ${bankRow('Tarjeta', b.card, true)}
-        ${bankRow('Concepto', o.code, true)}
-      </div>
-      ${b.note ? `<div class="dm-banner">${icon('alert')}<span>${escapeHtml(b.note)}</span></div>` : ''}
-    ` : ''}
-    ${!bad ? `<ul class="dm-progress">${steps.map((s, i) => `<li class="${i < idx || o.status === 'entregado' ? 'done' : (i === idx ? 'cur' : '')}"><span class="dot">${i < idx || o.status === 'entregado' ? icon('check') : ''}</span>${s.t}</li>`).join('')}</ul>` : ''}
-    <div class="dm-list">
-      <div class="dm-line"><div class="dm-line-main"><div class="dm-line-sub">A nombre de</div><div class="dm-line-name">${escapeHtml(mdCustomerName(o))}</div></div><div class="dm-line-right"><div class="dm-line-sub">Recoges</div><div class="dm-line-amt">${mdPickupLabel(o.pickupAt)}</div></div></div>
-      ${o.items.map(it => `<div class="dm-line"><div class="dm-line-main"><div class="dm-line-name">${escapeHtml(lineQtyLabel(it))} ${escapeHtml(it.name)}${it.sizeLabel ? ' · ' + escapeHtml(it.sizeLabel) : ''}</div>${it.note ? `<div class="dm-line-note">📝 ${escapeHtml(it.note)}</div>` : ''}</div><div class="dm-line-amt">${formatMoney(it.price * it.qty)}</div></div>`).join('')}
-    </div>
-    <div class="dm-totals"><div class="g"><span>Total</span><span>${formatMoney(o.total)}</span></div></div>
-    <div class="dm-actions"><button class="btn block" onclick="dmCloseSheet()">Seguir viendo el menú</button></div>`;
+  const win = window.open(url, '_blank');
+  if(!win) location.href = url;
+  dm.cart = [];
+  dmCloseSheet();
+  dmRefreshCards();
+  dmToast('Pedido listo en WhatsApp');
 }
 
 /* ---------- Arranque del menú del cliente ---------- */
@@ -9929,7 +9016,6 @@ function bootMenu(route){
   document.body.append(root, bar, layer, t);
   dmRender();
   dm.sig = dmSig();
-  if(route.order) dmOpenTrack(route.order);
   window.addEventListener('scroll', dmSpy, { passive:true });
   window.addEventListener('resize', dmMeasure);
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && dm.sheet) dmCloseSheet(); });
@@ -9940,15 +9026,14 @@ function bootMenu(route){
       dm.sig = s;
       const y = window.scrollY;
       dmRender(); window.scrollTo(0, y);
-      if(dm.sheet === 'track' || dm.sheet === 'cart') dmOpenSheet(dm.sheet);
+      if(dm.sheet === 'cart') dmOpenSheet(dm.sheet);
     }
   });
 }
-/* Firma del menú y de mis pedidos: solo se vuelve a dibujar si algo cambió */
+/* Firma del menú: solo se vuelve a dibujar si algo cambió */
 function dmSig(){
-  const mine = dmMine().map(x => { const o = mdGetOrder(x.orderId); return o ? o.id + o.status : ''; }).join(',');
   return (localStorage.getItem(MD_CFG_KEY) || '') + '|' + (localStorage.getItem('mesa_products') || '') + '|' +
-         (localStorage.getItem('mesa_categories') || '') + '|' + mine + '|' + JSON.stringify(((currentUser() || {}).business) || {});
+         (localStorage.getItem('mesa_categories') || '') + '|' + JSON.stringify(((currentUser() || {}).business) || {});
 }
 
 /* ---------- Arranque: menú del cliente o Mesa ---------- */
@@ -9956,10 +9041,6 @@ function dmSig(){
   const route = dmRoute();
   if(route){ bootMenu(route); return; }
   bootApp();
-  document.addEventListener('pointerdown', mdUnlockAudio, { passive:true });
-  document.addEventListener('keydown', mdUnlockAudio);
-  mdCheckIncoming();
-  mdOnSync(mdCheckIncoming);
 })();
 
 </script>
