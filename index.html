@@ -1365,11 +1365,37 @@
       color:#fff; font-size:20px; font-weight:800;
     }
     .auth-side-brand .mark{
-      width:36px; height:36px; border-radius:11px; background:var(--accent-strong);
+      width:36px; height:36px; border-radius:11px; background:var(--sec-home);
       display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 10px rgba(37,211,102,0.35);
     }
     .auth-side-brand .mark svg{ width:18px; height:18px; }
     .auth-hero-flag{ top:auto; bottom:28px; left:36px; }
+    .auth-side{
+      grid-area:side; align-self:center; justify-self:center; z-index:2;
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+      width:100%; max-width:460px; padding:0 40px; color:#fff;
+    }
+    .auth-side-art{
+      width:260px; height:260px; border-radius:50%;
+      background:radial-gradient(circle at 50% 45%, rgba(255,255,255,.14), rgba(255,255,255,.04) 62%, transparent 72%);
+      display:flex; align-items:center; justify-content:center; margin-bottom:26px;
+    }
+    .auth-side-art svg{ width:210px; height:210px; }
+    .auth-side-art:not(.wide) svg > ellipse:first-child{ opacity:.14; }
+    .auth-side-art.wide{ width:100%; height:auto; border-radius:0; background:none; }
+    .auth-side-art.wide svg{ width:100%; max-width:420px; height:auto; }
+    .auth-side-title{ font-size:26px; font-weight:800; letter-spacing:-.4px; line-height:1.2; }
+    .auth-side-sub{ font-size:15px; font-weight:500; color:rgba(255,255,255,.72); line-height:1.55; margin-top:10px; max-width:340px; }
+    .auth-side-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:22px; }
+    .auth-side-chips span{
+      font-size:12.5px; font-weight:700; color:rgba(255,255,255,.88);
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14);
+      padding:7px 12px; border-radius:999px;
+    }
+  }
+  @media (max-width:899px){
+    .auth-side{ display:none; }
   }
   @media (max-width:899px){
     .auth-side-brand{ display:none; }
@@ -1491,14 +1517,15 @@
      sección: café claro (el del menú digital).
   ========================================================= */
   :root{
-    --sec-menu:#B58B63;
-    --sec-menu-soft:#F6EEE6;
-    --sec-menu-ink:#7A5634;
-    --sec-menu-light:#CFAE8B;
+    --sec-menu:#25D366;
+    --sec-menu-soft:#E5FAEC;
+    --sec-menu-ink:#0E7A3D;
+    --sec-menu-light:#A9F0C6;
   }
   body[data-section="menu"] h1.page-title::before{ background:var(--sec-menu); }
   body[data-section="menu"] #view .section-title::before{ background:var(--sec-menu); }
   .navbtn.active[data-view="menu"]{ background:var(--sec-menu-soft); color:var(--sec-menu-ink); }
+  body[data-section="menu"] .btn.primary{ background:var(--sec-menu); color:#fff; }
   /* Con seis botones en el celular, las etiquetas pueden ir en dos renglones */
   @media (max-width:520px){
     .bottomnav{ padding-left:4px; padding-right:4px; }
@@ -1518,7 +1545,7 @@
     display:flex; align-items:center; justify-content:center;
   }
   .md-status-ico svg{ width:22px; height:22px; }
-  .md-status-ico.on{ background:var(--sec-menu); color:#fff; box-shadow:0 6px 14px rgba(181,139,99,.35); }
+  .md-status-ico.on{ background:var(--sec-menu); color:#fff; box-shadow:0 6px 14px rgba(37,211,102,.35); }
   .md-status-txt{ flex:1; min-width:0; }
   .md-status-title{ display:block; font-size:16px; font-weight:800; }
   .md-status-sub{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-top:2px; }
@@ -1561,6 +1588,40 @@
   .md-sub-actions .btn{ flex:1; padding:11px 10px; font-size:13px; }
   .md-toggles{ margin-top:6px; }
   .md-toggles .toggle-row:last-child{ border-bottom:none; padding-bottom:0; }
+  /* ---- Color del menú ---- */
+  .md-swatch-dot{ width:24px; height:24px; border-radius:50%; flex-shrink:0; border:2px solid var(--surface); box-shadow:0 0 0 1.5px var(--border); }
+  .md-swatches{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px; }
+  .md-swatch{
+    display:flex; flex-direction:column; align-items:center; gap:6px; background:none; border:none; padding:0;
+    font-size:11px; font-weight:700; color:var(--ink-soft); font-family:inherit;
+  }
+  .md-swatch span.c{
+    width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    border:3px solid var(--surface); box-shadow:0 0 0 1.5px var(--border); transition:transform .15s, box-shadow .15s;
+  }
+  .md-swatch span.c svg{ width:18px; height:18px; opacity:0; }
+  .md-swatch.active span.c{ box-shadow:0 0 0 2.5px var(--ink); transform:scale(1.06); }
+  .md-swatch.active span.c svg{ opacity:1; }
+  .md-swatch.active{ color:var(--ink); }
+  .md-custom-color{ display:flex; align-items:center; gap:12px; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:9px 12px; margin-bottom:16px; }
+  .md-custom-color input[type=color]{ width:40px; height:40px; border:none; border-radius:10px; padding:0; background:none; cursor:pointer; flex-shrink:0; }
+  .md-custom-color input[type=color]::-webkit-color-swatch-wrapper{ padding:0; }
+  .md-custom-color input[type=color]::-webkit-color-swatch{ border:none; border-radius:10px; }
+  .md-custom-color .t{ flex:1; min-width:0; }
+  .md-custom-color .t b{ display:block; font-size:14px; }
+  .md-custom-color .t span{ display:block; font-size:12px; font-weight:600; color:var(--ink-soft); font-family:var(--mono); margin-top:2px; }
+  .md-preview{ background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-card); padding:14px; margin-bottom:18px; }
+  .md-preview-k{ font-size:11px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px; margin-bottom:10px; }
+  .md-pv-top{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .md-pv-mark{ width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; }
+  .md-pv-mark svg{ width:17px; height:17px; }
+  .md-pv-name{ font-size:15px; font-weight:800; }
+  .md-pv-chips{ display:flex; gap:6px; margin-bottom:12px; }
+  .md-pv-chip{ font-size:12px; font-weight:700; padding:7px 12px; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-soft); }
+  .md-pv-card{ display:flex; align-items:center; gap:10px; background:var(--surface); border-radius:13px; padding:10px 12px; border:2px solid; }
+  .md-pv-card .n{ flex:1; min-width:0; font-size:13px; font-weight:700; }
+  .md-pv-unit{ display:inline-block; font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:999px; margin-top:4px; }
+  .md-pv-price{ font-size:14px; font-weight:800; }
   .md-flow .acc-row{ padding:13px 14px; cursor:default; }
   .md-flow .acc-row:active{ background:none; }
   .md-flow .acc-sub{ white-space:normal; }
@@ -1580,7 +1641,7 @@
   body.dm-mode .app, body.dm-mode #splash, body.dm-mode .bottomnav{ display:none !important; }
   body.dm-mode{ background:var(--bg); }
   body.dm-lock{ overflow:hidden; }
-  :root{ --dm-main:#CFAE8B; --dm-soft:#F8F1E9; --dm-ink:#8A6440; }
+  :root{ --dm-main:#CFAE8B; --dm-soft:#F8F1E9; --dm-ink:#8A6440; --dm-rgb:207,174,139; --dm-on:#16213E; }
   .dm{
     max-width:560px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column;
   }
@@ -1590,8 +1651,8 @@
     padding:calc(16px + env(safe-area-inset-top, 0px)) 18px 14px; background:var(--bg);
   }
   .dm-brand{ display:flex; align-items:center; gap:11px; min-width:0; }
-  .dm-mark{ width:42px; height:42px; border-radius:13px; flex-shrink:0; background:var(--dm-main); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(207,174,139,.35); }
-  .dm-mark svg{ width:21px; height:21px; }
+  .dm-mark{ width:42px; height:42px; border-radius:13px; flex-shrink:0; background:var(--dm-main); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(var(--dm-rgb),.35); }
+  .dm-mark svg{ width:21px; height:21px; color:var(--dm-on); }
   .dm-brand-txt{ min-width:0; }
   .dm-name{ display:block; font-size:21px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dm-sub{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-top:1px; }
@@ -1617,7 +1678,7 @@
   }
   .dm-chips::-webkit-scrollbar{ display:none; }
   .dm-chip{ flex:0 0 auto; border:1.5px solid var(--border); background:var(--surface); padding:9px 14px; border-radius:999px; font-size:13.5px; font-weight:700; color:var(--ink-soft); white-space:nowrap; }
-  .dm-chip.active{ background:var(--dm-main); color:var(--ink); border-color:transparent; }
+  .dm-chip.active{ background:var(--dm-main); color:var(--dm-on); border-color:transparent; }
   .dm-sec{ padding-top:14px; margin-bottom:26px; }
   .dm-sec-head{ display:flex; align-items:center; gap:12px; margin:0 0 14px; }
   .dm-sec-head::after{ content:''; flex:1; height:1.5px; background:var(--border); border-radius:2px; margin-left:4px; }
@@ -1630,7 +1691,7 @@
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card); overflow:hidden;
     box-shadow:var(--shadow-card); display:flex; flex-direction:column; position:relative;
   }
-  .dm-card.in-cart{ border-color:var(--dm-main); border-width:2px; box-shadow:0 4px 16px rgba(207,174,139,.38); }
+  .dm-card.in-cart{ border-color:var(--dm-main); border-width:2px; box-shadow:0 4px 16px rgba(var(--dm-rgb),.38); }
   .dm-card.out{ opacity:.6; }
   .dm-tap{ display:flex; flex-direction:column; flex:1; background:none; border:none; padding:0; text-align:left; color:inherit; cursor:pointer; width:100%; }
   .dm-photo{ width:100%; aspect-ratio:4/3.6; background:var(--surface-alt); display:flex; align-items:center; justify-content:center; overflow:hidden; color:var(--ink-faint); position:relative; }
@@ -1658,12 +1719,12 @@
   .dm-cartbar.show{ display:block; }
   .dm-cartbar-inner{
     width:100%; background:var(--ink); color:#fff; border-radius:20px; padding:12px 16px 12px 12px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px; border:2px solid rgba(207,174,139,.6);
+    display:flex; align-items:center; justify-content:space-between; gap:10px; border:2px solid rgba(var(--dm-rgb),.6);
     box-shadow:0 14px 30px rgba(22,33,62,.42); animation:cartbarPop .32s cubic-bezier(.34,1.56,.64,1);
   }
   .dm-cb-left{ display:flex; align-items:center; gap:11px; }
   .dm-cb-ico{ width:38px; height:38px; border-radius:50%; background:var(--dm-main); display:flex; align-items:center; justify-content:center; position:relative; }
-  .dm-cb-ico svg{ width:18px; height:18px; color:var(--ink); }
+  .dm-cb-ico svg{ width:18px; height:18px; color:var(--dm-on); }
   .dm-cb-count{ position:absolute; top:-5px; right:-5px; background:var(--accent-2); color:#fff; font-size:11px; font-weight:800; border-radius:999px; min-width:19px; height:19px; padding:0 4px; display:inline-flex; align-items:center; justify-content:center; border:2px solid var(--ink); }
   .dm-cb-label{ font-weight:800; font-size:14.5px; }
   .dm-cb-total{ font-weight:800; font-size:15.5px; display:flex; align-items:center; gap:8px; }
@@ -1749,6 +1810,30 @@
     resize:none; font-family:inherit; line-height:1.45; outline:none;
   }
   .md-textarea:focus{ border-color:var(--accent-strong); }
+  /* ---------- Horarios (negocio y Menú Digital) ---------- */
+  .hrs-list{ margin:4px 0 6px; }
+  .hrs-row{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .hrs-row:last-child{ border-bottom:none; }
+  .hrs-day{ flex:1; font-weight:800; font-size:14px; color:var(--ink); }
+  .hrs-times{ display:flex; align-items:center; gap:8px; flex-basis:100%; }
+  .hrs-times input{ flex:1; border:1.5px solid var(--border); border-radius:10px; padding:9px 10px; font-size:14px; font-weight:700; color:var(--ink); background:var(--surface); min-width:0; font-family:inherit; }
+  .hrs-times input:focus{ outline:none; border-color:var(--accent-strong); }
+  .hrs-times span{ font-size:12.5px; font-weight:700; color:var(--ink-soft); }
+  .hrs-closed{ font-size:13px; font-weight:700; color:var(--ink-faint); order:-0; }
+  .hrs-row.off .hrs-day{ color:var(--ink-soft); }
+  .hrs-copy{ margin:2px 0 12px; }
+  .hrs-mode{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:14px; }
+  .hrs-now{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800; padding:5px 10px; border-radius:99px; background:var(--surface-alt); color:var(--ink-soft); margin-bottom:12px; }
+  .hrs-now::before{ content:''; width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .hrs-now.on{ background:var(--success-bg); color:var(--success); }
+  .hrs-now.off{ background:var(--danger-bg); color:var(--accent-2); }
+  .dm-hours{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin:-6px 0 14px; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
+  .dm-hours svg{ width:15px; height:15px; }
+  .dm-hours b{ color:var(--success); font-weight:800; }
+  .dm-hours b.off{ color:var(--accent-2); }
+  .dm-hours-list div{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; font-weight:600; }
+  .dm-hours-list div:last-child{ border-bottom:none; }
+  .dm-hours-list div.today{ font-weight:800; }
 </style>
 
 </head>
@@ -3146,7 +3231,7 @@ const DEFAULT_PRINT = {
 function printPrefs(){
   let guardado = {};
   try{ guardado = JSON.parse(localStorage.getItem(PRINT_KEY) || '{}') || {}; }catch(e){ guardado = {}; }
-  return Object.assign({}, DEFAULT_PRINT, guardado);
+  return Object.assign({}, DEFAULT_PRINT, guardado, { logo:false });   // el logo ya no se imprime
 }
 function savePrintPrefs(p){
   try{ localStorage.setItem(PRINT_KEY, JSON.stringify(p)); }catch(e){}
@@ -5703,16 +5788,33 @@ Object.assign(ILLUSTRATIONS, {
   // Teléfono en la mano para la pantalla de registro
   phoneHand: `
   <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <ellipse cx="80" cy="148" rx="40" ry="6" fill="#EEF1F7"/>
-    <rect x="52" y="18" width="56" height="106" rx="14" fill="#FFFFFF" stroke="#16213E" stroke-width="2.6"/>
-    <circle cx="80" cy="48" r="15" fill="#FFD666"/>
-    <circle cx="80" cy="43" r="5" fill="#16213E"/>
-    <path d="M71 55c2-4 5-6 9-6s7 2 9 6" fill="#16213E"/>
-    <rect x="62" y="74" width="36" height="8" rx="4" fill="#E8EBF2"/>
-    <rect x="62" y="88" width="36" height="8" rx="4" fill="#E8EBF2"/>
-    <rect x="70" y="104" width="20" height="10" rx="3" fill="#F5BF3C"/>
-    <path d="M44 84c-4 2-6 6-5 10l6 22c2 7 8 12 15 12h28" stroke="#F5C6A3" stroke-width="11" stroke-linecap="round"/>
-    <path d="M47 92c0-6 4-10 9-10h4" stroke="#EBB491" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="80" cy="147" rx="38" ry="5" fill="#EEF1F7"/>
+    <!-- burbuja de chat (escribiendo) -->
+    <path d="M22 56h22a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-8l-7 6v-6h-7a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8Z" fill="#FFFFFF" stroke="#16213E" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="25" cy="68" r="2.3" fill="#F5BF3C"/><circle cx="33" cy="68" r="2.3" fill="#F5BF3C"/><circle cx="41" cy="68" r="2.3" fill="#F5BF3C"/>
+    <!-- destellos -->
+    <path d="M132 64v8M128 68h8" stroke="#FFD666" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M34 28v6M31 31h6" stroke="#25D366" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="136" cy="100" r="3" fill="#E1594C" opacity=".85"/>
+    <circle cx="26" cy="112" r="2.6" fill="#6C4FCB" opacity=".7"/>
+    <!-- celular -->
+    <rect x="52" y="12" width="60" height="118" rx="15" fill="#FFFFFF" stroke="#16213E" stroke-width="2.6"/>
+    <rect x="72" y="19" width="20" height="4" rx="2" fill="#16213E"/>
+    <circle cx="82" cy="45" r="13" fill="#FFD666"/>
+    <circle cx="82" cy="41" r="4.6" fill="#16213E"/>
+    <path d="M73.5 53.6c1.9-4.1 4.9-6.1 8.5-6.1s6.6 2 8.5 6.1" fill="#16213E"/>
+    <rect x="60" y="69" width="44" height="13" rx="4.5" fill="#F4F6FB" stroke="#E8EBF2" stroke-width="1.5"/>
+    <rect x="64" y="73.5" width="3" height="4.5" fill="#1E8E4E"/><rect x="67" y="73.5" width="3" height="4.5" fill="#FFFFFF"/><rect x="70" y="73.5" width="3" height="4.5" fill="#E1594C"/>
+    <rect x="76" y="74.8" width="6" height="2" rx="1" fill="#8A93AC"/>
+    <rect x="85" y="74.8" width="12" height="2" rx="1" fill="#16213E"/>
+    <path d="M99.5 72.5v7" stroke="#F5BF3C" stroke-width="1.6" stroke-linecap="round"/>
+    <rect x="60" y="88" width="30" height="5" rx="2.5" fill="#E8EBF2"/>
+    <rect x="60" y="101" width="44" height="13" rx="6.5" fill="#16213E"/>
+    <rect x="74" y="106.5" width="16" height="2.2" rx="1.1" fill="#FFFFFF"/>
+    <rect x="74" y="122" width="16" height="3" rx="1.5" fill="#E8EBF2"/>
+    <!-- número verificado -->
+    <circle cx="112" cy="28" r="11.5" fill="#25D366" stroke="#FFFFFF" stroke-width="3"/>
+    <path d="M107 28.4l3.4 3.4 6.4-6.8" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
   // Escena de bienvenida al regalo de 3 meses gratis
   trialGift: `
@@ -5931,7 +6033,7 @@ function renderAuth(){
   else if(s === 'trial') html = authTrialHTML();
   else if(s === 'users') html = authUsersHTML();          // selección de usuario
   else if(s === 'userpin') html = authUserPinHTML();      // NIP de ese usuario
-  layer.innerHTML = `<div class="auth-screen" key="${s}">${html}</div>`;
+  layer.innerHTML = `<div class="auth-screen" key="${s}">${html}${html.indexOf('auth-hero') === -1 ? authSideHTML(s) : ''}</div>`;
 
   if(s === 'userpin'){
     const pin = document.getElementById('userPinInput');
@@ -5948,14 +6050,34 @@ function renderAuth(){
   }
 }
 
-function authWelcomeHTML(){
-  const c = countryOf(authState.country);
+/* Panel izquierdo en PC para las pantallas que no traen ilustración
+   propia (en celular no se muestra). */
+const AUTH_SIDE = {
+  signup:  { illu:'phoneHand',  t:'Tu negocio, en tu bolsillo',  s:'Crea tu cuenta con tu número y empieza a vender en minutos.' },
+  login:   { illu:'phoneHand',  t:'¡Qué gusto verte de nuevo!',   s:'Entra con tu número y sigue justo donde te quedaste.' },
+  otp:     { illu:'lockShield', t:'Tu cuenta, protegida',          s:'Confirmamos que el número es tuyo para cuidar tu información.' },
+  name:    { illu:'shopOwner',  t:'Ya casi está listo',            s:'Ponle nombre a tu negocio y entra a administrarlo.' },
+  users:   { illu:'shopOwner',      t:'Cada quien con su cuenta',      s:'Elige tu nombre para ver tus ventas y tu turno.' },
+  userpin: { illu:'lockShield', t:'Escribe tu NIP',                s:'Así solo tú puedes entrar con tu usuario.' },
+};
+function authSideHTML(screen){
+  const d = AUTH_SIDE[screen] || AUTH_SIDE.signup;
+  const art = (typeof ILLUSTRATIONS !== 'undefined' && ILLUSTRATIONS[d.illu]) || ILLUSTRATIONS.phoneHand;
+  const wide = d.illu === 'shopOwner';
   return `
-    <div class="auth-side-brand"><span class="mark">${ICONS.fork}</span>Mesa</div>
+    <div class="auth-side" aria-hidden="true">
+      <div class="auth-side-art ${wide ? 'wide' : ''}">${art}</div>
+      <div class="auth-side-title">${d.t}</div>
+      <div class="auth-side-sub">${d.s}</div>
+      <div class="auth-side-chips">
+        <span>🧾 Ventas</span><span>📦 Inventario</span><span>📱 Menú Digital</span>
+      </div>
+    </div>`;
+}
+
+function authWelcomeHTML(){
+  return `
     <div class="auth-hero">
-      <button class="country-chip auth-hero-flag" onclick="openCountryPicker()">
-        <span class="flag">${c.flag}</span>${icon('chevronDown')}
-      </button>
       ${ILLUSTRATIONS.shopOwner}
     </div>
     <div class="auth-sheet">
@@ -6478,6 +6600,14 @@ function renderAccount(){
             <span class="acc-sub">${biz.name ? escapeHtml(biz.name + (biz.type ? ' · ' + biz.type : '')) : 'Agrega el nombre y la dirección'}</span>
           </span>
           <span class="acc-chev">${icon('chevronRight')}</span>
+        </button>
+        <button class="acc-row" onclick="openBusinessHours()">
+          <span class="acc-ico blue">${icon('clock')}</span>
+          <span class="acc-txt">
+            <span class="acc-label">Horario del negocio</span>
+            <span class="acc-sub">${escapeHtml(bizHoursSub())}</span>
+          </span>
+          <span class="acc-chev">${icon('chevronRight')}</span>
         </button>` : ''}
       <button class="acc-row" onclick="goTo('products')">
         <span class="acc-ico green">${icon('box')}</span>
@@ -6651,6 +6781,178 @@ function saveProfile(){
   toast('Perfil actualizado', { variant:'toast-success', icon:icon('check') });
 }
 
+/* =========================================================
+   HORARIOS
+   Un horario = 7 días (índice como Date.getDay(): 0 = domingo).
+   Cada día: { open, from:'HH:MM', to:'HH:MM' }.
+   Si "to" es menor o igual que "from", cierra al día siguiente
+   (ej. 18:00 a 02:00).
+========================================================= */
+const HRS_DAYS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const HRS_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const HRS_ORDER = [1,2,3,4,5,6,0];   // se muestra de lunes a domingo
+function hrsDefault(){
+  return [0,1,2,3,4,5,6].map(d => ({ open:d !== 0, from:'09:00', to:'21:00' }));
+}
+function hrsValidTime(t){ return typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t); }
+function hrsClean(days){
+  if(!Array.isArray(days) || days.length !== 7) return null;
+  return days.map(x => ({
+    open: !!(x && x.open),
+    from: hrsValidTime(x && x.from) ? x.from : '09:00',
+    to:   hrsValidTime(x && x.to)   ? x.to   : '21:00'
+  }));
+}
+function hrsMin(t){ const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+function hrsFmt(t){
+  const [h, m] = t.split(':').map(Number);
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return hh + (m ? ':' + String(m).padStart(2, '0') : '') + (h < 12 ? ' am' : ' pm');
+}
+function hrsRange(x){ return x.from === x.to ? 'Abierto 24 horas' : hrsFmt(x.from) + ' – ' + hrsFmt(x.to); }
+
+/* ¿Está abierto en este momento? Revisa hoy y lo que quedó de ayer (horario nocturno). */
+function hrsIsOpen(days, when){
+  days = hrsClean(days);
+  if(!days) return true;                       // sin horario = siempre abierto
+  const now = when || new Date();
+  const d = now.getDay(), m = now.getHours() * 60 + now.getMinutes();
+  const hoy = days[d], ayer = days[(d + 6) % 7];
+  if(hoy.open){
+    const f = hrsMin(hoy.from), t = hrsMin(hoy.to);
+    if(f === t) return true;
+    if(t > f ? (m >= f && m < t) : m >= f) return true;
+  }
+  if(ayer.open){
+    const f = hrsMin(ayer.from), t = hrsMin(ayer.to);
+    if(t < f && m < t) return true;
+  }
+  return false;
+}
+/* Texto de cuándo vuelve a abrir: "hoy a las 1 pm", "mañana a las 9 am", "el lunes a las 9 am". */
+function hrsNextOpen(days, when){
+  days = hrsClean(days);
+  if(!days) return '';
+  const now = when || new Date();
+  const d = now.getDay(), m = now.getHours() * 60 + now.getMinutes();
+  for(let i = 0; i < 8; i++){
+    const x = days[(d + i) % 7];
+    if(!x.open) continue;
+    if(i === 0 && hrsMin(x.from) <= m) continue;
+    const cuando = i === 0 ? 'hoy' : (i === 1 ? 'mañana' : 'el ' + HRS_DAYS[(d + i) % 7].toLowerCase());
+    return cuando + ' a las ' + hrsFmt(x.from);
+  }
+  return '';
+}
+/* Hora de cierre de hoy si está abierto: "Cierra a las 9 pm". */
+function hrsClosesAt(days, when){
+  days = hrsClean(days);
+  if(!days) return '';
+  const now = when || new Date();
+  const d = now.getDay(), m = now.getHours() * 60 + now.getMinutes();
+  const hoy = days[d], ayer = days[(d + 6) % 7];
+  if(ayer.open && hrsMin(ayer.to) < hrsMin(ayer.from) && m < hrsMin(ayer.to)) return hrsFmt(ayer.to);
+  if(hoy.open && hoy.from !== hoy.to) return hrsFmt(hoy.to);
+  return '';
+}
+/* Resumen corto agrupando días seguidos iguales: "Lun–Sáb 9 am – 9 pm · Dom cerrado" */
+function hrsSummary(days){
+  days = hrsClean(days);
+  if(!days) return '';
+  const key = x => x.open ? x.from + '-' + x.to : 'x';
+  const grupos = [];
+  HRS_ORDER.forEach(d => {
+    const g = grupos[grupos.length - 1];
+    if(g && key(days[g.last]) === key(days[d])){ g.last = d; g.n++; }
+    else grupos.push({ first:d, last:d, n:1 });
+  });
+  return grupos.map(g => {
+    const dias = g.n === 1 ? HRS_SHORT[g.first] : (g.n === 2 ? HRS_SHORT[g.first] + ' y ' + HRS_SHORT[g.last] : HRS_SHORT[g.first] + '–' + HRS_SHORT[g.last]);
+    const x = days[g.first];
+    return (g.n === 7 ? 'Todos los días' : dias) + ' ' + (x.open ? hrsRange(x) : 'cerrado');
+  }).join(' · ');
+}
+function hrsStatus(days){
+  if(!hrsClean(days)) return { on:true, txt:'Sin horario' };
+  if(hrsIsOpen(days)){
+    const c = hrsClosesAt(days);
+    return { on:true, txt:'Abierto ahora' + (c ? ' · cierra a las ' + c : '') };
+  }
+  const n = hrsNextOpen(days);
+  return { on:false, txt:'Cerrado ahora' + (n ? ' · abre ' + n : '') };
+}
+
+/* ---------- Editor de horario (se usa en el negocio y en el menú) ---------- */
+let hrsDraft = null;
+function hrsEditorHTML(){
+  return hrsListHTML() + `
+    <button class="btn ghost block hrs-copy" onclick="hrsCopyMonday()">${icon('copy')} Copiar el horario del lunes a todos los días abiertos</button>`;
+}
+function hrsListHTML(){
+  return `
+    <div class="hrs-list" id="hrsList">${HRS_ORDER.map(d => {
+      const x = hrsDraft[d];
+      return `<div class="hrs-row ${x.open ? '' : 'off'}">
+        <span class="hrs-day">${HRS_DAYS[d]}</span>
+        ${x.open ? '' : `<span class="hrs-closed">Cerrado</span>`}
+        <label class="switch"><input type="checkbox" ${x.open ? 'checked' : ''} onchange="hrsToggleDay(${d}, this.checked)"><span class="track"></span></label>
+        ${x.open ? `<span class="hrs-times">
+            <input type="time" value="${x.from}" aria-label="${HRS_DAYS[d]}: abre" onchange="hrsSetTime(${d},'from',this.value)">
+            <span>a</span>
+            <input type="time" value="${x.to}" aria-label="${HRS_DAYS[d]}: cierra" onchange="hrsSetTime(${d},'to',this.value)">
+          </span>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+}
+function hrsRepaint(){ const el = document.getElementById('hrsList'); if(el) el.outerHTML = hrsListHTML(); }
+function hrsToggleDay(d, on){ hrsDraft[d].open = !!on; vibrate(8); hrsRepaint(); }
+function hrsSetTime(d, k, v){ if(hrsValidTime(v)) hrsDraft[d][k] = v; }
+function hrsCopyMonday(){
+  const l = hrsDraft[1];
+  hrsDraft.forEach((x, i) => { if(i !== 1 && x.open){ x.from = l.from; x.to = l.to; } });
+  vibrate(8); hrsRepaint();
+  toast('Horario del lunes copiado');
+}
+
+/* ---------- Horario del negocio ---------- */
+function bizHours(){ return hrsClean((((currentUser() || {}).business) || {}).hours); }
+function bizHoursSub(){
+  const h = bizHours();
+  if(!h) return 'Agrega de qué hora a qué hora abres';
+  return hrsStatus(h).txt;
+}
+function openBusinessHours(){
+  hrsDraft = bizHours() || hrsDefault();
+  const st = bizHours() ? hrsStatus(bizHours()) : null;
+  openModal(`
+    <h3 class="sheet-title">Horario del negocio</h3>
+    <p class="sheet-text">Los días y horas en que tu negocio está abierto. Si cierras después de medianoche, pon la hora de cierre del día siguiente (ej. 6 pm a 2 am).</p>
+    ${st ? `<span class="hrs-now ${st.on ? 'on' : 'off'}">${st.txt}</span>` : ''}
+    ${hrsEditorHTML()}
+    <div class="sheet-actions">
+      ${bizHours() ? `<button class="btn ghost block" onclick="clearBusinessHours()">Quitar horario</button>` : `<button class="btn ghost block" onclick="closeModal()">Cancelar</button>`}
+      <button class="btn primary block" onclick="saveBusinessHours()">Guardar horario</button>
+    </div>
+  `, { dismissible:true });
+}
+function saveBusinessHours(){
+  const days = hrsClean(hrsDraft);
+  if(!days.some(x => x.open)){ toast('Marca al menos un día abierto', { subtitle:'O usa "Quitar horario"' }); return; }
+  const u = currentUser() || newUser('MX','');
+  updateUser({ business: Object.assign({}, u.business || {}, { hours: days }) });
+  closeModal();
+  render();
+  toast('Horario del negocio guardado', { subtitle: hrsSummary(days), variant:'toast-success', icon:icon('check') });
+}
+function clearBusinessHours(){
+  const u = currentUser() || newUser('MX','');
+  const b = Object.assign({}, u.business || {}); delete b.hours;
+  updateUser({ business: b });
+  closeModal();
+  render();
+  toast('Horario quitado');
+}
+
 /* ---------- Información del negocio ---------- */
 const BUSINESS_TYPES = ['Restaurante','Cafetería','Fonda','Taquería','Bar','Tienda','Otro'];
 function openBusinessForm(){
@@ -6684,6 +6986,7 @@ function openBusinessForm(){
 }
 function saveBusinessForm(){
   updateUser({ business: {
+    hours: ((currentUser() || {}).business || {}).hours,   // conserva el horario
     name: document.getElementById('bizName').value.trim(),
     type: document.getElementById('bizType').value,
     address: document.getElementById('bizAddress').value.trim(),
@@ -6832,19 +7135,6 @@ function printSettingsHTML(){
       <label>Mensaje al final del ticket</label>
       <input type="text" maxlength="60" value="${escapeHtml(p.footer || '')}"
              oninput="setPrintPref('footer', this.value)" placeholder="\u00a1Gracias por su visita!">
-    </div>
-
-    <div class="toggle-row">
-      <span class="acc-ico gold">${icon('camera')}</span>
-      <span class="acc-txt">
-        <span class="acc-label">Imprimir el logo del negocio</span>
-        <span class="acc-sub">${biz.logo ? 'Sale arriba del nombre. En t\u00e9rmicas se ve mejor un logo en blanco y negro.' : 'Primero sube tu logo en Informaci\u00f3n de mi negocio.'}</span>
-      </span>
-      <label class="switch">
-        <input type="checkbox" ${p.logo ? 'checked' : ''} ${biz.logo ? '' : 'disabled'}
-               onchange="setPrintPref('logo', this.checked, true)">
-        <span class="track"></span>
-      </label>
     </div>
 
     <div class="section-title">Vista previa <span class="title-count" id="lblPrintPaper"></span></div>
@@ -8250,20 +8540,143 @@ function mdUnitSuffix(p){
 ========================================================= */
 const MD_CFG_KEY = 'mesa_menu';
 
+/* ---------- Color del Menú Digital ----------
+   El negocio elige un color; con él se calculan el tono suave, el tono
+   oscuro para textos y si encima va texto claro u oscuro. */
+const MD_DEFAULT_COLOR = '#CFAE8B';
+const MD_COLORS = [
+  { hex:'#CFAE8B', name:'Café' },
+  { hex:'#E8A33D', name:'Mostaza' },
+  { hex:'#E07A3F', name:'Naranja' },
+  { hex:'#D9534F', name:'Rojo' },
+  { hex:'#E07A9B', name:'Rosa' },
+  { hex:'#8E6CD1', name:'Morado' },
+  { hex:'#3B82C4', name:'Azul' },
+  { hex:'#2FA59A', name:'Turquesa' },
+  { hex:'#4E9F5B', name:'Verde' },
+  { hex:'#2B2F3A', name:'Negro' },
+];
+function mdValidColor(h){ return (typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h.trim())) ? h.trim().toUpperCase() : null; }
+function mdHexRgb(h){ h = mdValidColor(h) || MD_DEFAULT_COLOR; return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function mdRgbHex(rgb){ return '#' + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+function mdMix(rgb, to, t){ return rgb.map((v, i) => v + (to[i] - v) * t); }
+function mdLum(rgb){
+  const c = rgb.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function mdContrast(a, b){ const la = mdLum(a), lb = mdLum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); }
+/* Paleta completa a partir de un solo color */
+function mdPalette(hex){
+  const rgb = mdHexRgb(hex);
+  const ink = [22, 33, 62];
+  const soft = mdMix(rgb, [255, 255, 255], 0.86);
+  // tono oscuro legible sobre el tono suave
+  let dark = rgb.slice(), k = 0;
+  while(mdContrast(dark, soft) < 4.5 && k < 20){ dark = mdMix(dark, [0, 0, 0], 0.12); k++; }
+  const on = mdContrast(rgb, ink) >= mdContrast(rgb, [255, 255, 255]) ? '#16213E' : '#FFFFFF';
+  return { main:mdRgbHex(rgb), soft:mdRgbHex(soft), ink:mdRgbHex(dark), rgb:rgb.join(','), on };
+}
+function mdColorName(hex){ const c = MD_COLORS.find(x => x.hex === (mdValidColor(hex) || '')); return c ? c.name : 'Personalizado'; }
+
 function mdDefaultCfg(){
-  return { active:false, id:null, activatedAt:null, paused:false, whatsapp:{ country:'', number:'' } };
+  return { active:false, id:null, activatedAt:null, paused:false, whatsapp:{ country:'', number:'' }, color:MD_DEFAULT_COLOR, hours:{ mode:'business', days:null } };
 }
 function mdCfg(){
   let c = {};
   try{ c = JSON.parse(localStorage.getItem(MD_CFG_KEY) || '{}') || {}; }catch(e){ c = {}; }
   const out = Object.assign(mdDefaultCfg(), c);
   out.whatsapp = Object.assign(mdDefaultCfg().whatsapp, c.whatsapp || {});
+  out.hours = mdCleanHours(c.hours);
   return out;
 }
 function mdSaveCfg(c){
-  const limpio = { active:!!c.active, id:c.id || null, activatedAt:c.activatedAt || null, paused:!!c.paused, whatsapp:c.whatsapp || { country:'', number:'' } };
+  const limpio = { active:!!c.active, id:c.id || null, activatedAt:c.activatedAt || null, paused:!!c.paused, whatsapp:c.whatsapp || { country:'', number:'' }, color:mdValidColor(c.color) || MD_DEFAULT_COLOR, hours:mdCleanHours(c.hours) };
   try{ localStorage.setItem(MD_CFG_KEY, JSON.stringify(limpio)); }catch(e){}
 }
+/* ---------- Horario del Menú Digital ----------
+   mode 'business' = igual que el horario del negocio (Mi cuenta)
+   mode 'custom'   = horario propio del menú
+   mode 'always'   = recibe pedidos a cualquier hora
+   Fuera de horario, los clientes ven el menú pero no pueden enviar pedidos. */
+const MD_HOURS_MODES = [
+  { id:'business', emoji:'🏪', label:'Igual que el negocio' },
+  { id:'custom',   emoji:'🕒', label:'Horario propio' },
+  { id:'always',   emoji:'🌙', label:'Siempre abierto' },
+];
+function mdCleanHours(h){
+  h = h || {};
+  const mode = MD_HOURS_MODES.some(m => m.id === h.mode) ? h.mode : 'business';
+  return { mode, days: hrsClean(h.days) };
+}
+function mdMenuHours(cfg){
+  const h = (cfg || mdCfg()).hours;
+  if(h.mode === 'always') return null;
+  if(h.mode === 'custom') return h.days;
+  return typeof bizHours === 'function' ? bizHours() : null;
+}
+function mdClosedNow(cfg){ return !hrsIsOpen(mdMenuHours(cfg)); }
+function mdOrdersBlocked(cfg){ cfg = cfg || mdCfg(); return cfg.paused || mdClosedNow(cfg); }
+function mdHoursSub(cfg){
+  cfg = cfg || mdCfg();
+  const days = mdMenuHours(cfg);
+  if(cfg.hours.mode === 'always') return 'Siempre abierto · recibe pedidos a cualquier hora';
+  if(cfg.hours.mode === 'business' && !days) return 'Igual que el negocio · aún no tiene horario (siempre abierto)';
+  return (cfg.hours.mode === 'business' ? 'Igual que el negocio' : 'Horario propio') + ' · ' + hrsStatus(days).txt.toLowerCase();
+}
+
+let mdHoursMode = 'business';
+function mdOpenHoursForm(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')) return;
+  const cfg = mdCfg();
+  mdHoursMode = cfg.hours.mode;
+  hrsDraft = cfg.hours.days || bizHours() || hrsDefault();
+  hrsDraft = hrsDraft.map(x => Object.assign({}, x));
+  mdRenderHoursForm();
+}
+function mdRenderHoursForm(){
+  const biz = bizHours();
+  let cuerpo = '';
+  if(mdHoursMode === 'custom'){
+    cuerpo = `<p class="sheet-text" style="margin-bottom:6px;">Días y horas en que tus clientes pueden enviar pedidos desde el Menú Digital.</p>` + hrsEditorHTML();
+  }else if(mdHoursMode === 'business'){
+    cuerpo = biz
+      ? `<div class="card" style="padding:12px 14px; margin-bottom:12px;"><div class="dm-hours-list">${HRS_ORDER.map(d => `<div><span>${HRS_DAYS[d]}</span><span>${biz[d].open ? hrsRange(biz[d]) : 'Cerrado'}</span></div>`).join('')}</div></div>
+         <button class="btn ghost block" style="margin-bottom:6px;" onclick="closeModal(); openBusinessHours();">${icon('edit')} Cambiar horario del negocio</button>`
+      : `<p class="sheet-text">Aún no tienes horario del negocio, así que el menú recibe pedidos a cualquier hora.</p>
+         <button class="btn ghost block" style="margin-bottom:6px;" onclick="closeModal(); openBusinessHours();">${icon('clock')} Poner horario del negocio</button>`;
+  }else{
+    cuerpo = `<p class="sheet-text">Tus clientes podrán enviar pedidos a cualquier hora del día. Puedes pausarlos cuando quieras desde "Recibir pedidos".</p>`;
+  }
+  openModal(`
+    <div class="sheet-header">
+      <h2>Horario del Menú Digital</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    <p class="sheet-text" style="margin-bottom:14px;">Fuera de este horario tus clientes pueden ver el menú, pero no enviar pedidos.</p>
+    <div class="hrs-mode">${MD_HOURS_MODES.map(m => `<button class="opt-card ${mdHoursMode === m.id ? 'active' : ''}" onclick="mdSetHoursMode('${m.id}')"><span class="opt-emoji">${m.emoji}</span>${m.label}</button>`).join('')}</div>
+    ${cuerpo}
+    <div class="sheet-actions">
+      <button class="btn ghost block" onclick="closeModal()">Cancelar</button>
+      <button class="btn primary block" onclick="mdSaveHours()">Guardar horario</button>
+    </div>
+  `, { dismissible:true });
+}
+function mdSetHoursMode(m){ mdHoursMode = m; vibrate(8); mdRenderHoursForm(); }
+function mdSaveHours(){
+  const cfg = mdCfg();
+  if(mdHoursMode === 'custom'){
+    const days = hrsClean(hrsDraft);
+    if(!days.some(x => x.open)){ toast('Marca al menos un día abierto'); return; }
+    cfg.hours = { mode:'custom', days };
+  }else{
+    cfg.hours = { mode:mdHoursMode, days:cfg.hours.days };
+  }
+  mdSaveCfg(cfg);
+  closeModal();
+  toast('Horario del menú guardado', { subtitle:mdHoursSub(mdCfg()) });
+  mdRerenderIfMenu();
+}
+
 /* Limpia lo que dejó la versión anterior (pedidos guardados en Mesa). */
 (function(){
   try{
@@ -8321,12 +8734,6 @@ function renderMenuDigital(){
     <div class="section-title">Configuración del Menú Digital</div>
     ${mdConfigHTML(cfg)}
 
-    <div class="section-title">Cómo llegan los pedidos</div>
-    <div class="acc-list md-flow">
-      <div class="acc-row"><span class="md-num">1</span><span class="acc-txt"><span class="acc-label">El cliente abre tu link</span><span class="acc-sub">Ve tus productos con foto, precio, descripción y unidad.</span></span></div>
-      <div class="acc-row"><span class="md-num">2</span><span class="acc-txt"><span class="acc-label">Elige y toca "Enviar por WhatsApp"</span><span class="acc-sub">Revisa su pedido y lo confirma.</span></span></div>
-      <div class="acc-row"><span class="md-num wa">${icon('whatsapp')}</span><span class="acc-txt"><span class="acc-label">Te llega el pedido a tu WhatsApp</span><span class="acc-sub">${mdWhatsapp() ? escapeHtml(mdWhatsappLabel()) + ' · con productos, cantidades, notas y total' : 'Configura el WhatsApp del negocio'}</span></span></div>
-    </div>
   `;
 }
 
@@ -8339,8 +8746,12 @@ function mdChecklist(){
   return [
     { label:'Nombre del negocio', ok:!!(b.name || '').trim(),
       sub:(b.name || '').trim() ? escapeHtml(b.name) + ' · aparece arriba de tu menú' : 'Aparece arriba de tu menú', action:'openBusinessForm()' },
+    { label:'Color del menú', ok:true, swatch:mdCfg().color,
+      sub:mdColorName(mdCfg().color) + ' · ' + (mdValidColor(mdCfg().color) || MD_DEFAULT_COLOR) + ' · lo ven tus clientes', action:'mdOpenColorForm()' },
     { label:'Logo del negocio', ok:!!u.photo, optional:true,
       sub:u.photo ? 'Tu foto de perfil se muestra arriba a la derecha' : 'Opcional · se usa tu foto de perfil de Mesa', action:'openEditProfile()' },
+    { label:'Horario del menú', ok:true, icon:'clock',
+      sub:escapeHtml(mdHoursSub()), action:'mdOpenHoursForm()' },
     { label:'WhatsApp del negocio', ok:!!wa,
       sub:wa ? escapeHtml(mdWhatsappLabel()) + (wa.fromAccount ? ' · el de tu cuenta de Mesa' : ' · aquí llegan los pedidos') : 'Aquí te llegarán los pedidos', action:'mdOpenWhatsappForm()' },
     { label:'Productos del menú', ok:prods.length > 0,
@@ -8351,7 +8762,7 @@ function mdChecklist(){
 function mdConfigHTML(cfg){
   const list = mdChecklist();
   const ready = list.every(x => x.ok || x.optional);
-  const estado = !cfg.active ? { cls:'', txt:'Inactivo' } : (cfg.paused ? { cls:'paused', txt:'Pausado' } : { cls:'on', txt:'Activo' });
+  const estado = !cfg.active ? { cls:'', txt:'Inactivo' } : (cfg.paused ? { cls:'paused', txt:'Pausado' } : (mdClosedNow(cfg) ? { cls:'paused', txt:'Cerrado' } : { cls:'on', txt:'Activo' }));
   const rows = list.map(x => `
     <button class="acc-row" onclick="${x.action}">
       <span class="md-check ${x.ok ? '' : (x.optional ? 'opt' : 'miss')}">${x.ok ? icon('check') : (x.optional ? '–' : '!')}</span>
@@ -8359,6 +8770,7 @@ function mdConfigHTML(cfg){
         <span class="acc-label">${x.label}</span>
         <span class="acc-sub">${x.sub}</span>
       </span>
+      ${x.swatch ? `<span class="md-swatch-dot" style="background:${x.swatch}"></span>` : ''}
       <span class="acc-chev">${icon('chevronRight')}</span>
     </button>`).join('');
 
@@ -8368,7 +8780,7 @@ function mdConfigHTML(cfg){
         <span class="md-status-ico ${cfg.active ? 'on' : ''}">${icon('menuBook')}</span>
         <span class="md-status-txt">
           <span class="md-status-title">${cfg.active ? 'Tu Menú Digital está activo' : 'Menú Digital desactivado'}</span>
-          <span class="md-status-sub">${cfg.active ? (cfg.paused ? 'Tus clientes ven el menú, pero no pueden enviar pedidos' : 'Los pedidos llegan a tu WhatsApp') : 'Confirma estas opciones y actívalo'}</span>
+          <span class="md-status-sub">${cfg.active ? (cfg.paused ? 'Tus clientes ven el menú, pero no pueden enviar pedidos' : (mdClosedNow(cfg) ? 'Fuera de horario: ven el menú, pero no pueden pedir' + (hrsNextOpen(mdMenuHours(cfg)) ? ' · abre ' + hrsNextOpen(mdMenuHours(cfg)) : '') : 'Los pedidos llegan a tu WhatsApp')) : 'Confirma estas opciones y actívalo'}</span>
         </span>
         <span class="md-pill ${estado.cls}">${estado.txt}</span>
       </div>
@@ -8389,7 +8801,7 @@ function mdConfigHTML(cfg){
           <span class="acc-ico">${icon('gear')}</span>
           <span class="acc-txt">
             <span class="acc-label">Opciones del Menú Digital</span>
-            <span class="acc-sub">${ready ? 'Todo listo' : 'Falta completar algo'} · WhatsApp, logo y pedidos</span>
+            <span class="acc-sub">${ready ? 'Todo listo' : 'Falta completar algo'} · color, horario, WhatsApp, logo y pedidos</span>
           </span>
           <span class="acc-chev" style="transform:rotate(${mdCfgOpen ? 180 : 0}deg); transition:transform .2s;">${icon('chevronDown')}</span>
         </button>
@@ -8460,6 +8872,81 @@ function mdShareLink(){
   const data = { title:(b.name || 'Nuestro menú'), text:'Mira nuestro menú y haz tu pedido por WhatsApp:', url:mdLink(mdCfg()) };
   if(navigator.share){ navigator.share(data).catch(() => {}); }
   else mdCopy(data.url, 'Link copiado para compartir');
+}
+
+/* ---------- Color del menú (formulario con vista previa) ---------- */
+let mdColorDraft = null;
+function mdOpenColorForm(){
+  if(!requirePerm('gestionarProductos', 'No tienes permiso para cambiar el Menú Digital')) return;
+  mdColorDraft = mdValidColor(mdCfg().color) || MD_DEFAULT_COLOR;
+  mdRenderColorForm();
+}
+function mdRenderColorForm(){
+  const c = mdColorDraft;
+  const pal = mdPalette(c);
+  const b = ((currentUser() || {}).business) || {};
+  const nombre = (b.name || '').trim() || 'Tu negocio';
+  openModal(`
+    <div class="sheet-header">
+      <h2>Color del menú</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    <p class="sheet-text" style="margin-bottom:16px;">Elige el color con el que tus clientes verán tu Menú Digital. Los botones para enviar por WhatsApp se quedan en verde.</p>
+    <div class="md-swatches">
+      ${MD_COLORS.map(x => `<button class="md-swatch ${x.hex === c ? 'active' : ''}" onclick="mdPickColor('${x.hex}')" aria-label="${x.name}">
+        <span class="c" style="background:${x.hex}; color:${mdPalette(x.hex).on}">${icon('check')}</span>${x.name}
+      </button>`).join('')}
+    </div>
+    <label class="md-custom-color">
+      <input type="color" value="${c.toLowerCase()}" oninput="mdPickColor(this.value, true)" onchange="mdPickColor(this.value)">
+      <span class="t"><b>${MD_COLORS.some(x => x.hex === c) ? 'Otro color' : 'Color personalizado'}</b><span id="mdColorHex">${c}</span></span>
+      <span class="acc-chev">${icon('chevronRight')}</span>
+    </label>
+    <div class="md-preview" id="mdColorPreview">${mdColorPreviewHTML(pal, nombre)}</div>
+    <div class="sheet-actions" style="margin-top:0;">
+      <button class="btn ghost" onclick="mdPickColor('${MD_DEFAULT_COLOR}')">Restablecer</button>
+      <button class="btn primary" onclick="mdSaveColor()">Guardar color</button>
+    </div>
+  `, { dismissible:true });
+}
+function mdColorPreviewHTML(pal, nombre){
+  return `
+    <div class="md-preview-k">Así lo verán tus clientes</div>
+    <div class="md-pv-top">
+      <span class="md-pv-mark" style="background:${pal.main}; color:${pal.on}; box-shadow:0 4px 10px rgba(${pal.rgb},.35);">${icon('forkDark')}</span>
+      <span class="md-pv-name">${escapeHtml(nombre)}</span>
+    </div>
+    <div class="md-pv-chips">
+      <span class="md-pv-chip" style="background:${pal.main}; color:${pal.on}; border-color:transparent;">🥞 Hotcakes</span>
+      <span class="md-pv-chip">🥤 Malteadas</span>
+    </div>
+    <div class="md-pv-card" style="border-color:${pal.main}; box-shadow:0 4px 14px rgba(${pal.rgb},.3);">
+      <span class="n">Hotcakes con miel<br><span class="md-pv-unit" style="background:${pal.soft}; color:${pal.ink};">Por pieza</span></span>
+      <span class="md-pv-price">$65.00</span>
+    </div>`;
+}
+/* live = mientras se arrastra el selector: solo refresca la vista previa */
+function mdPickColor(hex, live){
+  const h = mdValidColor(hex); if(!h) return;
+  mdColorDraft = h;
+  if(live){
+    const pv = document.getElementById('mdColorPreview');
+    const b = ((currentUser() || {}).business) || {};
+    if(pv) pv.innerHTML = mdColorPreviewHTML(mdPalette(h), (b.name || '').trim() || 'Tu negocio');
+    const t = document.getElementById('mdColorHex'); if(t) t.textContent = h;
+    document.querySelectorAll('.md-swatch').forEach(el => el.classList.remove('active'));
+    return;
+  }
+  vibrate(8);
+  mdRenderColorForm();
+}
+function mdSaveColor(){
+  const cfg = mdCfg();
+  cfg.color = mdColorDraft || MD_DEFAULT_COLOR;
+  mdSaveCfg(cfg);
+  closeModal();
+  toast('Color del menú guardado', { subtitle:mdColorName(cfg.color) + ' · ' + cfg.color });
+  mdRerenderIfMenu();
 }
 
 /* ---------- WhatsApp del negocio (formulario) ---------- */
@@ -8715,9 +9202,22 @@ function dmCardBar(p, paused){
     : `${formatMoney(p.price)}<small> /${productUnit(p).short}</small>`;
   return `<div class="dm-bar" onclick="dmOpenProduct('${p.id}')" style="cursor:pointer;"><div class="dm-price">${price}</div>${out ? '' : ''}</div>`;
 }
+function dmApplyColor(hex){
+  const pal = mdPalette(hex);
+  const r = document.documentElement.style;
+  r.setProperty('--dm-main', pal.main);
+  r.setProperty('--dm-soft', pal.soft);
+  r.setProperty('--dm-ink', pal.ink);
+  r.setProperty('--dm-rgb', pal.rgb);
+  r.setProperty('--dm-on', pal.on);
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if(!meta){ meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
+  meta.content = pal.main;
+}
 function dmRender(){
   const root = document.getElementById('dmRoot');
   const d = dmData();
+  dmApplyColor(d.cfg.color);
   const nombre = (d.b.name || '').trim() || 'Nuestro menú';
   document.title = nombre + ' · Menú Digital';
   const logo = d.u.photo
@@ -8726,7 +9226,7 @@ function dmRender(){
   const top = `
     <header class="dm-top" id="dmTop">
       <div class="dm-brand">
-        <span class="dm-mark">${ICONS.fork}</span>
+        <span class="dm-mark">${icon('forkDark')}</span>
         <span class="dm-brand-txt"><span class="dm-name">${escapeHtml(nombre)}</span><span class="dm-sub">Menú digital</span></span>
       </div>
       <div class="dm-logo">${logo}</div>
@@ -8750,14 +9250,16 @@ function dmRender(){
     <main class="dm-view">
       <h1 class="dm-title">Nuestro menú</h1>
       <p class="dm-lead">Elige tus productos y envía tu pedido por WhatsApp.</p>
-      ${d.cfg.paused ? `<div class="dm-banner">${icon('pause')}<span><b>Por ahora no estamos recibiendo pedidos</b>Puedes ver el menú; vuelve a intentarlo más tarde.</span></div>` : ''}
+      ${dmHoursLineHTML(d.cfg)}
+      ${d.cfg.paused ? `<div class="dm-banner">${icon('pause')}<span><b>Por ahora no estamos recibiendo pedidos</b>Puedes ver el menú; vuelve a intentarlo más tarde.</span></div>`
+        : (mdClosedNow(d.cfg) ? `<div class="dm-banner">${icon('clock')}<span><b>Estamos cerrados en este momento</b>Puedes ver el menú${hrsNextOpen(mdMenuHours(d.cfg)) ? '; recibimos pedidos de nuevo ' + hrsNextOpen(mdMenuHours(d.cfg)) : ''}.</span></div>` : '')}
       ${cats.length ? `
         <nav class="dm-chips" id="dmChips">${cats.map((c, i) => `<button class="dm-chip ${i === 0 ? 'active' : ''}" data-target="dms-${c.id}" onclick="dmGoSection('dms-${c.id}')">${c.emoji} ${escapeHtml(c.name)}</button>`).join('')}</nav>
         ${cats.map(c => {
           const list = d.prods.filter(p => c.id === UNCATEGORIZED.id ? !d.cats.some(x => x.id === p.category) : p.category === c.id);
           return `<section class="dm-sec" id="dms-${c.id}">
             <div class="dm-sec-head"><span class="dm-sec-emoji">${c.emoji}</span><div><h2 class="dm-sec-title">${escapeHtml(c.name)}</h2><div class="dm-sec-count">${list.length} producto${list.length === 1 ? '' : 's'}</div></div></div>
-            <div class="dm-grid">${list.map(p => dmCardHTML(p, c, d.cfg.paused)).join('')}</div>
+            <div class="dm-grid">${list.map(p => dmCardHTML(p, c, mdOrdersBlocked(d.cfg))).join('')}</div>
           </section>`;
         }).join('')}
       ` : `<div class="dm-empty">${icon('bag')}<h2>Aún no hay productos</h2><p>Pronto verás aquí el menú del negocio.</p></div>`}
@@ -8765,6 +9267,24 @@ function dmRender(){
   dmMeasure();
   dmRenderCartbar();
   dmSpy();
+}
+/* Línea de horario bajo el título: "Abierto ahora · cierra a las 9 pm" (toca para ver la semana) */
+function dmHoursLineHTML(cfg){
+  const days = mdMenuHours(cfg);
+  if(!days) return '';
+  const st = hrsStatus(days);
+  const [a, ...b] = st.txt.split(' · ');
+  return `<button class="dm-hours" onclick="dmOpenSheet('hours')">${icon('clock')}<span><b class="${st.on ? '' : 'off'}">${a}</b>${b.length ? ' · ' + b.join(' · ') : ''} · Ver horario</span></button>`;
+}
+function dmHoursSheetHTML(){
+  const days = mdMenuHours(mdCfg()) || [];
+  const hoy = new Date().getDay();
+  return `
+    <div class="sheet-header">
+      <h2>Horario de pedidos</h2>
+      <button class="sheet-close" onclick="dmCloseSheet()" aria-label="Cerrar">${icon('close')}</button>
+    </div>
+    <div class="dm-hours-list">${HRS_ORDER.map(d => days[d] ? `<div class="${d === hoy ? 'today' : ''}"><span>${HRS_DAYS[d]}${d === hoy ? ' (hoy)' : ''}</span><span>${days[d].open ? hrsRange(days[d]) : 'Cerrado'}</span></div>` : '').join('')}</div>`;
 }
 function dmCardHTML(p, c, paused){
   const out = stockInfo(p).level === 'out';
@@ -8840,6 +9360,7 @@ function dmOpenSheet(kind){
   if(kind === 'product') html = dmProductHTML();
   else if(kind === 'cart') html = dmCartHTML();
   else if(kind === 'confirm') html = dmConfirmHTML();
+  else if(kind === 'hours') html = dmHoursSheetHTML();
   layer.innerHTML = `<div class="dm-overlay" id="dmOverlay"><div class="dm-sheet" role="dialog" aria-modal="true"><div class="sheet-grip"></div>${html}</div></div>`;
   document.getElementById('dmOverlay').addEventListener('click', e => { if(e.target.id === 'dmOverlay') dmCloseSheet(); });
   document.body.classList.add('dm-lock');
@@ -8867,7 +9388,8 @@ function dmProductHTML(){
   const out = stockInfo(p).level === 'out';
   const step = productStep(p);
   const qtyTxt = size ? fmtNum(dm.pd.qty) : (u.frac ? fmtQty(dm.pd.qty, u.id) : fmtNum(dm.pd.qty));
-  const disabled = out || d.cfg.paused;
+  const blocked = mdOrdersBlocked(d.cfg);
+  const disabled = out || blocked;
   return `
     <div class="dm-pd-photo">${dmPhoto(p.image, p.name)}<button class="sheet-close" onclick="dmCloseSheet()" aria-label="Cerrar">${icon('close')}</button></div>
     <div class="dm-pd-head">
@@ -8892,7 +9414,7 @@ function dmProductHTML(){
         <span>${qtyTxt}</span>
         <button onclick="dmPdQty(1)" ${dmQtyOf(p.id) + dm.pd.qty + step > dmMaxFor(p) + 1e-9 ? 'disabled' : ''} aria-label="Más">+</button>
       </div>
-      <button class="btn dm-green" onclick="dmAddFromSheet()" ${disabled ? 'disabled' : ''}>${out ? 'Agotado' : (d.cfg.paused ? 'Pedidos pausados' : icon('bag') + ' Agregar · ' + formatMoney(price * dm.pd.qty))}</button>
+      <button class="btn dm-green" onclick="dmAddFromSheet()" ${disabled ? 'disabled' : ''}>${out ? 'Agotado' : (blocked ? (d.cfg.paused ? 'Pedidos pausados' : 'Cerrado por ahora') : icon('bag') + ' Agregar · ' + formatMoney(price * dm.pd.qty))}</button>
     </div>`;
 }
 function dmPickSize(id){ dm.pd.sizeId = id; dmOpenSheet('product'); }
@@ -8944,7 +9466,9 @@ function dmTotalsHTML(){
   </div>`;
 }
 function dmCartHTML(){
-  const paused = mdCfg().paused;
+  const cfg = mdCfg();
+  const paused = mdOrdersBlocked(cfg);
+  const next = hrsNextOpen(mdMenuHours(cfg));
   return `
     <div class="sheet-header">
       <div class="sheet-header-left"><h2>Tu pedido</h2></div>
@@ -8952,7 +9476,7 @@ function dmCartHTML(){
     </div>
     ${dmLinesHTML(true)}
     ${dmTotalsHTML()}
-    ${paused ? `<div class="dm-banner" style="margin:14px 0 0;">${icon('pause')}<span><b>Pedidos pausados</b>El negocio no está recibiendo pedidos en este momento.</span></div>` : ''}
+    ${paused ? `<div class="dm-banner" style="margin:14px 0 0;">${icon('pause')}<span><b>${cfg.paused ? 'Pedidos pausados' : 'Estamos cerrados'}</b>${cfg.paused ? 'El negocio no está recibiendo pedidos en este momento.' : 'Recibimos pedidos de nuevo ' + (next || 'más tarde') + '.'}</span></div>` : ''}
     <div class="dm-actions">
       <button class="btn dm-green block" onclick="dmOpenSheet('confirm')" ${paused ? 'disabled' : ''}>${icon('whatsapp')} Enviar por WhatsApp</button>
     </div>`;
@@ -8991,6 +9515,7 @@ function dmWhatsappMessage(){
 function dmSendWhatsApp(){
   const cfg = mdCfg();
   if(!cfg.active || cfg.id !== dm.id || cfg.paused){ dmToast('El negocio no está recibiendo pedidos'); return; }
+  if(mdClosedNow(cfg)){ dmToast('Estamos cerrados en este momento'); dmRender(); dmCloseSheet(); return; }
   const tel = mdWhatsappDigits();
   if(!tel){ dmToast('El negocio aún no configura su WhatsApp'); return; }
   if(!dm.cart.length) return;
@@ -9020,6 +9545,16 @@ function bootMenu(route){
   window.addEventListener('resize', dmMeasure);
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && dm.sheet) dmCloseSheet(); });
   window.addEventListener('hashchange', () => { const r = dmRoute(); if(r && r.id !== dm.id) location.reload(); });
+  const dmClockSig = () => mdOrdersBlocked() + '|' + dmHoursLineHTML(mdCfg());
+  let dmLastClock = dmClockSig();
+  setInterval(() => {
+    const c = dmClockSig();
+    if(c !== dmLastClock){
+      dmLastClock = c;
+      const y = window.scrollY; dmRender(); window.scrollTo(0, y);
+      if(dm.sheet === 'cart') dmOpenSheet('cart');
+    }
+  }, 30000);
   mdOnSync(() => {
     const s = dmSig();
     if(s !== dm.sig){
