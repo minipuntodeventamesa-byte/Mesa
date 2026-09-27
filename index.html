@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3F4FA">
 <title>Vendo · Punto de venta</title>
 <style>
   :root{
@@ -2785,6 +2786,317 @@
   .dm-q.big button{ width:32px; height:32px; font-size:16px; }
   .dm-q.big span{ font-size:14px; min-width:38px; }
 </style>
+<style id="pulido-css">
+  /* =========================================================
+     PULIDO VISUAL — más fluido, ligero y parejo en celular,
+     tablet y PC. Va al final para ganar sobre las reglas de
+     arriba sin tener que reescribirlas una por una.
+  ========================================================= */
+  :root{
+    --z:.9;                                   /* tamaño general en celular (igual que antes) */
+    --ease-out:cubic-bezier(.22,1,.36,1);     /* arranca rápido y frena suave */
+    --ease-sheet:cubic-bezier(.32,.72,0,1);   /* hojas que suben desde abajo */
+    --hover-border:#D3D8E6;
+  }
+  /* En tablet y PC ya no se encoge TODO con zoom: el diseño compacto de
+     PC ya es más chico por sí mismo, y juntos dejaban letras de 8 px. */
+  @media (min-width:700px){ :root{ --z:1; } }
+
+  .app, #modal-layer, #modal-ghost, .auth-layer, .toast,
+  .dm, .dm-cartbar, #dmLayer, #dmGhost, .dm-toast{ zoom:var(--z); }
+  .app, .dm{ min-height:calc(100dvh / var(--z)); }
+  @media (min-width:700px){ .bottomnav{ height:calc(100dvh / var(--z)); } }
+
+  /* ---------- Toques: sin destello gris, sin retraso, sin seleccionar texto ---------- */
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  button, a, label, input, select, textarea, [onclick]{
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  }
+  button{ -webkit-user-select:none; user-select:none; }
+  img{ -webkit-user-drag:none; }
+
+  /* ---------- Transiciones cortas y parejas en todo lo que se toca ---------- */
+  .btn, .navbtn, .chip, .filter-chip, .opt-card, .doc-opt, .doc-sub-opt, .kind-card,
+  .qty-btn, .icon-btn, .sheet-close, .sheet-back, .auth-back, .acc-row, .sale-row, .prod-row,
+  .cta-home, .user-chip, .avatar-btn, .todo-check, .todo-del, .filters-trigger-btn, .alert-card,
+  .mdi-card, .mdi-home-card, .country-item, .pr-item, .user-pick, .seg button, .mdi-tabs button,
+  .dm-chip, .dm-size, .dm-q button, .cartbar-inner, .phone-code, .doc-big, .doc-row,
+  .product-card, .md-compact-actions .btn, .catmgr-row, .md-hide-btn{
+    transition:transform .18s var(--ease-out), background-color .18s ease, border-color .18s ease,
+               color .18s ease, box-shadow .22s ease, opacity .18s ease;
+  }
+  .btn:active:not(:disabled), .chip:active, .filter-chip:active, .opt-card:active, .doc-opt:active,
+  .doc-sub-opt:active, .kind-card:active, .icon-btn:active, .sheet-close:active, .sheet-back:active,
+  .cta-home:active, .alert-card:active, .mdi-home-card:active, .filters-trigger-btn:active,
+  .seg button:active, .mdi-tabs button:active, .dm-size:active, .phone-code:active, .user-chip:active{
+    transform:scale(.97);
+  }
+  .qty-btn:active:not(:disabled), .dm-q button:active:not(:disabled){ transform:scale(.86); }
+  .navbtn:active{ transform:scale(.93); }
+  .sale-row:active, .prod-row:active, .mdi-card:active, .acc-row:active{ transform:scale(.99); }
+  .product-card .pc-tap:active{ opacity:.92; }
+  .product-card:has(.pc-tap:active){ transform:scale(.975); }
+  .btn:disabled{ cursor:not-allowed; }
+
+  /* Con mouse: el cursor avisa qué se puede tocar */
+  @media (hover:hover) and (pointer:fine){
+    .btn:not(:disabled):hover{ filter:brightness(1.05); }
+    .btn.ghost:not(:disabled):hover, .btn.outline:not(:disabled):hover{ filter:none; background:var(--surface-alt); }
+    .navbtn:not(.active):hover{ background:var(--surface-alt); color:var(--ink); }
+    .acc-row:hover, .country-item:hover{ background:var(--surface-alt); }
+    .md-flow .acc-row:hover{ background:none; }
+    .sale-row:hover, .prod-row:hover, .mdi-card:hover, .alert-card:hover, .mdi-home-card:hover,
+    .filters-trigger-btn:hover, .user-chip:hover, .catmgr-row:hover{
+      border-color:var(--hover-border);
+      box-shadow:0 1px 2px rgba(22,33,62,.05), 0 10px 24px rgba(22,33,62,.08);
+    }
+    .product-card:hover{ transform:translateY(-2px); box-shadow:0 1px 2px rgba(22,33,62,.05), 0 14px 28px rgba(22,33,62,.11); }
+    .product-card.in-cart:hover{ box-shadow:0 0 0 1px var(--brand), 0 14px 28px rgba(var(--brand-rgb),.22); }
+    .chip:not(.active):hover, .filter-chip:not(.active):hover, .opt-card:not(.active):hover,
+    .doc-opt:not(.active):hover, .kind-card:not(.active):hover, .dm-chip:not(.active):hover, .mdi-tabs button:not(.active):hover{
+      border-color:var(--hover-border); color:var(--ink);
+    }
+    .seg button:not(.active):hover{ color:var(--ink); }
+    .cta-home:hover{ transform:translateY(-1px); box-shadow:0 18px 34px rgba(var(--brand-rgb),.38); }
+    .icon-btn:hover, .sheet-close:hover, .sheet-back:hover, .auth-back:hover, .md-hide-btn:hover{ background:#E3E6EF; color:var(--ink); }
+    .qty-btn:not(:disabled):hover{ box-shadow:0 2px 6px rgba(22,33,62,.18); }
+    .todo-del:hover{ color:var(--accent-2); }
+  }
+
+  /* ---------- Encabezado ---------- */
+  .topbar{ transition:box-shadow .2s ease; }
+  body.is-scrolled .topbar{ box-shadow:0 1px 0 var(--border), 0 10px 22px -16px rgba(22,33,62,.28); }
+  body.is-scrolled[data-section="sale"] .topbar{ box-shadow:none; }
+  @media (max-width:699px){
+    /* iPhone con la app instalada: el encabezado ya no queda debajo de la hora */
+    .topbar{ padding-top:calc(16px + env(safe-area-inset-top)); }
+  }
+  body[data-section="account"] h1.page-title::before{ background:var(--brand); }
+
+  /* ---------- Menú inferior / lateral ---------- */
+  .navbtn .navicon svg{ transition:transform .25s var(--ease-out); }
+  .navbtn.active .navicon svg{ transform:translateY(-1px) scale(1.06); }
+  @media (max-width:520px){
+    .navbtn span:last-child{ font-size:10.5px; letter-spacing:-.15px; }
+  }
+
+  /* ---------- Entrada suave al cambiar de sección ---------- */
+  @keyframes viewIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  #view.view-enter > *:not(.cartbar):not(.chip-row){ animation:viewIn .34s var(--ease-out) both; }
+  #view.view-enter > .chip-row{ animation:fadeIn .25s ease both; }
+  #view.view-enter > :nth-child(2){ animation-delay:.02s; }
+  #view.view-enter > :nth-child(3){ animation-delay:.04s; }
+  #view.view-enter > :nth-child(4){ animation-delay:.06s; }
+  #view.view-enter > :nth-child(5){ animation-delay:.08s; }
+  #view.view-enter > :nth-child(n+6){ animation-delay:.1s; }
+
+  /* ---------- Hojas / ventanas ---------- */
+  /* El fondo oscuro se anima aparte (más barato que animar toda la capa) */
+  .modal-overlay, .dm-overlay{ background:transparent; animation:none; overscroll-behavior:contain; }
+  .modal-overlay::before, .dm-overlay::before{
+    content:''; position:absolute; inset:0; background:rgba(16,22,42,.45);
+    animation:fadeIn .26s ease both;
+  }
+  .modal-sheet, .dm-sheet{
+    position:relative; overscroll-behavior:contain;
+    animation:sheetUp .42s var(--ease-sheet) both;
+  }
+  @keyframes sheetUp{ from{ transform:translateY(100%); } to{ transform:none; } }
+  @keyframes sheetDown{ from{ transform:none; } to{ transform:translateY(100%); } }
+  @keyframes fadeOut{ from{ opacity:1; } to{ opacity:0; } }
+  @keyframes dialogIn{ from{ opacity:0; transform:translateY(14px) scale(.97); } to{ opacity:1; transform:none; } }
+  @keyframes dialogOut{ from{ opacity:1; transform:none; } to{ opacity:0; transform:translateY(8px) scale(.98); } }
+  .modal-center .modal-sheet{ animation:dialogIn .28s var(--ease-out) both; }
+
+  .modal-overlay.is-closing, .dm-overlay.is-closing{ pointer-events:none; }
+  .modal-overlay.is-closing::before, .dm-overlay.is-closing::before{ animation:fadeOut .24s ease both; }
+  .modal-overlay.is-closing .modal-sheet, .dm-overlay.is-closing .dm-sheet{ animation:sheetDown .26s cubic-bezier(.4,0,1,1) both; }
+  .modal-center.is-closing .modal-sheet{ animation:dialogOut .18s ease-in both; }
+  /* Cambiar el contenido de una hoja ya abierta: sin volver a animar */
+  .modal-overlay.is-swap::before, .modal-overlay.is-swap .modal-sheet,
+  .dm-overlay.is-swap::before, .dm-overlay.is-swap .dm-sheet{ animation:none; }
+  #modal-ghost, #dmGhost{ position:relative; z-index:401; pointer-events:none; }
+  #modal-ghost .modal-overlay, #dmGhost .dm-overlay{ z-index:401; }
+
+  @media (min-width:700px){
+    .modal-sheet, .dm-sheet{ animation:dialogIn .28s var(--ease-out) both; }
+    .modal-overlay.is-closing .modal-sheet, .dm-overlay.is-closing .dm-sheet{ animation:dialogOut .18s ease-in both; }
+    .modal-sheet, .dm-sheet{ box-shadow:0 24px 60px -12px rgba(16,22,42,.35); }
+  }
+  /* En celular y tablet, con una hoja abierta la página de atrás no se mueve */
+  @media (pointer:coarse){
+    html.modal-open, html.modal-open body{ overflow:hidden; }
+  }
+  @media (pointer:fine){
+    .modal-sheet, .dm-sheet, .country-list, .print-preview{ scrollbar-width:thin; scrollbar-color:#C9CEDD transparent; }
+  }
+  /* Filas que se deslizan de lado: sin barra de scroll visible en ningún navegador */
+  .chip-row, .mdi-tabs, .dm-chips{ scrollbar-width:none; }
+  .chip-row{ scroll-behavior:smooth; }
+
+  /* Los avisos (toast) quedaban DETRÁS de las hojas abiertas: por ejemplo
+     "El efectivo recibido es insuficiente" al cobrar no se alcanzaba a ver. */
+  .toast{ z-index:650; }
+
+  /* ---------- Carrito (hoja) ---------- */
+  .cart-item-subtotal{ width:auto; min-width:58px; white-space:nowrap; }
+  .cart-item-remove{ border-radius:10px; padding:6px; margin-right:-6px; }
+
+  /* ---------- Nueva venta: tarjetas de producto ---------- */
+  /* Seleccionada: anillo de color con sombra (antes el borde cambiaba de
+     grosor y toda la tarjeta "saltaba" un pixel). */
+  .product-card.in-cart{
+    border-width:1px; border-color:var(--brand);
+    box-shadow:0 0 0 1px var(--brand), 0 8px 20px rgba(var(--brand-rgb),.18);
+  }
+  .product-card .pc-qty-total{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .product-card .pc-price{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .qty-control.mini{ gap:5px; }
+  /* Fotos de ejemplo (dibujos): se ven completas, sin recortar */
+  .pc-photo img[src^="data:image/svg"], .dm-photo img[src^="data:image/svg"],
+  .dm-pd-photo img[src^="data:image/svg"], .pr-photo img[src^="data:image/svg"]{ object-fit:contain; }
+  .pc-photo:has(img[src^="data:image/svg"]), .dm-photo:has(img[src^="data:image/svg"]),
+  .dm-pd-photo:has(img[src^="data:image/svg"]){ background:#fff; }
+
+  @media (max-width:699px){
+    /* Fotos cuadradas: caben más productos en pantalla sin deslizar tanto */
+    .product-card .pc-photo{ aspect-ratio:1 / 1; }
+    .product-grid{ gap:10px; }
+    .qty-control.mini .qty-btn{ width:27px; height:27px; font-size:15px; }
+    .qty-control.mini .qty-val{ font-size:13px; min-width:14px; }
+    .product-card .pc-pricebar, .product-card .pc-qtybar{ padding:8px 11px 12px; gap:6px; }
+    .product-card .pc-inner{ padding:11px 11px 4px; }
+  }
+
+  /* ---------- Formularios ---------- */
+  /* ".field label" le quitaba el acomodo a estas etiquetas especiales:
+     por eso "Toca para subir una foto" salía pegado arriba a la izquierda. */
+  .field label.photo-upload{ display:flex; margin-bottom:0; font-size:12.5px; color:var(--ink-soft); }
+  .field label.switch{ display:flex; margin-bottom:0; }
+  .field label.md-custom-color{ display:flex; margin-bottom:16px; color:var(--ink); }
+  .photo-upload{ transition:border-color .18s ease, background-color .18s ease; }
+  @media (hover:hover) and (pointer:fine){
+    .photo-upload:hover, .biz-logo:hover{ border-color:var(--brand); background:var(--brand-soft); color:var(--brand-ink); }
+  }
+  .field input, .field select, .md-textarea, .todo-add input, .phone-input, .size-row input, .qe-item-row input, .hrs-times input{
+    transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+  }
+  .field input:focus, .field select:focus, .md-textarea:focus, .todo-add input:focus, .phone-input:focus,
+  .size-row .pf-size-label:focus, .size-row .pf-size-price:focus, .qe-item-row input:focus, .hrs-times input:focus{
+    box-shadow:0 0 0 3px rgba(var(--brand-rgb),.14);
+  }
+
+  /* ---------- Acceso (bienvenida, registro, prueba gratis) ---------- */
+  .trial-badge{ align-self:flex-start; }
+  /* El dibujo puede salirse de su caja: así el mostrador llega de orilla
+     a orilla y nunca se ve como una caja "flotando". */
+  .auth-hero svg{ overflow:visible; }
+  @media (min-width:600px) and (max-width:899px){
+    .auth-hero svg{ max-width:660px; }
+  }
+  @media (min-width:900px){
+    /* El logo "Vendo" iba encima del dibujo; ahora va arriba a la izquierda */
+    .auth-screen > .auth-hero{ position:static; align-self:end; padding:0 24px; }
+    .auth-screen > .auth-hero svg{ max-width:640px; }
+    /* Dibujo del panel izquierdo: orillas desvanecidas (sin cortes duros) */
+    .auth-side-art.wide svg{
+      -webkit-mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent),
+                         linear-gradient(180deg, #000 88%, transparent);
+      -webkit-mask-composite:source-in;
+              mask-image:linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent),
+                         linear-gradient(180deg, #000 88%, transparent);
+              mask-composite:intersect;
+    }
+    .auth-sheet .auth-body, .auth-screen > .auth-body{ max-width:440px; }
+  }
+
+  /* ---------- Menú Digital (lo que ve el cliente) ---------- */
+  /* El desenfoque de fondo era caro de dibujar al deslizar en celulares
+     sencillos; con un fondo sólido se ve igual y se desliza más fluido. */
+  .dm-top{ -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .dm-chips{
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+    background:linear-gradient(rgba(var(--dm-rgb),.035), rgba(var(--dm-rgb),.035)), var(--bg);
+  }
+  .dm-cartbar.no-pop .dm-cartbar-inner{ animation:none; }
+
+  /* =========================================================
+     TABLET Y PC
+  ========================================================= */
+  @media (min-width:700px){
+    /* Contenido con ancho máximo y centrado: en monitores grandes ya no se
+       estira de orilla a orilla. */
+    .topbar, .view{ width:100%; max-width:1240px; justify-self:center; }
+    .topbar{ padding-left:36px; padding-right:36px; }
+    .chip-row.sticky-index{ margin-left:-36px; margin-right:-36px; padding-left:36px; padding-right:36px; }
+
+    /* Menú lateral un poco más ancho: "Nueva venta" y "Menú Digital"
+       caben en un solo renglón */
+    .app{ grid-template-columns:92px minmax(0,1fr); }
+    .cartbar, .toast{ left:calc(50% + 46px); }
+    .modal-overlay{ padding-left:92px; }
+    body.auth-open .modal-overlay{ padding-left:0; }
+
+    /* Letras que habían quedado demasiado chicas */
+    .navbtn{ padding:10px 2px; gap:4px; }
+    .navbtn .navicon, .navbtn .navicon svg{ width:20px; height:20px; }
+    .navbtn span:last-child{ font-size:11px; white-space:nowrap; letter-spacing:-.1px; }
+    .topbar-clock{ font-size:12px; }
+    .brand-name{ font-size:17.5px; }
+    .brand-sub{ font-size:11px; }
+    .stat-card .stat-value{ font-size:20px; }
+    .stat-card .stat-label{ font-size:12px; }
+    .sale-row-meta, .sale-row-who{ font-size:11.5px; }
+
+    /* Nueva venta: tarjetas legibles (antes ~8 por fila con letras de 7 px) */
+    .product-grid{ grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
+    .product-card .pc-photo{ aspect-ratio:4 / 3; }
+    .product-card .pc-photo.is-placeholder svg{ width:26px; height:26px; }
+    .product-card .pc-inner{ padding:10px 11px 2px; }
+    .product-card .pc-cat{ font-size:10px; margin-bottom:3px; }
+    .product-card .pc-name{ font-size:13px; line-height:1.3; height:34px; }
+    .product-card .pc-stock{ font-size:11px; }
+    .product-card .pc-pricebar, .product-card .pc-qtybar{ padding:6px 11px 11px; gap:6px; }
+    .product-card .pc-price{ font-size:14.5px; }
+    .product-card .pc-qty-total{ font-size:13px; }
+    .product-card .qty-control.mini{ padding:3px; }
+    .product-card .qty-control.mini .qty-btn{ width:24px; height:24px; font-size:14px; }
+    .product-card .qty-control.mini .qty-val{ font-size:12.5px; min-width:14px; }
+    .product-card .pc-flag{ top:10px; right:8px; }
+
+    .modal-sheet{ max-width:460px; }
+    .cartbar-inner{ padding:10px 14px 10px 10px; }
+  }
+
+  /* Tablet (pantalla táctil): botones con tamaño cómodo para el dedo */
+  @media (min-width:700px) and (pointer:coarse){
+    .navbtn{ padding:12px 2px; }
+    .btn{ min-height:42px; padding:11px 16px; font-size:14px; }
+    .qty-btn{ width:30px; height:30px; font-size:16px; }
+    .product-grid{ grid-template-columns:repeat(auto-fill, minmax(176px, 1fr)); }
+    .product-card .qty-control.mini .qty-btn{ width:30px; height:30px; font-size:16px; }
+    .product-card .qty-control.mini .qty-val{ font-size:14px; }
+    .icon-btn{ width:36px; height:36px; }
+    .sheet-close, .sheet-back{ width:36px; height:36px; }
+    .chip, .filter-chip{ padding:10px 15px; font-size:14px; }
+    .field input, .field select, .md-textarea{ padding:12px 13px; font-size:15px; }
+    .acc-row{ padding:13px 15px; }
+    .todo-check{ width:26px; height:26px; }
+    .todo-add input{ padding:11px 12px; font-size:14px; }
+    .seg button{ padding:9px 8px; font-size:13.5px; }
+    .opt-card{ padding:12px 6px; font-size:12.5px; }
+    .user-chip{ padding:4px 12px 4px 4px; }
+    .avatar-btn{ width:34px; height:34px; }
+  }
+
+  /* Menos movimiento si la persona así lo pidió en su teléfono o computadora */
+  @media (prefers-reduced-motion:reduce){
+    *, *::before, *::after{
+      animation-duration:.01ms !important; animation-iteration-count:1 !important;
+      transition-duration:.01ms !important; scroll-behavior:auto !important;
+    }
+  }
+</style>
 </head>
 <body>
 
@@ -2854,6 +3166,7 @@
 </div>
 
 <div id="modal-layer"></div>
+<div id="modal-ghost" aria-hidden="true"></div>
 <div class="auth-layer" id="authLayer"></div>
 <div class="toast" id="toast"></div>
 
@@ -2862,29 +3175,49 @@
    al deslizar porque Safari esconde su barra y aparece la franja inferior)
    para que el carrito y el índice de categorías nunca queden tapados. */
 (function(){
+  /* offsetHeight da la medida en el mismo tamaño en que se usa (la app
+     está reducida con "zoom"); getBoundingClientRect la daba ya reducida
+     y el índice de categorías quedaba un poco metido debajo del encabezado.
+     Además solo se escribe si cambió: antes se reescribía en CADA
+     movimiento del scroll y eso hacía que deslizar se sintiera pesado. */
+  var ultimo = {};
+  function poner(nombre, valor){
+    if(ultimo[nombre] === valor) return;
+    ultimo[nombre] = valor;
+    document.documentElement.style.setProperty(nombre, valor);
+  }
   function medir(){
-    var root = document.documentElement;
     var top = document.querySelector('.topbar');
     var nav = document.querySelector('.bottomnav');
-    if(top) root.style.setProperty('--topbar-h', top.getBoundingClientRect().height + 'px');
+    if(top && top.offsetHeight) poner('--topbar-h', top.offsetHeight + 'px');
     if(nav){
-      var abajo = window.matchMedia('(min-width:700px)').matches ? 0 : nav.getBoundingClientRect().height;
-      root.style.setProperty('--nav-h', abajo + 'px');
+      var abajo = window.matchMedia('(min-width:700px)').matches ? 0 : nav.offsetHeight;
+      poner('--nav-h', abajo + 'px');
     }
+  }
+  var pendiente = false;
+  function medirLuego(){
+    if(pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(function(){ pendiente = false; medir(); });
+  }
+  /* Sombra suave bajo el encabezado solo cuando ya bajaste un poco */
+  var arriba = null;
+  function revisarScroll(){
+    var bajo = (window.scrollY || window.pageYOffset || 0) > 6;
+    if(bajo !== arriba){ arriba = bajo; document.body.classList.toggle('is-scrolled', bajo); }
   }
   function iniciar(){
     medir();
+    revisarScroll();
     if(window.ResizeObserver){
-      var ro = new ResizeObserver(medir);
+      var ro = new ResizeObserver(medirLuego);
       document.querySelectorAll('.topbar, .bottomnav').forEach(function(el){ ro.observe(el); });
     }
-    window.addEventListener('resize', medir);
-    window.addEventListener('orientationchange', medir);
-    if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', medir);
-      window.visualViewport.addEventListener('scroll', medir);
-    }
-    window.addEventListener('scroll', medir, { passive:true });
+    window.addEventListener('resize', medirLuego);
+    window.addEventListener('orientationchange', medirLuego);
+    if(window.visualViewport) window.visualViewport.addEventListener('resize', medirLuego);
+    window.addEventListener('scroll', revisarScroll, { passive:true });
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
@@ -3474,23 +3807,100 @@ function vibrate(pattern){
 /* ---------- Navegación ---------- */
 function goTo(view){
   currentView = view;
+  render.fresh = true;
   render();
-  document.getElementById('view').scrollTop = 0;
+  const el = document.getElementById('view');
+  el.scrollTop = 0;
+  /* La página completa es la que se desliza: al cambiar de sección se
+     regresa arriba (antes te quedabas a media pantalla de la anterior). */
+  window.scrollTo(0, 0);
+  /* Entrada suave de la sección nueva */
+  el.classList.remove('view-enter');
+  void el.offsetWidth;
+  el.classList.add('view-enter');
+  clearTimeout(goTo._t);
+  goTo._t = setTimeout(() => el.classList.remove('view-enter'), 520);
 }
 
 function render(){
   document.body.dataset.section = currentView;
   document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('active', b.dataset.view === currentView));
   const el = document.getElementById('view');
-  if(currentView === 'home') el.innerHTML = renderHome();
-  else if(currentView === 'sale') el.innerHTML = renderSale();
-  else if(currentView === 'history'){ el.innerHTML = renderHistoryShell(); renderHistoryList(); }
-  else if(currentView === 'stats') el.innerHTML = renderStats();
-  else if(currentView === 'products') el.innerHTML = renderProducts();
-  else if(currentView === 'account') el.innerHTML = renderAccount();
-  else if(currentView === 'menu') el.innerHTML = renderMenuDigital();
+  /* Si es la misma sección, solo se cambia lo que cambió (morphHTML):
+     las fotos no parpadean, la barra del carrito no "rebota" en cada
+     toque y la fila de categorías no regresa al inicio. */
+  const same = !render.fresh && el.dataset.v === currentView;
+  render.fresh = false;
+  el.dataset.v = currentView;
+  const put = html => { if(same) morphHTML(el, html); else el.innerHTML = html; };
+  if(currentView === 'home') put(renderHome());
+  else if(currentView === 'sale') put(renderSale());
+  else if(currentView === 'history'){ put(renderHistoryShell()); renderHistoryList(); }
+  else if(currentView === 'stats') put(renderStats());
+  else if(currentView === 'products') put(renderProducts());
+  else if(currentView === 'account') put(renderAccount());
+  else if(currentView === 'menu') put(renderMenuDigital());
   const chip = document.getElementById('userChip');
   if(chip) chip.classList.toggle('active', currentView === 'account');
+}
+
+/* ---------- Repintado ligero ----------
+   Compara el HTML nuevo con lo que ya está en pantalla y solo toca los
+   nodos distintos. Si algo no se puede comparar, se reemplaza completo
+   (igual que antes), así que el resultado siempre es el mismo. */
+function morphHTML(el, html){
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html;
+  morphKids(el, tpl.content);
+}
+function morphKids(from, to){
+  let a = from.firstChild, b = to.firstChild;
+  while(b){
+    const nb = b.nextSibling;
+    if(!a){ from.appendChild(b); }
+    else{
+      const na = a.nextSibling;
+      if(!morphNode(a, b)) from.replaceChild(b, a);
+      a = na;
+    }
+    b = nb;
+  }
+  while(a){ const na = a.nextSibling; from.removeChild(a); a = na; }
+}
+function morphNode(a, b){
+  if(a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) return false;
+  if(a.nodeType === 3 || a.nodeType === 8){
+    if(a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue;
+    return true;
+  }
+  if(a.nodeType !== 1) return false;
+  const tag = a.nodeName;
+  const focused = document.activeElement === a;
+  if(tag === 'SELECT' || tag === 'TEXTAREA'){
+    if(!a.isEqualNode(b)) return false;
+    if(!focused && a.value !== b.value) a.value = b.value;
+    return true;
+  }
+  if(tag !== 'INPUT' && a.isEqualNode(b)) return true;
+  /* Dibujos SVG distintos: se cambian completos */
+  if(a.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
+  try{
+    for(let i = a.attributes.length - 1; i >= 0; i--){
+      const n = a.attributes[i].name;
+      if(!b.hasAttribute(n)) a.removeAttribute(n);
+    }
+    for(let i = 0; i < b.attributes.length; i++){
+      const at = b.attributes[i];
+      if(a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+    }
+  }catch(e){ return false; }
+  if(tag === 'INPUT'){
+    if(a.type === 'checkbox' || a.type === 'radio'){ if(a.checked !== b.checked) a.checked = b.checked; }
+    else if(!focused && a.value !== b.value) a.value = b.value;
+    return true;
+  }
+  morphKids(a, b);
+  return true;
 }
 
 /* =========================================================
@@ -3745,7 +4155,7 @@ function renderSale(){
           <div class="pc-tap" onclick="${tapAction}">
             <div class="pc-top" style="background:${cat.color}"></div>
             <div class="pc-photo ${p.image ? '' : 'is-placeholder'}">
-              ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}">` : icon('plateSet')}
+              ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" decoding="async">` : icon('plateSet')}
             </div>
             <div class="pc-inner">
               <div class="pc-cat">${escapeHtml(cat.name)}</div>
@@ -3951,22 +4361,64 @@ function changeSizeQty(productId, sizeId, delta){
 }
 
 /* ---------- Carrito / checkout (modal) ---------- */
+/* Título de una hoja (sirve para saber si se está repintando la misma) */
+function sheetTitleOf(sheet){
+  const h = sheet && sheet.querySelector('h2, h3, .sheet-title');
+  return h ? h.textContent.trim() : '';
+}
+function prefersLessMotion(){
+  try{ return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; }
+}
 function openModal(html, opts){
   opts = opts || {};
   const layer = document.getElementById('modal-layer');
-  layer.innerHTML = `<div class="modal-overlay ${opts.center?'modal-center':''}" id="modalOverlay">
+  /* Si una hoja se está cerrando, se quita ya para no encimar dos fondos */
+  const ghost = document.getElementById('modal-ghost');
+  if(ghost) ghost.innerHTML = '';
+  /* ¿Ya hay una hoja abierta? Entonces solo se cambia su contenido, sin
+     volver a deslizarla desde abajo (antes "brincaba" en cada toque, por
+     ejemplo al elegir Efectivo/Tarjeta o al cambiar una cantidad). */
+  const prevSheet = layer.querySelector('.modal-overlay:not(.is-closing) .modal-sheet');
+  const swap = !!prevSheet;
+  const prevTitle = swap ? sheetTitleOf(prevSheet) : '';
+  const prevY = swap ? prevSheet.scrollTop : 0;
+  layer.innerHTML = `<div class="modal-overlay ${opts.center?'modal-center':''} ${swap?'is-swap':''}" id="modalOverlay">
       <div class="modal-sheet ${opts.card?'modal-card':''}">
         ${opts.grip !== false ? '<div class="sheet-grip"></div>' : ''}
         ${html}
       </div>
     </div>`;
+  if(swap && prevY){
+    const sh = layer.querySelector('.modal-sheet');
+    if(sh && sheetTitleOf(sh) === prevTitle) sh.scrollTop = prevY;
+  }
+  document.documentElement.classList.add('modal-open');
   if(opts.dismissible !== false){
     document.getElementById('modalOverlay').addEventListener('click', function(e){
       if(e.target.id === 'modalOverlay') closeModal();
     });
   }
 }
-function closeModal(){ document.getElementById('modal-layer').innerHTML = ''; }
+function closeModal(){
+  const layer = document.getElementById('modal-layer');
+  const ov = layer.querySelector('.modal-overlay');
+  const sh = ov && ov.querySelector('.modal-sheet');
+  const y = sh ? sh.scrollTop : 0;
+  /* El contenido se quita al instante (el resto del código lo espera así)
+     y una copia sin ids se desvanece encima durante un momento. */
+  layer.innerHTML = '';
+  document.documentElement.classList.remove('modal-open');
+  const ghost = document.getElementById('modal-ghost');
+  if(!ov || !ghost || prefersLessMotion()) return;
+  ov.removeAttribute('id');
+  ov.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+  ov.classList.remove('is-swap');
+  ov.classList.add('is-closing');
+  ghost.innerHTML = '';
+  ghost.appendChild(ov);
+  if(sh && y) sh.scrollTop = y;
+  setTimeout(() => { if(ov.parentNode) ov.parentNode.removeChild(ov); }, 260);
+}
 
 function openCartSheet(step){
   if(cart.length === 0 && step !== 'cart'){ step = 'cart'; }
@@ -4031,7 +4483,7 @@ function cartSheetHTML(step){
         <h2>Carrito</h2>
         ${cart.length > 0 ? `
           <div class="cart-total-pill">
-            <span class="ctp-icon">${icon('person')}</span>
+            <span class="ctp-icon">${icon('cart')}</span>
             <span>${formatMoney(totals.total)}</span>
           </div>
         ` : ''}
@@ -6850,24 +7302,14 @@ Object.assign(ILLUSTRATIONS, {
     <path d="M330 168c-10-8-8-24 2-30 6 10 6 22-2 30Z" fill="#2F6B4F"/>
     <path d="M330 168c10-6 12-20 4-28-8 8-10 20-4 28Z" fill="#3C8A64"/>
     <path d="M320 168h22l-3 24h-16l-3-24Z" fill="#F5BF3C"/>
-    <!-- mostrador -->
-    <rect x="0" y="228" width="400" height="72" fill="#F2E2C0"/>
-    <rect x="0" y="228" width="400" height="9" rx="3" fill="#FFF6E2"/>
-    <!-- tablet / punto de venta -->
-    <rect x="36" y="176" width="74" height="54" rx="7" fill="#101A31" stroke="#46598C" stroke-width="2"/>
-    <rect x="43" y="183" width="60" height="40" rx="4" fill="#FFFFFF"/>
-    <rect x="48" y="189" width="28" height="4" rx="2" fill="#C9CEDD"/>
-    <rect x="48" y="197" width="44" height="4" rx="2" fill="#E4E8F1"/>
-    <rect x="48" y="205" width="36" height="4" rx="2" fill="#E4E8F1"/>
-    <rect x="48" y="213" width="22" height="5" rx="2.5" fill="#FFD666"/>
-    <!-- persona -->
+    <!-- persona (detrás del mostrador) -->
     <g>
       <!-- torso / playera -->
       <path d="M148 230c0-30 20-48 52-48s52 18 52 48v18H148v-18Z" fill="#FFFFFF"/>
       <!-- mandil amarillo -->
       <path d="M176 196h48c8 12 11 26 11 52h-70c0-26 3-40 11-52Z" fill="#F5BF3C"/>
       <path d="M186 190c4 8 9 12 14 12s10-4 14-12" stroke="#F5BF3C" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <rect x="208" y="222" width="20" height="16" rx="3" fill="#E0A928"/>
+      <rect x="208" y="207" width="20" height="15" rx="3" fill="#E0A928"/>
       <!-- cuello y cabeza -->
       <path d="M190 172h20v18h-20z" fill="#EBB491"/>
       <ellipse cx="200" cy="150" rx="27" ry="30" fill="#F5C6A3"/>
@@ -6875,12 +7317,22 @@ Object.assign(ILLUSTRATIONS, {
       <path d="M200 116c19 0 30 12 30 30 0 7-1 12-3 17-2-12-6-17-10-19-6 4-25 6-38 1-3 4-5 10-6 18-3-6-4-11-4-17 0-18 12-30 31-30Z" fill="#3A2A22"/>
       <path d="M170 145c-6 4-8 14-5 22 2-9 4-14 8-17l-3-5Z" fill="#3A2A22"/>
       <!-- cara -->
-      <path d="M190 148c2-2 5-2 7 0M203 148c2-2 5-2 7 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
-      <path d="M192 163c4 4 12 4 16 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
-      <circle cx="177" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
-      <circle cx="223" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
+      <path d="M189 155c2-2.2 5.2-2.2 7.4 0M203.6 155c2-2.2 5.2-2.2 7.4 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M192 166c4 4 12 4 16 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="178" cy="161" r="4" fill="#F0A6A0" opacity=".55"/>
+      <circle cx="222" cy="161" r="4" fill="#F0A6A0" opacity=".55"/>
       <circle cx="228" cy="152" r="4.5" stroke="#FFD666" stroke-width="2.5" fill="none"/>
     </g>
+    <!-- el mostrador se extiende más allá del dibujo para que nunca se vea "cortado" en pantallas anchas -->
+    <rect x="-800" y="228" width="2000" height="472" fill="#F2E2C0"/>
+    <rect x="-800" y="228" width="2000" height="9" fill="#FFF6E2"/>
+    <!-- tablet / punto de venta -->
+    <rect x="36" y="176" width="74" height="54" rx="7" fill="#101A31" stroke="#46598C" stroke-width="2"/>
+    <rect x="43" y="183" width="60" height="40" rx="4" fill="#FFFFFF"/>
+    <rect x="48" y="189" width="28" height="4" rx="2" fill="#C9CEDD"/>
+    <rect x="48" y="197" width="44" height="4" rx="2" fill="#E4E8F1"/>
+    <rect x="48" y="205" width="36" height="4" rx="2" fill="#E4E8F1"/>
+    <rect x="48" y="213" width="22" height="5" rx="2.5" fill="#FFD666"/>
     <!-- burbuja de venta -->
     <g>
       <rect x="268" y="150" width="104" height="44" rx="14" fill="#FFFFFF"/>
@@ -6939,18 +7391,7 @@ Object.assign(ILLUSTRATIONS, {
     <circle cx="42" cy="118" r="4" fill="#2E7DC0"/>
     <rect x="52" y="158" width="7" height="7" rx="2" fill="#F5BF3C" transform="rotate(30 55 162)"/>
     <circle cx="366" cy="180" r="4" fill="#25D366"/>
-    <!-- mostrador -->
-    <rect x="0" y="230" width="400" height="70" fill="#F2E2C0"/>
-    <rect x="0" y="230" width="400" height="9" rx="3" fill="#FFF6E2"/>
-    <!-- regalo -->
-    <g>
-      <rect x="228" y="178" width="92" height="68" rx="9" fill="#FFD666"/>
-      <rect x="228" y="178" width="92" height="17" fill="#F5BF3C"/>
-      <rect x="265" y="178" width="18" height="68" fill="#E1594C"/>
-      <path d="M265 178c0-14-9-24-18-24 0 12 8 20 18 24Z" fill="#E1594C"/>
-      <path d="M283 178c0-14 9-24 18-24 0 12-8 20-18 24Z" fill="#E1594C"/>
-    </g>
-    <!-- persona -->
+    <!-- persona (detrás del mostrador) -->
     <g>
       <path d="M96 230c0-30 20-48 52-48s52 18 52 48v16H96v-16Z" fill="#FFFFFF"/>
       <path d="M124 196h48c8 12 11 26 11 50h-70c0-24 3-38 11-50Z" fill="#25D366"/>
@@ -6959,11 +7400,21 @@ Object.assign(ILLUSTRATIONS, {
       <ellipse cx="148" cy="150" rx="27" ry="30" fill="#F5C6A3"/>
       <path d="M148 116c19 0 30 12 30 30 0 7-1 12-3 17-2-12-6-17-10-19-6 4-25 6-38 1-3 4-5 10-6 18-3-6-4-11-4-17 0-18 12-30 31-30Z" fill="#3A2A22"/>
       <path d="M118 145c-6 4-8 14-5 22 2-9 4-14 8-17l-3-5Z" fill="#3A2A22"/>
-      <path d="M138 148c2-2 5-2 7 0M151 148c2-2 5-2 7 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
-      <path d="M138 161c5 5 14 5 19-1" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
-      <circle cx="125" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
-      <circle cx="171" cy="156" r="4" fill="#F0A6A0" opacity=".55"/>
-      <path d="M198 214c14-6 24-14 30-24" stroke="#F5C6A3" stroke-width="11" stroke-linecap="round"/>
+      <path d="M137 155c2-2.2 5.2-2.2 7.4 0M151.6 155c2-2.2 5.2-2.2 7.4 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M139 165c5 4.6 13 4.6 18 0" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="126" cy="161" r="4" fill="#F0A6A0" opacity=".55"/>
+      <circle cx="170" cy="161" r="4" fill="#F0A6A0" opacity=".55"/>
+    </g>
+    <!-- el mostrador se extiende más allá del dibujo para que nunca se vea "cortado" en pantallas anchas -->
+    <rect x="-800" y="230" width="2000" height="470" fill="#F2E2C0"/>
+    <rect x="-800" y="230" width="2000" height="9" fill="#FFF6E2"/>
+    <!-- regalo -->
+    <g>
+      <rect x="228" y="178" width="92" height="68" rx="9" fill="#FFD666"/>
+      <rect x="228" y="178" width="92" height="17" fill="#F5BF3C"/>
+      <rect x="265" y="178" width="18" height="68" fill="#E1594C"/>
+      <path d="M265 178c0-14-9-24-18-24 0 12 8 20 18 24Z" fill="#E1594C"/>
+      <path d="M283 178c0-14 9-24 18-24 0 12-8 20-18 24Z" fill="#E1594C"/>
     </g>
     <!-- burbuja -->
     <g>
@@ -7121,6 +7572,12 @@ function hideAuth(){
   document.getElementById('authLayer').innerHTML = '';
   document.body.classList.remove('auth-open');
   clearInterval(authResendTimer);
+  setThemeColor('#F3F4FA');
+}
+/* Color de la barra del navegador en el celular: igual al fondo de lo que se ve */
+function setThemeColor(c){
+  const m = document.querySelector('meta[name="theme-color"]');
+  if(m && m.content !== c) m.content = c;
 }
 function authGo(screen){
   authState.screen = screen;
@@ -7139,6 +7596,7 @@ function renderAuth(){
   else if(s === 'users') html = authUsersHTML();          // selección de usuario
   else if(s === 'userpin') html = authUserPinHTML();      // NIP de ese usuario
   layer.innerHTML = `<div class="auth-screen" key="${s}">${html}${html.indexOf('auth-hero') === -1 ? authSideHTML(s) : ''}</div>`;
+  setThemeColor(html.indexOf('auth-hero') !== -1 ? '#2A2D79' : '#FFFFFF');
 
   if(s === 'userpin'){
     const pin = document.getElementById('userPinInput');
@@ -10253,7 +10711,7 @@ function dmData(){
 function dmFind(id){ return DB.getProducts().find(p => p.id === id); }
 function dmPhoto(src, alt){
   if(!src) return icon('plate');
-  return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt || '')}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{innerHTML:ICONS.plate}).firstChild)">`;
+  return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt || '')}" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{innerHTML:ICONS.plate}).firstChild)">`;
 }
 function dmToast(msg){
   const t = document.getElementById('dmToast');
@@ -10445,9 +10903,14 @@ function dmRenderCartbar(){
   const bar = document.getElementById('dmCartbar');
   if(!bar) return;
   const n = dmUnits();
-  bar.classList.toggle('show', n > 0 && !dm.sheet);
+  const wasShown = bar.classList.contains('show');
+  const showNow = n > 0 && !dm.sheet;
+  if(showNow && !wasShown) bar._shownAt = Date.now();
+  bar.classList.toggle('show', showNow);
   if(!n) return;
   const t = mdTotals(dm.cart);
+  /* Si la barra ya estaba a la vista, no vuelve a "rebotar" */
+  bar.classList.toggle('no-pop', wasShown && Date.now() - (bar._shownAt || 0) > 450);
   bar.innerHTML = `<button class="dm-cartbar-inner" onclick="dmOpenSheet('cart')">
     <span class="dm-cb-left"><span class="dm-cb-ico">${icon('bag')}<span class="dm-cb-count">${n}</span></span><span class="dm-cb-label">Ver pedido</span></span>
     <span class="dm-cb-total">${formatMoney(t.subtotal)}<span class="cartbar-chevron">${icon('chevronRight')}</span></span>
@@ -10484,23 +10947,47 @@ function dmSpy(){
 
 /* ---------- Hojas (producto, pedido, confirmar, datos, seguimiento) ---------- */
 function dmOpenSheet(kind){
+  const prevKind = dm.sheet;
   dm.sheet = kind;
   const layer = document.getElementById('dmLayer');
+  const ghost = document.getElementById('dmGhost'); if(ghost) ghost.innerHTML = '';
+  /* Misma idea que en la app: si ya hay una hoja abierta solo cambia su
+     contenido (al subir o bajar la cantidad ya no "rebota"). */
+  const prev = layer.querySelector('.dm-sheet');
+  const swap = !!prev;
+  const y = (swap && prevKind === kind) ? prev.scrollTop : 0;
   let html = '';
   if(kind === 'product') html = dmProductHTML();
   else if(kind === 'cart') html = dmCartHTML();
   else if(kind === 'confirm') html = dmConfirmHTML();
   else if(kind === 'hours') html = dmHoursSheetHTML();
-  layer.innerHTML = `<div class="dm-overlay" id="dmOverlay"><div class="dm-sheet" role="dialog" aria-modal="true"><div class="sheet-grip"></div>${html}</div></div>`;
+  layer.innerHTML = `<div class="dm-overlay ${swap ? 'is-swap' : ''}" id="dmOverlay"><div class="dm-sheet" role="dialog" aria-modal="true"><div class="sheet-grip"></div>${html}</div></div>`;
+  if(y){ const sh = layer.querySelector('.dm-sheet'); if(sh) sh.scrollTop = y; }
   document.getElementById('dmOverlay').addEventListener('click', e => { if(e.target.id === 'dmOverlay') dmCloseSheet(); });
   document.body.classList.add('dm-lock');
   dmRenderCartbar();
 }
 function dmCloseSheet(){
   dm.sheet = null;
-  document.getElementById('dmLayer').innerHTML = '';
+  const layer = document.getElementById('dmLayer');
+  const ov = layer.querySelector('.dm-overlay');
+  const sh = ov && ov.querySelector('.dm-sheet');
+  const y = sh ? sh.scrollTop : 0;
+  layer.innerHTML = '';
   document.body.classList.remove('dm-lock');
   dmRenderCartbar();
+  /* Se desvanece una copia sin ids mientras se cierra */
+  let ghost = document.getElementById('dmGhost');
+  if(!ov || prefersLessMotion()) return;
+  if(!ghost){ ghost = document.createElement('div'); ghost.id = 'dmGhost'; ghost.className = 'dmx'; ghost.setAttribute('aria-hidden', 'true'); document.body.appendChild(ghost); }
+  ov.removeAttribute('id');
+  ov.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+  ov.classList.remove('is-swap');
+  ov.classList.add('is-closing');
+  ghost.innerHTML = '';
+  ghost.appendChild(ov);
+  if(sh && y) sh.scrollTop = y;
+  setTimeout(() => { if(ov.parentNode) ov.parentNode.removeChild(ov); }, 260);
 }
 
 function dmOpenProduct(pid){
