@@ -2026,6 +2026,9 @@
   .mdi-card.st-ok{ border-left-color:var(--success); }
   .mdi-card.st-no{ border-left-color:var(--accent-2); }
   .mdi-card.st-no .mdi-name, .mdi-card.st-no .mdi-card-foot b{ color:var(--ink-soft); }
+  .mdi-card.st-cancel{ border-left-color:var(--ink-faint); }
+  .mdi-card.st-cancel .mdi-name, .mdi-card.st-cancel .mdi-card-foot b{ color:var(--ink-soft); }
+  .mdi-card.st-cancel .mdi-card-foot b{ text-decoration:line-through; }
   .mdi-card-top{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .mdi-code{ font-family:var(--mono); font-weight:800; font-size:13px; letter-spacing:.4px; }
   .mdi-time{ margin-left:auto; font-size:11.5px; font-weight:700; color:var(--ink-soft); }
@@ -2039,6 +2042,7 @@
   .mdi-pill.no{ background:var(--danger-bg); color:var(--accent-2); }
   .mdi-pill.mod{ background:var(--brand-soft); color:var(--brand-ink); }
   .mdi-pill.wa{ background:#E3F8EA; color:#0E7A3D; }
+  .mdi-pill.cancel{ background:var(--surface-alt); color:var(--ink-soft); }
   .mdi-name{ display:flex; align-items:center; gap:6px; font-size:14.5px; font-weight:800; }
   .mdi-name svg{ width:15px; height:15px; color:var(--ink-soft); flex-shrink:0; }
   .mdi-items{ font-size:12.5px; font-weight:600; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2067,6 +2071,8 @@
   .mdi-banner.ok{ background:var(--success-bg); color:#1F6B49; }
   .mdi-banner.no{ background:var(--danger-bg); color:#8A3A32; }
   .mdi-banner.warn{ background:var(--accent-soft); color:#6B4A00; margin-top:4px; }
+  .mdi-banner.cancel{ background:var(--surface-alt); color:var(--ink-soft); }
+  .mdi-banner.cancel b{ color:var(--ink); }
   .mdi-compare{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px; margin-bottom:18px; box-shadow:var(--shadow-card); }
   .mdi-compare-head{ display:flex; gap:12px; align-items:center; }
   .mdi-compare-head .acc-sub{ white-space:normal; }
@@ -2264,8 +2270,7 @@
   }
   .md-hide-btn svg{ width:13px; height:13px; transform:rotate(180deg); }
 
-  /* ---------- "Mi cuenta" siempre dentro de las secciones ---------- */
-  .navbtn[data-view="account"]{ display:flex; }
+  /* ---------- "Mi cuenta" solo en el menú lateral de PC (ver media 700px) ---------- */
   @media (max-width:520px){
     .navbtn{ min-width:0; }
     .navbtn span:last-child{ font-size:9.5px; }
@@ -2510,9 +2515,9 @@
   .inv-kind.datos{ background:var(--brand-soft); color:var(--brand-ink); }
   .inv-recent-k{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin:0 0 6px; }
 
-  /* ---------- PC: "Mi cuenta" solo arriba a la derecha ---------- */
+  /* ---------- PC: "Mi cuenta" en el menú lateral, debajo de "Menú Digital" ---------- */
   @media (min-width:700px){
-    .navbtn[data-view="account"]{ display:none; }
+    .navbtn[data-view="account"]{ display:flex; margin-top:0; }
     .done-box{ padding:10px 12px; }
     .done-ico{ width:34px; height:34px; }
     .done-txt b{ font-size:14px; }
@@ -2842,8 +2847,8 @@
     <button class="navbtn" data-view="sale" data-icon="cart" onclick="goTo('sale')"><span class="navicon"></span><span>Nueva venta</span></button>
     <button class="navbtn" data-view="history" data-icon="receipt" onclick="goTo('history')"><span class="navicon"></span><span>Historial</span></button>
     <button class="navbtn" data-view="stats" data-icon="chart" onclick="goTo('stats')"><span class="navicon"></span><span>Ventas</span></button>
-    <button class="navbtn" data-view="products" data-icon="box" onclick="goTo('products')"><span class="navicon"></span><span>Productos</span></button>
     <button class="navbtn" data-view="menu" data-icon="menuBook" onclick="goTo('menu')"><span class="navicon"></span><span>Menú Digital</span></button>
+    <button class="navbtn" data-view="products" data-icon="box" onclick="goTo('products')"><span class="navicon"></span><span>Productos</span></button>
     <button class="navbtn" data-view="account" data-icon="person" onclick="goTo('account')"><span class="navicon"></span><span>Mi cuenta</span></button>
   </nav>
 </div>
@@ -3227,6 +3232,18 @@ function initDB(){
   if(localStorage.getItem('mesa_categories') === null){ DB.saveCategories(defaultCategories()); }
   if(localStorage.getItem('mesa_sales') === null){ DB.saveSales([]); }
   if(localStorage.getItem('mesa_counter') === null){ localStorage.setItem('mesa_counter','0'); }
+
+  /* Productos de ejemplo: se ponen la primera vez, y también una única
+     vez si el catálogo quedó vacío por pruebas anteriores (sin productos,
+     sin secciones y sin ventas). Después ya no vuelven a aparecer solos. */
+  if(localStorage.getItem('mesa_demo_seed') === null){
+    if(!DB.getProducts().length && !DB.getCategories().length && !DB.getSales().length){
+      DB.saveProducts(defaultProducts());
+      DB.saveCategories(defaultCategories());
+      localStorage.removeItem('mesa_demo_hint_off');
+    }
+    localStorage.setItem('mesa_demo_seed', '1');
+  }
 
   // Productos de demostración guardados antes de existir el precio de producción:
   // se les pone el simulado UNA vez (solo si nunca tuvieron dato: undefined).
@@ -5642,6 +5659,13 @@ function openSaleDetail(saleId){
 
 function cancelSale(saleId){
   if(!requirePerm('cancelarVentas', 'No tienes permiso para cancelar ventas')) return;
+  /* Si la venta viene de un pedido del Menú Digital, se cancela el pedido
+     completo: venta, existencias y el estado del pedido. */
+  const s0 = DB.getSales().find(s => s.id === saleId);
+  if(s0 && !s0.cancelled && s0.menuOrderId && typeof mdiCancelOrder === 'function'){
+    const o = MDI.get(s0.menuOrderId);
+    if(o && o.status === 'confirmado' && o.saleId === saleId){ mdiCancelOrder(o.id, true); return; }
+  }
   const ok = window.confirm('¿Cancelar esta venta? Se mantendrá en el historial pero dejará de contar en las estadísticas.');
   if(!ok) return;
   const sales = DB.getSales();
@@ -6155,7 +6179,7 @@ function openCategoryForm(categoryId){
     </div>
     <div class="field">
       <label>Color</label>
-      <input id="cfColor" type="color" style="height:46px; padding:4px;" value="${editing ? editing.color : '#F5BF3C'}">
+      <input id="cfColor" type="color" style="height:46px; padding:4px;" value="${editing ? editing.color : '#6C4FCB'}">
     </div>
     <button class="btn primary block" onclick="saveCategoryForm('${editing ? editing.id : ''}')">${editing ? 'Guardar cambios' : 'Crear categoría'}</button>
   `;
@@ -6166,7 +6190,7 @@ function saveCategoryForm(categoryId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const name = document.getElementById('cfName').value.trim();
   const emoji = document.getElementById('cfEmoji').value.trim() || '🏷️';
-  const color = document.getElementById('cfColor').value || '#F5BF3C';
+  const color = document.getElementById('cfColor').value || '#6C4FCB';
   if(!name){ toast('Escribe un nombre para la categoría'); return; }
 
   const categories = DB.getCategories();
@@ -8373,7 +8397,7 @@ function doDeleteAccount(){
   const wipeAll = document.getElementById('wipeRow').classList.contains('checked');
   AUTH.eraseAccount();
   if(wipeAll){
-    ['mesa_products','mesa_categories','mesa_sales','mesa_counter','mesa_todos','mesa_todos_seed','mesa_demo_hint_off',
+    ['mesa_products','mesa_categories','mesa_sales','mesa_counter','mesa_todos','mesa_todos_seed','mesa_demo_hint_off','mesa_demo_seed',
      'mesa_users','mesa_active_user','mesa_user_session','mesa_shifts',
      'mesa_quotes','mesa_quote_counter','mesa_quote_prefs','mesa_md_incoming',
      'mesa_menu','mesa_md_cfg_visible','mesa_dm_name'].forEach(k => localStorage.removeItem(k));
@@ -10183,12 +10207,6 @@ openProductForm = function(productId){
       <textarea id="pfDesc" class="md-textarea" maxlength="160" rows="2" placeholder="Ej. 100 hojas de raya, pasta dura">${escapeHtml((p && p.description) || '')}</textarea>
       <div class="field-hint" style="color:var(--ink-soft);">Se muestra en tu Menú Digital, debajo del nombre.</div>
     </div>`);
-  const cat = document.getElementById('pfCategory');
-  const catField = cat && cat.closest('.field');
-  if(catField) catField.insertAdjacentHTML('afterend', mdUnitFieldHTML(p));
-  const stepIn = document.getElementById('pfUnitStep');
-  if(stepIn) stepIn.addEventListener('input', mdOnUnitChange);
-  mdOnUnitChange();
 };
 const _mdToggleSizeFields = toggleSizeFields;
 toggleSizeFields = function(on){ _mdToggleSizeFields(on); if(!on) mdOnUnitChange(); else { const f = document.getElementById('pfUnitField'); if(f) f.style.display = 'none'; } };
@@ -10825,23 +10843,24 @@ paintChrome = function(){
 
 /* ---------- Catálogo de ejemplo para cualquier giro ---------- */
 const MU_DEMO_PHOTOS = {
-  refresco: svgPhoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#fff"/><ellipse cx="100" cy="184" rx="40" ry="6" fill="#EEF0F6"/><rect x="88" y="16" width="24" height="12" rx="3" fill="#E23B3B"/><path d="M90 28h20v14c0 8 16 16 16 36v92a12 12 0 0 1-12 12H86a12 12 0 0 1-12-12V78c0-20 16-28 16-36V28Z" fill="#4A1D14"/><path d="M74 96h52v40H74z" fill="#E23B3B"/><path d="M76 124c14-12 30 6 48-10" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M84 56c-4 6-5 12-5 20v84" stroke="#fff" stroke-width="4" opacity=".22" stroke-linecap="round"/></svg>`),
+  refresco: svgPhoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#fff"/><ellipse cx="100" cy="184" rx="40" ry="6" fill="#EEF0F6"/><rect x="88" y="16" width="24" height="12" rx="3" fill="#35B67A"/><path d="M90 28h20v14c0 8 16 16 16 36v92a12 12 0 0 1-12 12H86a12 12 0 0 1-12-12V78c0-20 16-28 16-36V28Z" fill="#F28C28"/><path d="M74 96h52v40H74z" fill="#35B67A"/><circle cx="100" cy="116" r="12" fill="#FFB347" stroke="#fff" stroke-width="3"/><path d="M100 104v24M88 116h24M91.5 107.5l17 17M108.5 107.5l-17 17" stroke="#fff" stroke-width="1.6" opacity=".85"/><path d="M84 56c-4 6-5 12-5 20v84" stroke="#fff" stroke-width="4" opacity=".22" stroke-linecap="round"/></svg>`),
   agua: svgPhoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#fff"/><ellipse cx="100" cy="184" rx="42" ry="6" fill="#EEF0F6"/><rect x="86" y="12" width="28" height="14" rx="4" fill="#2F7FE0"/><path d="M89 26h22v12c0 8 19 14 19 34v98a12 12 0 0 1-12 12H82a12 12 0 0 1-12-12V72c0-20 19-26 19-34V26Z" fill="#D6ECFF"/><path d="M70 100h60v40H70z" fill="#fff"/><path d="M70 100h60M70 140h60" stroke="#2F7FE0" stroke-width="3"/><path d="M100 108c-7 9-10 13-10 18a10 10 0 0 0 20 0c0-5-3-9-10-18Z" fill="#2F7FE0"/><path d="M80 58c-3 5-4 10-4 16v90" stroke="#fff" stroke-width="5" opacity=".8" stroke-linecap="round"/></svg>`),
   cuaderno: svgPhoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#fff"/><ellipse cx="104" cy="182" rx="56" ry="6" fill="#EEF0F6"/><rect x="52" y="30" width="104" height="142" rx="10" fill="#5B55E8"/><rect x="52" y="30" width="18" height="142" rx="6" fill="#4640C9"/><rect x="84" y="62" width="58" height="30" rx="6" fill="#fff"/><path d="M92 72h42M92 82h28" stroke="#C9CCF5" stroke-width="4" stroke-linecap="round"/>${[44,62,80,98,116,134,152].map(y => `<circle cx="61" cy="${y}" r="5" fill="#fff"/><path d="M48 ${y}h13" stroke="#B7BCD0" stroke-width="3" stroke-linecap="round"/>`).join('')}</svg>`),
   lapices: svgPhoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#fff"/><ellipse cx="100" cy="182" rx="58" ry="6" fill="#EEF0F6"/>${[[70,'#F9C23C'],[100,'#35B67A'],[130,'#E86A5C']].map(([x,c]) => `<g transform="rotate(-8 ${x} 100)"><rect x="${x-10}" y="34" width="20" height="104" fill="${c}"/><rect x="${x-10}" y="24" width="20" height="14" rx="3" fill="#F2A7B8"/><rect x="${x-10}" y="36" width="20" height="6" fill="#C9CEDD"/><path d="M${x-10} 138h20l-10 26z" fill="#F3D2A2"/><path d="M${x-3} 157h6l-3 7z" fill="#2B2F3A"/><path d="M${x-3} 44v90" stroke="#fff" stroke-width="3" opacity=".35"/></g>`).join('')}</svg>`),
 };
 defaultCategories = function(){
   return [
-    { id:'bebidas',   name:'Bebidas',   emoji:'🥤', color:'#3B82C4', demo:true },
-    { id:'papeleria', name:'Papelería', emoji:'✏️', color:'#7C6CE0', demo:true },
+    { id:'bebidas',   name:'Bebidas',   emoji:'🥤', color:'#2F7FE0', demo:true },
+    { id:'papeleria', name:'Papelería', emoji:'📒', color:'#5B55E8', demo:true },
   ];
 };
 defaultProducts = function(){
+  const base = { active:true, demo:true, stock:null, minStock:2, sizesOn:false, sizeUnit:'litro', sizes:[] };
   return [
-    { id:'demo1', name:'Refresco de cola 600 ml (EJEMPLO · reemplázame)', price:22, cost:13, category:'bebidas',   active:true, image:MU_DEMO_PHOTOS.refresco, demo:true, description:'Botella de 600 ml, bien fría.' },
-    { id:'demo2', name:'Agua natural 1 L (EJEMPLO · reemplázame)',        price:15, cost:7,  category:'bebidas',   active:true, image:MU_DEMO_PHOTOS.agua,     demo:true, description:'Agua purificada de 1 litro.' },
-    { id:'demo3', name:'Cuaderno profesional (EJEMPLO · reemplázame)',    price:48, cost:26, category:'papeleria', active:true, image:MU_DEMO_PHOTOS.cuaderno, demo:true, description:'100 hojas de raya, pasta dura.' },
-    { id:'demo4', name:'Lápices, paquete de 3 (EJEMPLO · reemplázame)',   price:18, cost:8,  category:'papeleria', active:true, image:MU_DEMO_PHOTOS.lapices,  demo:true, description:'Lápices del número 2 con goma.' },
+    Object.assign({ id:'demo1', name:'Refresco de naranja 600 ml', price:22, cost:13, category:'bebidas',   image:MU_DEMO_PHOTOS.refresco }, base),
+    Object.assign({ id:'demo2', name:'Agua natural 1 L',           price:15, cost:8,  category:'bebidas',   image:MU_DEMO_PHOTOS.agua }, base),
+    Object.assign({ id:'demo3', name:'Cuaderno profesional',       price:45, cost:26, category:'papeleria', image:MU_DEMO_PHOTOS.cuaderno }, base),
+    Object.assign({ id:'demo4', name:'Lápices (paquete de 3)',     price:18, cost:9,  category:'papeleria', image:MU_DEMO_PHOTOS.lapices }, base),
   ];
 };
 
@@ -10978,12 +10997,9 @@ saveBusinessForm = function(){
    4. PEDIDOS ENTRANTES DEL MENÚ DIGITAL
    -------------------------------------------------------------
    Cada pedido que el cliente manda desde el Menú Digital lleva un
-   folio (MD-XXXX) y un link "Abrir en caja". El pedido llega a
-   "Pedidos entrantes" de tres formas:
+   folio (MD-XXXX). El pedido llega a "Pedidos entrantes" de dos formas:
      1) En este mismo dispositivo: aparece solo, al instante.
-     2) Tocando el link del mensaje de WhatsApp: se abre la caja y
-        el pedido queda registrado.
-     3) Pegando el mensaje de WhatsApp en "Pegar pedido".
+     2) Pegando el mensaje de WhatsApp en "Pegar pedido".
    Se guarda el pedido ORIGINAL (lo que mandó el menú) y el pedido
    ACTUAL (con los cambios que haga el negocio).
 ========================================================= */
@@ -10993,6 +11009,7 @@ const MDI_STATUS = {
   nuevo:      { label:'Nuevo',      cls:'nuevo' },
   confirmado: { label:'Confirmado', cls:'ok' },
   rechazado:  { label:'Rechazado',  cls:'no' },
+  cancelado:  { label:'Cancelado',  cls:'cancel' },
 };
 const MDI_REJECT_REASONS = ['Se acabó un producto', 'Estamos cerrados', 'No llegamos a esa zona', 'Pedido duplicado', 'Otro motivo'];
 
@@ -11068,7 +11085,7 @@ function mdiBuildFromCart(cartLines, customerName){
   };
 }
 /* Mismo formato que siempre ha tenido el mensaje del Menú Digital. */
-function mdiMessage(o, withLink){
+function mdiMessage(o){
   const lines = o.original || o.lines || [];
   const t = mdTotals(lines);
   let msg = 'Hola, quiero hacer el siguiente pedido:\n';
@@ -11082,17 +11099,12 @@ function mdiMessage(o, withLink){
   msg += '\nSubtotal: ' + formatMoney(t.subtotal);
   msg += '\nIVA (16%): ' + formatMoney(t.iva);
   msg += '\n*Total: ' + formatMoney(t.total) + ' MXN*';
-  if(withLink) msg += '\n\n🔗 Para el negocio (registrar en caja):\n' + mdiLink(o);
   return msg;
 }
 
-/* ---------- Link "Abrir en caja": el pedido va dentro del link ---------- */
-function mdiEncode(o){
-  const c = { v:1, i:o.id, c:o.code, t:Date.parse(o.createdAt) || Date.now(), n:(o.customer && o.customer.name) || '',
-              l:(o.original || []).map(l => [l.productId || '', l.sizeId || '', l.qty, l.price, l.note || '', l.name, l.sizeLabel || '', l.unit || '']) };
-  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(c))));
-  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
+/* ---------- Links "registrar en caja" de mensajes anteriores ----------
+   El mensaje de WhatsApp ya no lleva este link, pero se siguen
+   aceptando los que llegaron antes (al abrirlos o al pegarlos). */
 function mdiDecode(s){
   s = String(s || '').replace(/-/g, '+').replace(/_/g, '/');
   while(s.length % 4) s += '=';
@@ -11109,7 +11121,6 @@ function mdiDecode(s){
     status:'nuevo', service:'llevar', payment:'efectivo'
   };
 }
-function mdiLink(o){ return location.href.split('#')[0] + '#pedido/' + mdiEncode(o); }
 
 /* Guarda un pedido que llega. Si ya existía (mismo id o folio) no se duplica. */
 function mdiReceive(o, source){
@@ -11218,7 +11229,7 @@ function mdiCompare(o, parsed){
 /* ---------- Contadores y aviso en el menú ---------- */
 function mdiCounts(){
   const all = MDI.all();
-  return { nuevo: all.filter(o => o.status === 'nuevo').length, confirmado: all.filter(o => o.status === 'confirmado').length, rechazado: all.filter(o => o.status === 'rechazado').length, total: all.length };
+  return { nuevo: all.filter(o => o.status === 'nuevo').length, confirmado: all.filter(o => o.status === 'confirmado').length, rechazado: all.filter(o => o.status === 'rechazado').length, cancelado: all.filter(o => o.status === 'cancelado').length, total: all.length };
 }
 function mdiPaintBadge(){
   const btn = document.querySelector('.navbtn[data-view="menu"]');
@@ -11244,14 +11255,16 @@ function mdiSectionHTML(){
     { id:'nuevo', label:'Nuevos', n:c.nuevo },
     { id:'confirmado', label:'Confirmados', n:c.confirmado },
     { id:'rechazado', label:'Rechazados', n:c.rechazado },
+    { id:'cancelado', label:'Cancelados', n:c.cancelado },
     { id:'todos', label:'Todos', n:c.total },
-  ];
+  ].filter(t => t.id !== 'cancelado' || t.n || mdiFilter === 'cancelado');
   const hoy = all.filter(o => isSameDay(new Date(o.createdAt), new Date()));
   const ventasHoy = visibleSales().filter(s => s.origin === 'menu' && !s.cancelled && isSameDay(new Date(s.date), new Date()));
   const empty = {
     nuevo: ['No hay pedidos por revisar', 'Cuando un cliente mande su pedido desde tu Menú Digital, aparecerá aquí para que lo confirmes o lo rechaces.'],
     confirmado: ['Aún no confirmas pedidos', 'Los pedidos que confirmes se guardan en Historial y en Ventas como “Pedido hecho en Menú Digital”.'],
     rechazado: ['Sin pedidos rechazados', 'Aquí verás los pedidos que no pudiste surtir.'],
+    cancelado: ['Sin pedidos cancelados', 'Aquí verás los pedidos confirmados que después cancelaste.'],
     todos: ['Aún no llegan pedidos', 'Comparte el link de tu Menú Digital con tus clientes para empezar a recibir pedidos.'],
   }[mdiFilter];
 
@@ -11280,7 +11293,7 @@ function mdiSectionHTML(){
       <button class="btn ghost" onclick="mdiOpenPaste()">${icon('paste')} Pegar pedido de WhatsApp</button>
       <button class="btn ghost" onclick="statsOrigin='menu'; statsSel=null; goTo('stats');">${icon('chart')} Estadísticas del menú</button>
     </div>
-    <p class="md-hint">¿El pedido te llegó al WhatsApp de otro teléfono? Toca el link <b>“registrar en caja”</b> que viene en el mensaje, o copia el mensaje y usa <b>Pegar pedido de WhatsApp</b>.</p>
+    <p class="md-hint">¿El pedido te llegó al WhatsApp de otro teléfono? Copia el mensaje y usa <b>Pegar pedido de WhatsApp</b>.</p>
   `;
 }
 function mdiCardHTML(o){
@@ -11388,9 +11401,12 @@ function mdiDetailHTML(o){
       <div class="mdi-banner ok">${icon('check')}<span><b>Pedido confirmado</b>${sale ? 'Se registró como venta ' + orderNumberLabel(sale.number) + ' en Historial y Ventas.' : 'Se registró en Historial y Ventas.'}</span></div>` : ''}
     ${o.status === 'rechazado' ? `
       <div class="mdi-banner no">${icon('close')}<span><b>Pedido rechazado</b>${escapeHtml(o.rejectReason || 'Sin motivo')}${o.rejectNote ? ' · ' + escapeHtml(o.rejectNote) : ''}</span></div>` : ''}
+    ${o.status === 'cancelado' ? `
+      <div class="mdi-banner cancel">${icon('close')}<span><b>Pedido cancelado</b>${sale ? 'La venta ' + orderNumberLabel(sale.number) + ' quedó cancelada en Historial y ya no cuenta en tus ventas.' : 'Ya no cuenta en tus ventas.'}${o.cancelledAt ? ' Cancelado el ' + formatDateTime(o.cancelledAt) + (o.cancelledBy ? ' por ' + escapeHtml(o.cancelledBy) : '') : ''}</span></div>` : ''}
 
-    ${mdiCompareHTML(o)}
+    ${o.status === 'rechazado' || o.status === 'cancelado' ? '' : mdiCompareHTML(o)}
 
+    ${o.status === 'rechazado' ? '' : `
     <div class="mdi-block-title">
       <span>Productos del pedido</span>
       ${mod ? `<span class="mdi-pill mod">Modificado</span>` : ''}
@@ -11408,7 +11424,7 @@ function mdiDetailHTML(o){
       <div class="totals-row"><span>IVA (16%)</span><span class="v">${formatMoney(t.iva)}</span></div>
       <div class="totals-row grand"><span>Total</span><span class="v">${formatMoney(t.total)}</span></div>
       ${mod ? `<div class="totals-row"><span>Total que mandó el cliente</span><span class="v" style="text-decoration:line-through;">${formatMoney(tOrig.total)}</span></div>` : ''}
-    </div>
+    </div>`}
 
     ${editable ? `
       <div class="section-title">Tipo de servicio</div>
@@ -11428,8 +11444,10 @@ function mdiDetailHTML(o){
       <div class="mdi-after">
         <button class="btn whatsapp" onclick="mdiNotify('${o.id}')">${icon('whatsapp')} Avisar al cliente</button>
         ${sale ? `<button class="btn ghost" onclick="showTicket(DB.getSales().find(s => s.id === '${sale.id}'))">${icon('receipt')} Ver ticket</button>` : ''}
+        ${o.status === 'confirmado' && can('cancelarVentas') ? `<button class="btn danger" onclick="mdiCancelOrder('${o.id}')">${icon('close')} Cancelar pedido</button>` : ''}
         ${o.status === 'rechazado' ? `<button class="btn ghost" onclick="mdiReopen('${o.id}')">${icon('undo')} Volver a revisar</button>
           <button class="btn danger" onclick="mdiDelete('${o.id}')">${icon('trash')} Eliminar</button>` : ''}
+        ${o.status === 'cancelado' ? `<button class="btn danger" onclick="mdiDelete('${o.id}')">${icon('trash')} Eliminar</button>` : ''}
       </div>
     `}
   `;
@@ -11439,7 +11457,7 @@ function mdiClose(){ mdiUI = { id:null, compare:false, text:'', result:null }; c
 /* ---------- Comparar con WhatsApp ---------- */
 function mdiCompareHTML(o){
   const r = mdiUI.result;
-  const msg = o.waText || mdiMessage(o, false);
+  const msg = o.waText || mdiMessage(o);
   return `
     <div class="mdi-compare">
       <div class="mdi-compare-head">
@@ -11688,12 +11706,56 @@ function mdiConfirm(id){
     menuModified: mdiIsModified(o)
   });
   const sales = DB.getSales(); sales.push(sale); DB.saveSales(sales);
+  /* Lo que se descuenta de existencias, para regresarlo si se cancela. */
+  const tomado = {};
+  Object.keys(uso).forEach(pid => { const p = inventario.find(x => x.id === pid); if(stockInfo(p).control) tomado[pid] = uso[pid]; });
   const desc = deductStock(uso, inventario);
   if(desc.cambio) DB.saveProducts(inventario);
-  MDI.update(id, x => { x.status = 'confirmado'; x.saleId = sale.id; x.decidedAt = new Date().toISOString(); x.decidedBy = sale.userName || ''; });
+  MDI.update(id, x => { x.status = 'confirmado'; x.saleId = sale.id; x.decidedAt = new Date().toISOString(); x.decidedBy = sale.userName || ''; x.stockTaken = tomado; });
   vibrate([15, 60, 15]);
   toast('Pedido confirmado', { icon:icon('check'), variant:'toast-success', subtitle:'Venta ' + orderNumberLabel(sale.number) + ' · Historial y Ventas', duration:2600 });
   if(desc.alertas.length) setTimeout(() => toast(desc.alertas.length === 1 ? 'Te queda poco de un producto' : 'Te queda poco de ' + desc.alertas.length + ' productos', { icon:icon('alert'), variant:'toast-danger', subtitle: desc.alertas.map(a => a.name + ' (' + a.txt + ')').join(', ') }), 2700);
+  mdiUI = { id, compare:false, text:'', result:null };
+  mdiOpen(id);
+  if(currentView === 'menu' || currentView === 'home') renderBgKeepModal();
+  mdiPaintBadge();
+}
+
+/* ---------- Cancelar un pedido ya confirmado ----------
+   La venta se queda en Historial como cancelada (deja de contar en
+   Ventas) y lo que se descontó de existencias regresa al inventario. */
+function mdiStockToReturn(o, inventario){
+  const out = {};
+  const base = o.stockTaken || stockUseByProduct(o.lines || [], inventario); /* pedidos confirmados antes de guardar stockTaken */
+  Object.keys(base).forEach(pid => {
+    const p = inventario.find(x => x.id === pid);
+    if(p && stockInfo(p).control && base[pid] > 0) out[pid] = base[pid];
+  });
+  return out;
+}
+function mdiCancelOrder(id, fromHistory){
+  if(!requirePerm('cancelarVentas', 'No tienes permiso para cancelar ventas')) return;
+  const o = MDI.get(id);
+  if(!o || o.status !== 'confirmado') return;
+  const sales = DB.getSales();
+  const sale = o.saleId ? sales.find(s => s.id === o.saleId) : null;
+  const inventario = DB.getProducts();
+  const regresa = mdiStockToReturn(o, inventario);
+  const hayRegreso = Object.keys(regresa).length > 0;
+  const ok = window.confirm('¿Cancelar el pedido ' + o.code + '?\n\n'
+    + (sale ? 'La venta ' + orderNumberLabel(sale.number) + ' se queda en tu historial como cancelada y deja de contar en tus ventas.' : 'Deja de contar en tus ventas.')
+    + (hayRegreso ? '\nLo que se descontó de tus existencias regresa al inventario.' : ''));
+  if(!ok) return;
+  if(sale && !sale.cancelled){ sale.cancelled = true; DB.saveSales(sales); }
+  if(hayRegreso){
+    Object.keys(regresa).forEach(pid => { const p = inventario.find(x => x.id === pid); p.stock = r3(Number(p.stock) + regresa[pid]); });
+    DB.saveProducts(inventario);
+  }
+  const me = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
+  MDI.update(id, x => { x.status = 'cancelado'; x.cancelledAt = new Date().toISOString(); x.cancelledBy = me ? me.name : ''; delete x.stockTaken; });
+  vibrate([15, 60, 15]);
+  toast('Pedido ' + o.code + ' cancelado', { subtitle:(sale ? 'Venta ' + orderNumberLabel(sale.number) + ' cancelada' : 'Ya no cuenta en tus ventas') + (hayRegreso ? ' · existencias devueltas' : '') });
+  if(fromHistory){ closeModal(); render(); mdiPaintBadge(); return; }
   mdiUI = { id, compare:false, text:'', result:null };
   mdiOpen(id);
   if(currentView === 'menu' || currentView === 'home') renderBgKeepModal();
@@ -11739,7 +11801,12 @@ function mdiReopen(id){
   mdiRefresh();
 }
 function mdiDelete(id){
-  if(!window.confirm('¿Eliminar este pedido rechazado? No se puede deshacer.')) return;
+  const o = MDI.get(id); if(!o) return;
+  if(o.status !== 'rechazado' && o.status !== 'cancelado') return;
+  const txt = o.status === 'cancelado'
+    ? '¿Eliminar este pedido cancelado? Se quita de Pedidos entrantes y no se puede deshacer.\n\nLa venta cancelada se queda en tu Historial.'
+    : '¿Eliminar este pedido rechazado? No se puede deshacer.';
+  if(!window.confirm(txt)) return;
   MDI.save(MDI.all().filter(o => o.id !== id));
   mdiClose();
   toast('Pedido eliminado');
@@ -11757,6 +11824,8 @@ function mdiNotify(id){
     if(mdiIsModified(o)) msg += 'Hicimos unos cambios, así quedó:\n';
     msg += '\n' + o.lines.map(l => '• ' + mdiLineLabel(l) + ' ' + mdiQtyText(l) + ' - ' + formatMoney(l.price * l.qty)).join('\n');
     msg += '\n\n*Total: ' + formatMoney(t.total) + ' MXN*\n¡Gracias por tu compra!';
+  }else if(o.status === 'cancelado'){
+    msg = 'Hola' + nombre + ', te avisamos que tu pedido ' + o.code + (b.name ? ' en ' + b.name : '') + ' quedó cancelado. Si tienes alguna duda, escríbenos 🙏';
   }else{
     msg = 'Hola' + nombre + ', lo sentimos 🙏 No podemos surtir tu pedido ' + o.code + (o.rejectReason && o.rejectReason !== 'Otro motivo' ? ': ' + o.rejectReason.toLowerCase() + '.' : '.');
     if(o.rejectNote) msg += '\n' + o.rejectNote;
@@ -11926,10 +11995,10 @@ dmSendWhatsApp = function(){
   const name = nameEl ? nameEl.value.trim().slice(0, 60) : '';
   try{ if(name) localStorage.setItem('mesa_dm_name', name); }catch(e){}
   const order = mdiBuildFromCart(dm.cart, name);
-  order.waText = mdiMessage(order, false);
+  order.waText = mdiMessage(order);
   /* En este mismo dispositivo el pedido entra solo a "Pedidos entrantes". */
   mdiReceive(order, 'menu');
-  const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(mdiMessage(order, true));
+  const url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(order.waText);
   if(navigator.vibrate) try{ navigator.vibrate([60, 40, 60]); }catch(e){}
   const win = window.open(url, '_blank');
   if(!win) location.href = url;
@@ -11938,7 +12007,7 @@ dmSendWhatsApp = function(){
   dmRefreshCards();
   dmToast('Pedido ' + order.code + ' listo en WhatsApp');
 };
-dmWhatsappMessage = function(){ return mdiMessage(mdiBuildFromCart(dm.cart, ''), false); };
+dmWhatsappMessage = function(){ return mdiMessage(mdiBuildFromCart(dm.cart, '')); };
 
 /* =========================================================
    6. VENTAS: origen (en caja / Menú Digital) y estadísticas del menú
@@ -13050,7 +13119,7 @@ function muMigrateDemo(){
   const route = dmRoute();
   if(route){ bootMenu(route); return; }
 
-  /* Link "registrar en caja" que viene en el mensaje de WhatsApp */
+  /* Link "registrar en caja" de mensajes de WhatsApp anteriores */
   let llegado = null, malo = false;
   const m = location.hash.match(/^#pedido\/([A-Za-z0-9_-]+)/);
   if(m){
