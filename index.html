@@ -3430,6 +3430,40 @@
     .mov-card{ padding:2px 12px; }
     .kv-card{ padding:4px 14px; }
   }
+
+  /* ---- Lector de códigos (Mi cuenta › Lector de códigos) ---- */
+  .pr-state.idle{ background:var(--surface-alt); color:var(--ink-soft); }
+  .sc-steps{ margin:13px 0 0; padding:0; list-style:none; counter-reset:sc; display:flex; flex-direction:column; gap:9px; }
+  .sc-steps li{ counter-increment:sc; position:relative; padding-left:31px; font-size:13px; font-weight:600; color:var(--ink-soft); line-height:1.45; }
+  .sc-steps li::before{ content:counter(sc); position:absolute; left:0; top:-1px; width:22px; height:22px; border-radius:50%; background:var(--brand-soft); color:var(--brand-ink); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .sc-steps b{ color:var(--ink); }
+  .sc-test{ display:flex; align-items:center; gap:8px; margin-top:14px; border:1.5px dashed var(--border); border-radius:14px; padding:2px 6px 2px 12px; background:var(--surface-alt); cursor:text; transition:border-color .15s, box-shadow .15s, background .15s; }
+  .sc-test:focus-within{ border-style:solid; border-color:var(--brand); background:var(--surface); box-shadow:0 0 0 4px var(--brand-soft); }
+  .sc-test-ico{ display:flex; color:var(--ink-soft); flex-shrink:0; }
+  .sc-test-ico svg{ width:22px; height:22px; }
+  .sc-test input{ flex:1; min-width:0; border:none; background:transparent; font-size:16px; font-weight:800; letter-spacing:.3px; padding:12px 4px; color:var(--ink); outline:none; font-family:var(--sans); }
+  .sc-test input::placeholder{ font-weight:600; letter-spacing:0; color:var(--ink-faint); font-size:14.5px; }
+  .sc-test.pulse .sc-test-ico{ animation:scPulse 1.6s ease-in-out infinite; }
+  @keyframes scPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+  @media (prefers-reduced-motion: reduce){ .sc-test.pulse .sc-test-ico{ animation:none; } }
+  .sc-result{ display:flex; align-items:center; gap:11px; margin-top:10px; padding:10px 11px; border-radius:13px; border:1.5px solid var(--border); background:var(--surface); }
+  .sc-result.ok{ border-color:var(--success); background:var(--success-bg); }
+  .sc-result.miss{ border-color:#F0DCA0; background:var(--accent-soft); }
+  .sc-result .acc-ico{ width:34px; height:34px; border-radius:11px; flex-shrink:0; }
+  .sc-result .acc-ico svg{ width:17px; height:17px; }
+  .sc-result .acc-txt{ flex:1; min-width:0; }
+  .sc-result .acc-label{ font-size:13.5px; }
+  .sc-result .acc-sub{ font-size:12px; white-space:normal; word-break:break-all; }
+  .sc-result .btn{ padding:9px 12px; font-size:13px; flex-shrink:0; }
+  .sc-result .btn svg{ width:15px; height:15px; }
+  .sc-how{ font-size:12px; font-weight:700; color:var(--ink-soft); margin:8px 2px 0; line-height:1.4; }
+  .sc-how.ok{ color:var(--success); }
+  .sc-serial{ display:flex; align-items:center; gap:12px; margin-top:14px; padding-top:13px; border-top:1px dashed var(--border); }
+  .sc-serial .acc-txt{ flex:1; min-width:0; }
+  .sc-serial .acc-label{ font-size:13.5px; }
+  .sc-serial .acc-sub{ white-space:normal; font-size:12px; }
+  .sc-serial .btn{ padding:10px 13px; font-size:13px; flex-shrink:0; }
+  .sc-serial .btn svg{ width:16px; height:16px; }
 </style>
 
 </head>
@@ -3568,52 +3602,24 @@
 ========================================================= */
 
 /* =========================================================
-   ALMACENAMIENTO — hoy en el navegador, mañana en una base de datos
+   ALMACENAMIENTO — todo se guarda en ESTE navegador
    ---------------------------------------------------------
    Todo lo que guarda Vendo vive en localStorage con claves
-   "mesa_*". Cada clave es una COLECCIÓN que corresponde a una
-   tabla de la base de datos (ver DATA_COLLECTIONS y el archivo
-   vendo_schema.sql). Esta capa agrega:
+   "mesa_*" (productos, ventas, clientes, caja…). Esta capa agrega:
      · Caché en memoria: leer ya no vuelve a interpretar el JSON
        completo en cada toque (la app se siente más rápida).
      · Aviso claro si el navegador se queda sin espacio, en vez
        de que la app truene a media venta.
-     · Registro de qué cambió y cuándo (para sincronizar después).
-     · Un id único del dispositivo y la versión de los datos.
-   Para migrar: exporta el respaldo (Mi cuenta › Datos y respaldo)
-   o conecta un servidor; cada colección se sube a su tabla.
+     · Fecha del último cambio y del último respaldo.
+   Para tener una copia: Mi cuenta › Datos y respaldo (respaldo
+   .json para restaurar y Excel para ver tus datos).
 ========================================================= */
-const DATA_SCHEMA_VERSION = 3;
+const DATA_SCHEMA_VERSION = 3;          /* versión del formato del respaldo */
 const DATA_META_KEY = 'mesa_meta';
-const DATA_COLLECTIONS = [
-  { key:'mesa_products',       table:'productos',              label:'Productos',                 type:'list'   },
-  { key:'mesa_categories',     table:'categorias',             label:'Categorías',                type:'list'   },
-  { key:'mesa_sales',          table:'ventas',                 label:'Ventas y devoluciones',     type:'list'   },
-  { key:'mesa_customers',      table:'clientes',               label:'Clientes',                  type:'list'   },
-  { key:'mesa_payments',       table:'abonos',                 label:'Abonos de clientes',        type:'list'   },
-  { key:'mesa_cash',           table:'cortes_caja',            label:'Caja y cortes',             type:'list'   },
-  { key:'mesa_expenses',       table:'gastos',                 label:'Gastos',                    type:'list'   },
-  { key:'mesa_inv_moves',      table:'movimientos_inventario', label:'Movimientos de inventario', type:'list'   },
-  { key:'mesa_parked',         table:'ventas_en_espera',       label:'Ventas en espera',          type:'list'   },
-  { key:'mesa_quotes',         table:'cotizaciones',           label:'Cotizaciones',              type:'list'   },
-  { key:'mesa_md_incoming',    table:'pedidos_menu',           label:'Pedidos del Menú Digital',  type:'list'   },
-  { key:'mesa_users',          table:'usuarios',               label:'Usuarios',                  type:'list'   },
-  { key:'mesa_shifts',         table:'turnos',                 label:'Turnos',                    type:'list'   },
-  { key:'mesa_todos',          table:'pendientes',             label:'Pendientes',                type:'list'   },
-  { key:'mesa_user',           table:'cuenta',                 label:'Cuenta y negocio',          type:'object' },
-  { key:'mesa_pos_cfg',        table:'configuracion',          label:'Ventas y cobro',            type:'object' },
-  { key:'mesa_menu',           table:'configuracion',          label:'Menú Digital',              type:'object' },
-  { key:'mesa_quote_prefs',    table:'configuracion',          label:'Diseño de cotización',      type:'object' },
-  { key:'mesa_print',          table:'configuracion',          label:'Impresión de tickets',      type:'object' },
-  { key:'mesa_counter',        table:'folios',                 label:'Folio de ventas',           type:'value'  },
-  { key:'mesa_quote_counter',  table:'folios',                 label:'Folio de cotizaciones',     type:'value'  },
-  { key:'mesa_return_counter', table:'folios',                 label:'Folio de devoluciones',     type:'value'  },
-  { key:'mesa_cash_counter',   table:'folios',                 label:'Folio de cortes',           type:'value'  },
-];
 /* Lo que NO viaja en un respaldo: sesiones y cosas propias de este aparato. */
-const DATA_NOT_IN_BACKUP = ['mesa_session','mesa_user_session','mesa_active_user','mesa_printer','mesa_meta','mesa_md_cfg_visible','mesa_dm_name'];
+const DATA_NOT_IN_BACKUP = ['mesa_session','mesa_user_session','mesa_active_user','mesa_printer','mesa_scanner','mesa_meta','mesa_md_cfg_visible','mesa_dm_name','mesa_sync'];
 
-/** Id corto y único (sirve igual cuando los datos vivan en un servidor). */
+/** Id corto y único para cada registro. */
 function uid(prefix){
   return (prefix || '') + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
@@ -3732,11 +3738,6 @@ const Store = {
 })();
 
 /* ---------- Utilidades generales que usan los módulos nuevos ---------- */
-function csvCell(v){
-  v = v == null ? '' : String(v);
-  return /[",\n\r;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-}
-function toCSV(rows){ return '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n'); }
 function downloadFile(name, content, mime){
   try{
     const blob = content instanceof Blob ? content : new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
@@ -4145,9 +4146,7 @@ function defaultProducts(){
 }
 
 /* ---------- Persistencia ---------- */
-/* Cada get/save corresponde a una tabla (ver DATA_COLLECTIONS arriba).
-   Cuando exista un servidor, solo cambia lo que hay dentro de estas
-   funciones; el resto de la app no se entera. */
+/* Cada get/save lee o guarda una lista en este navegador. */
 const DB = {
   getProducts(){ return Store.list('mesa_products'); },
   saveProducts(list){ Store.set('mesa_products', list); },
@@ -5009,7 +5008,7 @@ function saleScanCode(code, fromSearch){
   return true;
 }
 function scanBeep(){
-  if(!posCfg().scanBeep) return;
+  if(!scannerCfg().beep) return;
   try{
     const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
     scanBeep._ctx = scanBeep._ctx || new AC();
@@ -5895,7 +5894,7 @@ function checkoutPayment(totals){
   return out;
 }
 
-/** Un artículo de la venta tal como se guarda (y como lo lee la base de datos). */
+/** Un artículo de la venta tal como se guarda. */
 function saleItemFromCart(c){
   const p = findProduct(c.productId);
   // El precio de producción del producto es "por litro/kilo". Si se vendió
@@ -10025,6 +10024,14 @@ function renderAccount(){
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
+      <button class="acc-row" onclick="openScannerSettings()">
+        <span class="acc-ico blue">${icon('barcode')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">Lector de códigos</span>
+          <span class="acc-sub">${escapeHtml(scannerSub())}</span>
+        </span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
       ${soyDueno ? `
         <button class="acc-row" onclick="openQuoteEditor()">
           <span class="acc-ico qcol">${icon('edit')}</span>
@@ -10047,7 +10054,7 @@ function renderAccount(){
           <span class="acc-ico blue">${icon('database')}</span>
           <span class="acc-txt">
             <span class="acc-label">Datos y respaldo</span>
-            <span class="acc-sub">${Store.meta().lastBackupAt ? 'Último respaldo ' + formatDateShort(Store.meta().lastBackupAt) : 'Descarga una copia de tus datos'} · Excel · base de datos</span>
+            <span class="acc-sub">${Store.meta().lastBackupAt ? 'Respaldo del ' + formatDateShort(Store.meta().lastBackupAt) : 'Aún sin respaldo'} · Excel y .json</span>
           </span>
           <span class="acc-chev">${icon('chevronRight')}</span>
         </button>
@@ -15642,9 +15649,9 @@ function muMigrateDemo(){
      · Inventario con movimientos (kardex) y entradas de mercancía
      · Devoluciones parciales con reingreso al inventario
      · Ventas en espera / cuentas abiertas, venta libre y lector de códigos
-     · Reportes por fechas con exportación a Excel (CSV) e impresión
-     · Datos y respaldo: descargar, restaurar, importar productos y
-       preparación para migrar a una base de datos (ver vendo_schema.sql)
+     · Reportes por fechas con Excel (.xlsx) e impresión
+     · Datos y respaldo: respaldo .json, Excel e importar productos
+     · Lector de códigos Bluetooth, USB (teclado o puerto COM) y cámara
 ========================================================================= */
 
 Object.assign(ICONS, {
@@ -16914,11 +16921,66 @@ function saveCustomItem(){
 
 /* =========================================================
    LECTOR DE CÓDIGOS DE BARRAS
-   · Lector USB o Bluetooth: "escribe" el código muy rápido y da
-     Enter. Se detecta solo en Nueva venta, sin tocar nada.
+   · Bluetooth o con cable USB: el lector funciona como un teclado
+     que "escribe" el código muy rápido y da Enter. Se enlaza en el
+     celular o la computadora y la app lo reconoce sola.
+   · Puerto COM (serial): lectores de PC que no escriben como
+     teclado. Se enlazan desde Mi cuenta › Lector de códigos.
    · Cámara del celular: donde el navegador lo permita.
+   La configuración es de ESTE aparato (no viaja en el respaldo).
 ========================================================= */
-const scanBuf = { s:'', t:0, fast:0 };
+const SCANNER_KEY = 'mesa_scanner';
+function scannerCfg(){
+  const d = { conn:'bt', beep:posCfg().scanBeep !== false, anywhere:true, lastAt:null, lastCode:'', lastSrc:'', serialOn:false, baud:9600 };
+  return Object.assign(d, Store.get(SCANNER_KEY, {}) || {});
+}
+function saveScannerCfg(c){ Store.set(SCANNER_KEY, c); }
+function scannerMarkSeen(code, src){
+  const c = scannerCfg();
+  c.lastAt = new Date().toISOString(); c.lastCode = String(code).slice(0, 60); c.lastSrc = src || '';
+  saveScannerCfg(c);
+}
+function scannerSub(){
+  const c = scannerCfg();
+  if(serialPort) return 'Enlazado por puerto COM · listo';
+  if(c.lastAt) return 'Funcionando · último código ' + (isSameDay(new Date(c.lastAt), new Date()) ? 'hoy ' + fmtTime(c.lastAt) : 'el ' + formatDateShort(c.lastAt));
+  return 'Enlaza un lector Bluetooth o con cable (USB)';
+}
+
+/** Todo código que llega de un lector (teclado o puerto COM) pasa por aquí. */
+function handleScannedCode(code, src){
+  code = String(code || '').replace(/[\u0000-\u001F]/g, '').trim();
+  if(!code) return;
+  scannerMarkSeen(code, src);
+  if(document.getElementById('scTest')){ scannerTestShow(code, src === 'serial' ? 'serial' : 'lector'); return; }
+  if(document.body.classList.contains('dm-mode') || document.body.classList.contains('auth-open')) return;
+  if(document.querySelector('#confirm-layer .modal-overlay')) return;
+  /* Con el cursor en otro campo (ej. el código de un producto): se escribe ahí */
+  const ae = document.activeElement;
+  if(src === 'serial' && ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && ae.id !== 'saleSearch' && !/checkbox|radio|range|file/.test(ae.type || '')){
+    ae.value = code; ae.dispatchEvent(new Event('input', { bubbles:true })); scanBeep(); return;
+  }
+  if(scanStream) return;                                          /* la cámara está abierta */
+  if(currentView !== 'sale'){
+    if(!scannerCfg().anywhere){ toast('Abre Nueva venta para escanear', { icon:icon('barcode') }); return; }
+    if(document.querySelector('#modal-layer .modal-overlay')){ toast('Cierra esta ventana para escanear', { icon:icon('barcode'), subtitle:code }); return; }
+    goTo('sale');
+  }
+  const modal = !!document.querySelector('#modal-layer .modal-overlay');
+  const cartOpen = !!document.querySelector('#modal-layer .cart-opts');
+  if(modal && !cartOpen){ toast('Termina lo que estás haciendo y vuelve a escanear', { icon:icon('barcode'), subtitle:code }); return; }
+  if(saleScanCode(code, false)){
+    if(cartOpen && document.querySelector('#modal-layer .cart-opts')) openCartSheet('cart');   /* se actualiza el carrito abierto */
+    return;
+  }
+  vibrate([18, 60, 18]);
+  toast('Código no encontrado: ' + code, { icon:icon('alert'), variant:'toast-danger toast-top', subtitle: can('gestionarProductos') ? 'Búscalo o crea el producto con ese código' : '' });
+  if(!modal){ saleSearch = code; render(); }
+}
+
+/* ---- Lector tipo teclado (Bluetooth o USB) + atajos de PC ---- */
+const scanBuf = { s:'', t:0, fast:0, timer:null };
+function scanBufReset(){ scanBuf.s = ''; scanBuf.fast = 0; clearTimeout(scanBuf.timer); scanBuf.timer = null; }
 document.addEventListener('keydown', function(e){
   if(document.body.classList.contains('dm-mode') || document.body.classList.contains('auth-open')) return;
   const tg = e.target;
@@ -16938,22 +17000,19 @@ document.addEventListener('keydown', function(e){
     if(ov && !ov.dataset.lock && !scanStream){ e.preventDefault(); closeModal(); if(currentView === 'sale') render(); return; }
     if(ov && scanStream){ e.preventDefault(); closeScanner(); return; }
   }
-  /* ---- Lector tipo teclado ---- */
-  if(currentView !== 'sale' || document.querySelector('#modal-layer .modal-overlay')) return;
+  /* ---- Lector ---- */
+  if(tg && tg.id === 'scTest') return;                            /* la caja de prueba lo maneja */
   if(typing && tg.id !== 'saleSearch') return;
   const now = Date.now();
   if(e.key === 'Enter'){
     const code = scanBuf.s;
-    const rapido = scanBuf.fast >= Math.max(3, code.length - 2);
-    scanBuf.s = ''; scanBuf.fast = 0;
-    if(code.length >= 4 && rapido && tg.id !== 'saleSearch'){
-      e.preventDefault();
-      if(!saleScanCode(code, false)){
-        vibrate([18, 60, 18]);
-        toast('Código no encontrado: ' + code, { icon:icon('alert'), variant:'toast-danger toast-top', subtitle: can('gestionarProductos') ? 'Búscalo o crea el producto con ese código' : '' });
-        saleSearch = code; render();
-      }
-    }
+    const rapido = code.length >= 4 && scanBuf.fast >= Math.max(3, code.length - 2) && now - scanBuf.t < 200;
+    scanBufReset();
+    if(!rapido) return;
+    if(document.querySelector('#confirm-layer .modal-overlay')){ e.preventDefault(); e.stopImmediatePropagation(); return; }
+    if(tg && tg.id === 'saleSearch'){ scannerMarkSeen(code, 'lector'); return; }   /* onSaleSearchKey lo agrega */
+    e.preventDefault();
+    handleScannedCode(code, 'lector');
     return;
   }
   if(e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey){
@@ -16961,8 +17020,262 @@ document.addEventListener('keydown', function(e){
     else if(now - scanBuf.t < 45) scanBuf.fast++;
     scanBuf.s += e.key;
     scanBuf.t = now;
+    /* Lectores que no mandan Enter al final */
+    clearTimeout(scanBuf.timer);
+    if(!typing) scanBuf.timer = setTimeout(() => {
+      const code = scanBuf.s;
+      if(code.length >= 6 && scanBuf.fast >= code.length - 2){ scanBufReset(); handleScannedCode(code, 'lector'); }
+    }, 180);
   }
 }, true);
+
+/* ---- Lector por puerto COM (Chrome o Edge en computadora) ---- */
+let serialPort = null, serialReader = null, serialBusy = false;
+function serialSupported(){ return !!(navigator.serial && navigator.serial.requestPort); }
+async function serialConnect(ask){
+  if(!serialSupported() || serialBusy) return false;
+  serialBusy = true;
+  try{
+    let port = null;
+    if(ask) port = await navigator.serial.requestPort();
+    else { const ports = await navigator.serial.getPorts(); port = ports[0] || null; }
+    if(!port) return false;
+    const c = scannerCfg();
+    if(!port.readable) await port.open({ baudRate:Number(c.baud) || 9600 });
+    serialPort = port;
+    c.serialOn = true; saveScannerCfg(c);
+    serialReadLoop(port);
+    if(ask) toast('Lector enlazado por puerto COM', { icon:icon('check'), variant:'toast-success', subtitle:'Escanea un código para probarlo' });
+    return true;
+  }catch(e){
+    if(ask && !(e && e.name === 'NotFoundError')) toast('No se pudo enlazar el lector', { icon:icon('alert'), variant:'toast-danger', subtitle:'Revisa que no lo esté usando otro programa y vuelve a intentar' });
+    return false;
+  }finally{
+    serialBusy = false;
+    scannerSheetRefresh();
+  }
+}
+async function serialReadLoop(port){
+  const dec = new TextDecoder();
+  let buf = '', flush = null;
+  const emit = () => { const c = buf.trim(); buf = ''; if(c.length >= 3) handleScannedCode(c, 'serial'); };
+  while(serialPort === port && port.readable){
+    let reader;
+    try{ reader = port.readable.getReader(); }catch(e){ break; }
+    serialReader = reader;
+    try{
+      for(;;){
+        const { value, done } = await reader.read();
+        if(done) break;
+        buf += dec.decode(value, { stream:true });
+        let i;
+        while((i = buf.search(/[\r\n]/)) >= 0){ const c = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if(c) handleScannedCode(c, 'serial'); }
+        clearTimeout(flush);
+        if(buf) flush = setTimeout(emit, 200);
+      }
+    }catch(e){ /* error de lectura: se reintenta mientras siga enlazado */ }
+    finally{ try{ reader.releaseLock(); }catch(e){} }
+    if(serialPort !== port) break;
+    await new Promise(r => setTimeout(r, 300));
+  }
+}
+async function serialDisconnect(forget){
+  const p = serialPort; serialPort = null;
+  try{ if(serialReader) await serialReader.cancel(); }catch(e){}
+  try{ if(p) await p.close(); }catch(e){}
+  if(forget){
+    const c = scannerCfg(); c.serialOn = false; saveScannerCfg(c);
+    try{ if(p && p.forget) await p.forget(); }catch(e){}
+    toast('Lector desenlazado');
+  }
+  scannerSheetRefresh();
+}
+if(serialSupported()){
+  try{
+    navigator.serial.addEventListener('connect', () => { if(scannerCfg().serialOn && !serialPort) serialConnect(false); });
+    navigator.serial.addEventListener('disconnect', e => {
+      if(serialPort && e.target === serialPort){ serialPort = null; scannerSheetRefresh(); toast('Se desconectó el lector', { icon:icon('alert'), subtitle:'Se vuelve a enlazar solo al conectarlo' }); }
+    });
+  }catch(e){}
+  setTimeout(() => { try{ if(scannerCfg().serialOn && !serialPort) serialConnect(false); }catch(e){} }, 1600);
+}
+
+/* ---- Mi cuenta › Lector de códigos ---- */
+const SCANNER_CONNS = {
+  bt:  { name:'Bluetooth', ico:'bluetooth' },
+  usb: { name:'Cable USB', ico:'usb' },
+  cam: { name:'Cámara', ico:'camera' }
+};
+function scannerStepsHTML(conn){
+  const steps = {
+    bt: [
+      'Carga y enciende tu lector. Ponlo en modo <b>Bluetooth teclado (HID)</b>: casi todos vienen así; si no, en su manual hay un código que lo activa.',
+      'En este celular, tablet o computadora abre <b>Ajustes › Bluetooth</b>, busca el lector y toca <b>Vincular</b>. Si te pide clave, suele ser <b>0000</b> o viene en el manual.',
+      'Regresa aquí y escanea cualquier producto en la <b>caja de prueba</b>.'
+    ],
+    usb: [
+      'Conecta el lector a un puerto USB de tu computadora. En celular o tablet Android usa un adaptador <b>OTG</b> (USB-C o micro USB).',
+      'No hay que instalar nada: en unos segundos tu aparato lo reconoce como un teclado.',
+      'Escanea cualquier producto en la <b>caja de prueba</b>.'
+    ],
+    cam: [
+      'Abre <b>Nueva venta</b> y toca el botón del código de barras junto a la búsqueda.',
+      'Da permiso para usar la cámara y apunta al código: el producto se agrega solo.',
+      'Funciona mejor con buena luz y el código derechito.'
+    ]
+  }[conn];
+  return `<ol class="sc-steps">${steps.map(t => `<li>${t}</li>`).join('')}</ol>`;
+}
+function scannerSheetHTML(){
+  const c = scannerCfg();
+  const conn = SCANNER_CONNS[c.conn] ? c.conn : 'bt';
+  const on = !!serialPort || (c.lastAt && Date.now() - new Date(c.lastAt).getTime() < 7 * 86400000);
+  const estado = serialPort ? 'Enlazado' : (on ? 'Funcionando' : 'Sin probar');
+  const serial = serialSupported();
+  return `
+    <div id="scannerSheet"></div>
+    <h3 class="sheet-title">Lector de códigos</h3>
+    <p class="sheet-text">Enlaza tu lector de códigos de barras y cobra más rápido: escaneas y el producto se agrega solo al carrito. Esto se guarda en este dispositivo.</p>
+
+    <div class="pr-card ${on ? 'on' : ''}">
+      <div class="pr-head">
+        <span class="acc-ico ${on ? 'green' : ''}">${icon('barcode')}</span>
+        <span class="acc-txt">
+          <span class="acc-label">Mi lector</span>
+          <span class="acc-sub" id="scLast">${c.lastAt ? 'Último código: <b>' + escapeHtml(c.lastCode) + '</b> · ' + (isSameDay(new Date(c.lastAt), new Date()) ? 'hoy ' + fmtTime(c.lastAt) : formatDateShort(c.lastAt)) : 'Todavía no has escaneado nada'}</span>
+        </span>
+        <span class="pr-state ${on ? 'on' : 'idle'}" id="scState"><span class="pr-dot"></span><span>${estado}</span></span>
+      </div>
+      <div class="seg" style="max-width:none; margin:13px 0 0;">
+        ${Object.keys(SCANNER_CONNS).map(k => `<button class="${conn === k ? 'active' : ''}" onclick="setScannerPref('conn','${k}')">${SCANNER_CONNS[k].name}</button>`).join('')}
+      </div>
+      ${scannerStepsHTML(conn)}
+      ${conn === 'cam' ? `
+        <div class="pr-actions">
+          <button class="btn dark" onclick="closeModal(); goTo('sale'); setTimeout(() => openScanner(), 80);" ${scanSupported() ? '' : 'disabled'}>${icon('camera')} Abrir la cámara</button>
+        </div>
+        ${scanSupported() ? '' : `<div class="pr-note warn" style="margin:12px 0 0;">Este navegador no puede leer códigos con la cámara. Usa <b>Chrome en Android</b> o un lector Bluetooth.</div>`}` : `
+        <label class="sc-test ${c.lastAt ? '' : 'pulse'}" for="scTest">
+          <span class="sc-test-ico">${icon('barcode')}</span>
+          <input id="scTest" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"
+                 placeholder="Toca aquí y escanea un producto" onkeydown="scTestKey(event)" oninput="scTestInput()">
+        </label>
+        <div id="scResult"></div>`}
+      ${conn === 'usb' && serial ? `
+        <div class="sc-serial">
+          <span class="acc-txt">
+            <span class="acc-label">${serialPort ? 'Enlazado por puerto COM' : '¿Lo conectaste y no escribe nada?'}</span>
+            <span class="acc-sub">${serialPort ? 'Los códigos llegan directo a la app.' : 'Algunos lectores de PC vienen en modo <b>puerto COM</b>. Enlázalo aquí (Chrome o Edge).'}</span>
+          </span>
+          ${serialPort
+            ? `<button class="btn ghost" onclick="serialDisconnect(true)">${icon('close')} Desenlazar</button>`
+            : `<button class="btn dark" onclick="serialConnect(true)">${icon('usb')} Enlazar</button>`}
+        </div>` : ''}
+    </div>
+
+    <div class="toggle-row">
+      <span class="acc-ico violet">${icon('bell')}</span>
+      <span class="acc-txt"><span class="acc-label">Sonido al escanear</span><span class="acc-sub">Un "bip" cuando el producto se agrega.</span></span>
+      <label class="switch"><input type="checkbox" ${c.beep ? 'checked' : ''} onchange="setScannerPref('beep', this.checked)"><span class="track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="acc-ico green">${icon('cart')}</span>
+      <span class="acc-txt"><span class="acc-label">Escanear desde cualquier pantalla</span><span class="acc-sub">Si escaneas estando en Inicio u otra pantalla, te lleva a Nueva venta y agrega el producto.</span></span>
+      <label class="switch"><input type="checkbox" ${c.anywhere ? 'checked' : ''} onchange="setScannerPref('anywhere', this.checked)"><span class="track"></span></label>
+    </div>
+
+    <p class="print-tip">
+      <b>¿Salen letras o símbolos raros?</b> Pon tu lector en el mismo idioma que tu teclado (Español o Inglés EE. UU.); viene en su manual.<br>
+      <b>¿En iPhone o iPad se esconde el teclado?</b> Pasa mientras el lector está enlazado. Muchos lectores lo vuelven a mostrar si presionas su botón dos veces rápido.<br>
+      <b>¿El código no existe?</b> Al escanearlo en Nueva venta te deja crear el producto con ese código.
+    </p>
+
+    <div class="sheet-actions">
+      <button class="btn primary block" onclick="closeModal(); render();">Listo</button>
+    </div>
+  `;
+}
+function openScannerSettings(){
+  openModal(scannerSheetHTML(), { dismissible:true });
+  const c = scannerCfg();
+  if(c.conn !== 'cam' && window.matchMedia && window.matchMedia('(pointer:fine)').matches) setTimeout(() => { const t = document.getElementById('scTest'); if(t) t.focus(); }, 120);
+}
+function scannerSheetRefresh(){
+  if(!document.getElementById('scannerSheet')) return;
+  const sheet = document.querySelector('#modal-layer .modal-sheet');
+  const y = sheet ? sheet.scrollTop : 0;
+  const res = document.getElementById('scResult');
+  const keep = res ? res.innerHTML : '';
+  if(sheet) sheet.innerHTML = '<div class="sheet-grip"></div>' + scannerSheetHTML(); else openScannerSettings();
+  const s2 = document.querySelector('#modal-layer .modal-sheet'); if(s2) s2.scrollTop = y;
+  const r2 = document.getElementById('scResult'); if(r2 && keep) r2.innerHTML = keep;
+}
+function setScannerPref(key, val){
+  const c = scannerCfg(); c[key] = val; saveScannerCfg(c);
+  vibrate(8);
+  scannerSheetRefresh();
+}
+
+/* Caja de prueba: sabe si el código llegó del lector (rapidísimo) o escrito a mano */
+const scTestState = { t:0, fast:0, n:0, timer:null };
+let scTestLast = '';
+function scTestKey(e){
+  const now = Date.now();
+  if(e.key === 'Enter'){ e.preventDefault(); scTestDone(false); return; }
+  if(e.key && e.key.length === 1){
+    if(!scTestState.n || now - scTestState.t > 400){ scTestState.fast = 0; scTestState.n = 0; }
+    else if(now - scTestState.t < 45) scTestState.fast++;
+    scTestState.n++; scTestState.t = now;
+  }
+}
+function scTestInput(){
+  clearTimeout(scTestState.timer);
+  scTestState.timer = setTimeout(() => {
+    const el = document.getElementById('scTest');
+    if(el && el.value.trim().length >= 6 && scTestState.n >= 6 && scTestState.fast >= scTestState.n - 2) scTestDone(true);
+  }, 250);
+}
+function scTestDone(noEnter){
+  clearTimeout(scTestState.timer);
+  const el = document.getElementById('scTest'); if(!el) return;
+  const code = el.value.replace(/[\u0000-\u001F]/g, '').trim();
+  const lector = scTestState.n >= 4 && scTestState.fast >= scTestState.n - 2;
+  scTestState.n = 0; scTestState.fast = 0;
+  el.value = '';
+  if(!code) return;
+  if(lector) scannerMarkSeen(code, 'lector');
+  scannerTestShow(code, lector ? (noEnter ? 'sin-enter' : 'lector') : 'mano');
+}
+function scannerTestShow(code, how){
+  const box = document.getElementById('scResult'); if(!box) return;
+  scTestLast = code;
+  const p = productBySku(code);
+  if(how !== 'mano'){ if(p) scanBeep(); vibrate(p ? 25 : [18, 60, 18]); }
+  const msg = {
+    lector:'✓ Tu lector funciona. Ya puedes vender escaneando.',
+    serial:'✓ Tu lector funciona por puerto COM. Ya puedes vender escaneando.',
+    'sin-enter':'✓ Tu lector funciona. No manda "Enter" al final, pero la app lo detecta igual.',
+    mano:'Parece que lo escribiste a mano. Con el lector el código se llena solo, en menos de un segundo.'
+  }[how] || '';
+  box.innerHTML = `
+    <div class="sc-result ${p ? 'ok' : 'miss'}">
+      <span class="acc-ico ${p ? 'green' : 'gold'}">${icon(p ? 'check' : 'barcode')}</span>
+      <span class="acc-txt">
+        <span class="acc-label">${p ? escapeHtml(p.name) : 'No está en tus productos'}</span>
+        <span class="acc-sub">Código ${escapeHtml(code)}${p ? ' · ' + formatMoney(p.price) : ''}</span>
+      </span>
+      ${!p && can('gestionarProductos') ? `<button class="btn ghost" onclick="closeModal(); newProductWithSku(scTestLast);">${icon('plus')} Crear</button>` : ''}
+    </div>
+    <div class="sc-how ${how === 'mano' ? '' : 'ok'}">${msg}</div>`;
+  if(how !== 'mano'){
+    const st = document.getElementById('scState');
+    if(st){ st.className = 'pr-state on'; st.innerHTML = '<span class="pr-dot"></span><span>Funcionando</span>'; const card = st.closest('.pr-card'); if(card) card.classList.add('on'); }
+    const last = document.getElementById('scLast');
+    if(last) last.innerHTML = 'Último código: <b>' + escapeHtml(code) + '</b> · hoy ' + fmtTime(new Date().toISOString());
+    const lbl = document.querySelector('.sc-test'); if(lbl) lbl.classList.remove('pulse');
+  }
+  const el = document.getElementById('scTest'); if(el) el.focus();
+}
 
 let scanStream = null, scanTimer = null, scanTarget = null, scanLast = { code:'', at:0 };
 function scanSupported(){ return 'BarcodeDetector' in window && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
@@ -17223,7 +17536,7 @@ function inventoryTabHTML(){
     `}
     <div class="section-title">Últimos movimientos</div>
     ${moves.length ? `<div class="card mov-card">${moves.map(m => movRowHTML(m, true)).join('')}</div>` : `<div class="todo-empty">Aún no hay movimientos de inventario.</div>`}
-    ${moves.length ? `<button class="btn ghost block" style="margin-top:10px;" onclick="exportCSV('inventario')">${icon('download')} Bajar movimientos a Excel</button>` : ''}
+    ${moves.length ? `<button class="btn ghost block" style="margin-top:10px;" onclick="exportExcel('inventario')">${icon('download')} Bajar movimientos a Excel</button>` : ''}
   `;
 }
 function movRowHTML(m, withName){
@@ -17483,9 +17796,7 @@ function renderReports(){
 
     <div class="inv-actions rep-actions">
       <button class="btn ghost" onclick="printReport()">${icon('print')} Imprimir</button>
-      <button class="btn ghost" onclick="exportCSV('ventas', reportRange())">${icon('download')} Excel: ventas</button>
-      <button class="btn ghost" onclick="exportCSV('detalle', reportRange())">${icon('download')} Excel: productos</button>
-      ${ver ? `<button class="btn ghost" onclick="exportCSV('gastos', reportRange())">${icon('download')} Excel: gastos</button>` : ''}
+      <button class="btn ghost" onclick="exportReportExcel()">${icon('download')} Descargar Excel</button>
     </div>
 
     ${!d.all.length && !d.exps.length ? `
@@ -17538,7 +17849,7 @@ function renderReports(){
       <div class="card rep-table">
         <div class="rep-tr head"><span>Producto</span><span>Cant.</span><span>Importe</span>${ver ? '<span>Ganancia</span>' : ''}</div>
         ${prods.slice(0, 30).map(p => `<div class="rep-tr"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.unit && !p.sizeLabel && !unitOf(p.unit).plain ? fmtQty(p.qty, p.unit) : fmtNum(p.qty))}</span><span>${formatMoney(p.total)}</span>${ver ? `<span class="${p.profit < 0 ? 'neg' : ''}">${formatMoney(p.profit)}</span>` : ''}</div>`).join('')}
-        ${prods.length > 30 ? `<div class="kv-note">Y ${prods.length - 30} más · bájalos todos con “Excel: productos”.</div>` : ''}
+        ${prods.length > 30 ? `<div class="kv-note">Y ${prods.length - 30} más · están todos en “Descargar Excel”.</div>` : ''}
       </div>` : ''}
 
     ${users.length > 1 || (users.length === 1 && users[0][0] !== 'Sin usuario') ? `
@@ -17602,99 +17913,675 @@ function printReport(){
 }
 
 /* =========================================================
-   EXPORTAR A EXCEL (CSV)
-   Se abre directo en Excel, Google Sheets o Numbers.
+   EXCEL (.xlsx)
+   Los archivos de Excel se arman aquí mismo, sin internet y sin
+   instalar nada. Cada hoja sale lista para trabajar:
+     · Título, negocio y fechas hasta arriba.
+     · Encabezados en verde que se quedan fijos al bajar.
+     · Dinero con formato de pesos y fechas de verdad (se pueden
+       ordenar, filtrar y sumar en Excel).
+     · Columnas del ancho justo, filtros y renglón de totales.
 ========================================================= */
-function exportCSV(kind, range){
-  const inR = iso => !range || (new Date(iso) >= range[0] && new Date(iso) < range[1]);
-  const stamp = dayKey(new Date());
-  const tag = range ? dayKey(range[0]) + (isSameDay(range[0], new Date(range[1].getTime() - 1)) ? '' : '_a_' + dayKey(new Date(range[1].getTime() - 1))) : stamp;
-  const d2 = iso => { const x = new Date(iso); return dayKey(x); };
-  const t2 = iso => new Date(iso).toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', hour12:false });
-  const num = v => (Math.round((Number(v) || 0) * 100) / 100).toFixed(2);
-  let rows = [], name = '';
-  if(kind === 'ventas'){
-    name = 'ventas_' + tag;
-    rows.push(['Folio','Fecha','Hora','Tipo','Estado','Cliente','Atendió','Servicio','Mesa/Ref','Método de pago','Detalle de pago','Importe','Descuento','Subtotal','IVA','Total','Propina','Efectivo recibido','Cambio','Referencia','Origen','Venta original']);
-    visibleSales().filter(s => inR(s.date)).sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(s => {
-      const ret = saleIsReturn(s);
-      rows.push([saleFolio(s), d2(s.date), t2(s.date), ret ? 'Devolución' : 'Venta', s.cancelled ? 'Cancelada' : 'Activa', s.customerName || '', s.userName || '',
-        ret ? '' : stripEmoji(serviceOf(s.serviceType).name), s.table || '', ret ? refundMethodName(s.paymentMethod) : paymentOf(s.paymentMethod).name,
-        s.paymentMethod === 'mixto' && s.payments ? s.payments.map(p => paymentOf(p.method).name + ' ' + num(p.amount)).join(' / ') : '',
-        num(s.listTotal != null ? s.listTotal : ''), num(s.discount || 0), num(s.subtotal), num(s.iva), num(s.total), num(s.tip || 0),
-        s.cash != null ? num(s.cash) : '', s.change != null ? num(s.change) : '', s.payRef || '', s.origin === 'menu' ? 'Menú Digital' + (s.menuCode ? ' ' + s.menuCode : '') : (s.quoteFolio ? 'Cotización ' + s.quoteFolio : 'Caja'),
-        ret && s.refNumber ? orderNumberLabel(s.refNumber) : '']);
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+/* Estilos (posición en cellXfs de styles.xml) */
+const XS = { base:0, head:1, text:2, money:3, num:4, int:5, date:6, datetime:7, time:8, pct:9, wrap:10,
+             totLabel:11, totMoney:12, totNum:13, totBlank:14, title:15, sub:16, bold:17, headR:18, totInt:19,
+             section:20, boldMoney:21, sectionBlank:22 };
+const XL_TYPE_STYLE = { text:XS.text, money:XS.money, num:XS.num, int:XS.int, date:XS.date, datetime:XS.datetime, time:XS.time, pct:XS.pct, wrap:XS.wrap };
+const XL_NUMERIC = { money:1, num:1, int:1, pct:1 };
+
+const XLSX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
++ '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
++ '<numFmts count="4">'
++   '<numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0.00;[Red]\\-&quot;$&quot;#,##0.00"/>'
++   '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>'
++   '<numFmt numFmtId="166" formatCode="dd/mm/yyyy hh:mm"/>'
++   '<numFmt numFmtId="167" formatCode="hh:mm"/>'
++ '</numFmts>'
++ '<fonts count="5">'
++   '<font><sz val="11"/><color rgb="FF16213E"/><name val="Calibri"/><family val="2"/></font>'
++   '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font>'
++   '<font><b/><sz val="11"/><color rgb="FF16213E"/><name val="Calibri"/><family val="2"/></font>'
++   '<font><b/><sz val="15"/><color rgb="FF16213E"/><name val="Calibri"/><family val="2"/></font>'
++   '<font><sz val="10"/><color rgb="FF6B7280"/><name val="Calibri"/><family val="2"/></font>'
++ '</fonts>'
++ '<fills count="4">'
++   '<fill><patternFill patternType="none"/></fill>'
++   '<fill><patternFill patternType="gray125"/></fill>'
++   '<fill><patternFill patternType="solid"><fgColor rgb="FF0E7A3D"/><bgColor indexed="64"/></patternFill></fill>'
++   '<fill><patternFill patternType="solid"><fgColor rgb="FFE5FAEC"/><bgColor indexed="64"/></patternFill></fill>'
++ '</fills>'
++ '<borders count="3">'
++   '<border><left/><right/><top/><bottom/><diagonal/></border>'
++   '<border><left style="thin"><color rgb="FFDDE1E8"/></left><right style="thin"><color rgb="FFDDE1E8"/></right><top style="thin"><color rgb="FFDDE1E8"/></top><bottom style="thin"><color rgb="FFDDE1E8"/></bottom><diagonal/></border>'
++   '<border><left/><right/><top style="medium"><color rgb="FF0E7A3D"/></top><bottom style="thin"><color rgb="FF0E7A3D"/></bottom><diagonal/></border>'
++ '</borders>'
++ '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
++ '<cellXfs count="23">'
++   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'                                                                                                   /* 0 base */
++   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1" indent="1"/></xf>'   /* 1 head */
++   '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" indent="1"/></xf>'                              /* 2 text */
++   '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'     /* 3 money */
++   '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'                              /* 4 num */
++   '<xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'       /* 5 int */
++   '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' /* 6 date */
++   '<xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' /* 7 datetime */
++   '<xf numFmtId="167" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' /* 8 time */
++   '<xf numFmtId="9" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'       /* 9 pct */
++   '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1" indent="1"/></xf>'                /* 10 wrap */
++   '<xf numFmtId="0" fontId="2" fillId="3" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" indent="1"/></xf>'                                                        /* 11 totLabel */
++   '<xf numFmtId="164" fontId="2" fillId="3" borderId="2" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'                                /* 12 totMoney */
++   '<xf numFmtId="0" fontId="2" fillId="3" borderId="2" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'                                                        /* 13 totNum */
++   '<xf numFmtId="0" fontId="0" fillId="3" borderId="2" xfId="0" applyFill="1" applyBorder="1"/>'                                                                      /* 14 totBlank */
++   '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'                                                                                      /* 15 title */
++   '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>'                                                                                      /* 16 sub */
++   '<xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" indent="1"/></xf>'               /* 17 bold */
++   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1" indent="1"/></xf>' /* 18 headR */
++   '<xf numFmtId="3" fontId="2" fillId="3" borderId="2" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'                                  /* 19 totInt */
++   '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" indent="1"/></xf>'                                                        /* 20 section */
++   '<xf numFmtId="164" fontId="2" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" indent="1"/></xf>'                                              /* 21 boldMoney */
++   '<xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1"/>'                                                                      /* 22 sectionBlank */
++ '</cellXfs>'
++ '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
++ '</styleSheet>';
+
+function xlEsc(s){
+  return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function xlCol(n){ let s = ''; n++; while(n > 0){ const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+/** Fecha de JS → número de fecha de Excel (hora local). */
+function xlDate(v){
+  const d = v instanceof Date ? v : new Date(v);
+  if(!v || isNaN(d)) return null;
+  return (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds()) - Date.UTC(1899, 11, 30)) / 86400000;
+}
+function xlSheetName(name, used){
+  let n = String(name || 'Hoja').replace(/[\[\]:*?\/\\]/g, ' ').replace(/^'+|'+$/g, '').trim().slice(0, 31) || 'Hoja';
+  let k = 2, base = n;
+  while(used.has(n.toLowerCase())){ const suf = ' ' + k++; n = base.slice(0, 31 - suf.length) + suf; }
+  used.add(n.toLowerCase());
+  return n;
+}
+/** Ancho aproximado (en caracteres) de un valor ya con formato. */
+function xlLen(v, t){
+  if(v === null || v === undefined || v === '') return 0;
+  if(t === 'date') return 10;
+  if(t === 'datetime') return 16;
+  if(t === 'time') return 5;
+  if(t === 'pct') return 6;
+  if(t === 'money'){ const n = Math.abs(Number(v) || 0); return ('$' + n.toFixed(2)).length + Math.floor(Math.max(0, Math.floor(n).toString().length - 1) / 3) + (Number(v) < 0 ? 1 : 0); }
+  if(t === 'int'){ const s = String(Math.round(Math.abs(Number(v) || 0))); return s.length + Math.floor((s.length - 1) / 3); }
+  if(t === 'num') return String(Math.round((Number(v) || 0) * 1000) / 1000).length;
+  return String(v).split('\n').reduce((a, l) => Math.max(a, l.length), 0);
+}
+/** Una celda. v puede ser {v, t, s} para darle otro tipo o estilo. */
+function xlCell(ref, v, t, style){
+  if(v && typeof v === 'object' && !(v instanceof Date) && 'v' in v){
+    if(v.t) t = v.t;
+    style = v.s != null ? v.s : (XL_TYPE_STYLE[t] != null ? XL_TYPE_STYLE[t] : style);
+    v = v.v;
+  }
+  const empty = `<c r="${ref}" s="${style}"/>`;
+  if(v === null || v === undefined || v === '') return empty;
+  if(t === 'date' || t === 'datetime' || t === 'time'){
+    const n = typeof v === 'number' ? v : xlDate(v);
+    if(n == null || !isFinite(n)) return empty;
+    const val = t === 'date' ? Math.floor(n) : (t === 'time' ? n - Math.floor(n) : n);
+    return `<c r="${ref}" s="${style}"><v>${Math.round(val * 1e8) / 1e8}</v></c>`;
+  }
+  if(XL_NUMERIC[t] && typeof v !== 'boolean'){
+    const n = typeof v === 'number' ? v : Number(v);
+    if(isFinite(n)) return `<c r="${ref}" s="${style}"><v>${t === 'money' ? Math.round(n * 100) / 100 : Math.round(n * 1e6) / 1e6}</v></c>`;
+  }
+  let s = String(v);
+  if(s.length > 32000) s = s.slice(0, 32000);
+  return `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xlEsc(s)}</t></is></c>`;
+}
+function xlVal(v){ return (v && typeof v === 'object' && !(v instanceof Date) && 'v' in v) ? v.v : v; }
+
+/** Arma el XML de una hoja.
+    sh = { name, title, subtitle, cols:[{h, t, w, sum}], rows:[[...]], totals, note } */
+function xlSheetXML(sh, idx){
+  const cols = sh.cols;
+  const nc = cols.length;
+  const last = xlCol(nc - 1);
+  const top = sh.title ? 4 : 1;                // renglón de encabezados
+  const firstData = top + 1;
+  const lastData = top + sh.rows.length;
+  const rowsXml = [];
+
+  /* Anchos */
+  const widths = cols.map((c, i) => {
+    let m = 0;
+    for(const r of sh.rows){ const v = r[i]; const tt = (v && typeof v === 'object' && v.t) ? v.t : c.t; const l = xlLen(xlVal(v), tt); if(l > m) m = l; }
+    if(sh.totals && c.sum) m = Math.max(m, xlLen(sh.rows.reduce((a, r) => a + (Number(xlVal(r[i])) || 0), 0), c.t));
+    const hw = Math.min(c.h.length, 18) + 3;
+    let w = Math.max(hw, m + 3);
+    w = Math.min(w, c.w || (c.t === 'wrap' ? 42 : 48));
+    return Math.max(c.min || 7, w);
+  });
+  /* Alto del encabezado según cuántos renglones ocupa */
+  const headLines = Math.max(1, ...cols.map((c, i) => Math.ceil(c.h.length / Math.max(1, widths[i] - 3))));
+
+  if(sh.title){
+    rowsXml.push(`<row r="1" ht="24" customHeight="1">${xlCell('A1', sh.title, 'text', XS.title)}</row>`);
+    if(sh.subtitle) rowsXml.push(`<row r="2">${xlCell('A2', sh.subtitle, 'text', XS.sub)}</row>`);
+  }
+  rowsXml.push(`<row r="${top}" ht="${Math.min(4, headLines) * 15 + 6}" customHeight="1">` +
+    cols.map((c, i) => xlCell(xlCol(i) + top, c.h, 'text', XL_NUMERIC[c.t] ? XS.headR : XS.head)).join('') + '</row>');
+
+  sh.rows.forEach((r, k) => {
+    const rn = firstData + k;
+    const kind = r._kind;                      // 'section' | 'bold' | undefined
+    rowsXml.push(`<row r="${rn}">` + cols.map((c, i) => {
+      let st = XL_TYPE_STYLE[c.t] != null ? XL_TYPE_STYLE[c.t] : XS.text;
+      if(kind === 'section') st = (i === 0 || xlVal(r[i]) !== '' && xlVal(r[i]) != null) ? XS.section : XS.sectionBlank;
+      else if(kind === 'bold') st = c.t === 'money' ? XS.boldMoney : XS.bold;
+      return xlCell(xlCol(i) + rn, r[i], c.t, st);
+    }).join('') + '</row>');
+  });
+
+  let totRow = 0;
+  if(sh.totals && sh.rows.length){
+    totRow = lastData + 1;
+    const labelAt = cols.findIndex(c => !c.sum);
+    rowsXml.push(`<row r="${totRow}" ht="20" customHeight="1">` + cols.map((c, i) => {
+      const ref = xlCol(i) + totRow;
+      if(c.sum){
+        const tot = sh.rows.reduce((a, r) => a + (Number(xlVal(r[i])) || 0), 0);
+        const st = c.t === 'money' ? XS.totMoney : (c.t === 'int' ? XS.totInt : XS.totNum);
+        return `<c r="${ref}" s="${st}"><f>SUBTOTAL(9,${xlCol(i)}${firstData}:${xlCol(i)}${lastData})</f><v>${Math.round(tot * 100) / 100}</v></c>`;
+      }
+      if(i === labelAt) return xlCell(ref, 'Total', 'text', XS.totLabel);
+      return `<c r="${ref}" s="${XS.totBlank}"/>`;
+    }).join('') + '</row>');
+  }
+  if(sh.note){
+    const nr = (totRow || lastData) + 2;
+    rowsXml.push(`<row r="${nr}">${xlCell('A' + nr, sh.note, 'text', XS.sub)}</row>`);
+  }
+
+  const lastRow = Math.max(top, totRow || lastData);
+  const filter = sh.filter !== false && sh.rows.length ? `<autoFilter ref="A${top}:${last}${lastData}"/>` : '';
+  return {
+    filterRef: filter ? `$A$${top}:$${last}$${lastData}` : '',
+    top,
+    xml: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+      + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
+      + `<dimension ref="A1:${last}${lastRow}"/>`
+      + `<sheetViews><sheetView workbookViewId="0"${idx === 0 ? ' tabSelected="1"' : ''}><pane ySplit="${top}" topLeftCell="A${firstData}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${firstData}" sqref="A${firstData}"/></sheetView></sheetViews>`
+      + '<sheetFormatPr defaultRowHeight="15"/>'
+      + '<cols>' + widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w.toFixed(1)}" customWidth="1"/>`).join('') + '</cols>'
+      + '<sheetData>' + rowsXml.join('') + '</sheetData>'
+      + filter
+      + '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>'
+      + '<pageSetup paperSize="1" orientation="' + (nc > 6 ? 'landscape' : 'portrait') + '" fitToWidth="1" fitToHeight="0"/>'
+      + `<ignoredErrors><ignoredError sqref="A1:${last}${lastRow + 2}" numberStoredAsText="1"/></ignoredErrors>`   /* sin triangulitos verdes en los códigos */
+      + '</worksheet>'
+  };
+}
+
+/* ---------- ZIP (el .xlsx es un zip con archivos XML) ---------- */
+let _crcTable = null;
+function crc32(u8){
+  if(!_crcTable){
+    _crcTable = new Uint32Array(256);
+    for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; _crcTable[n] = c >>> 0; }
+  }
+  let c = 0xFFFFFFFF;
+  for(let i = 0; i < u8.length; i++) c = _crcTable[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+async function deflateRaw(u8){
+  const cs = new CompressionStream('deflate-raw');
+  const out = new Blob([u8]).stream().pipeThrough(cs);
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+async function inflateRaw(u8){
+  const ds = new DecompressionStream('deflate-raw');
+  const out = new Blob([u8]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+async function zipBlob(files, mime){
+  const enc = new TextEncoder();
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const canDeflate = typeof CompressionStream === 'function';
+  const parts = [], central = [];
+  let offset = 0;
+  for(const f of files){
+    const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data;
+    const name = enc.encode(f.name);
+    const crc = crc32(data);
+    let comp = data, method = 0;
+    if(canDeflate && data.length > 512){
+      try{ const c = await deflateRaw(data); if(c.length < data.length){ comp = c; method = 8; } }catch(e){ /* sin compresión */ }
+    }
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, method, true);
+    lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, comp.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, comp);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, method, true);
+    ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, comp.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
+    ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + comp.length;
+  }
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: mime || 'application/zip' });
+}
+/** Lee un zip: regresa { nombre: Uint8Array }. */
+async function unzipFiles(buf, want){
+  const u8 = new Uint8Array(buf), dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for(let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--){ if(dv.getUint32(i, true) === 0x06054b50){ eocd = i; break; } }
+  if(eocd < 0) throw new Error('no-zip');
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const dec = new TextDecoder();
+  const out = {};
+  for(let k = 0; k < count; k++){
+    if(dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const loc = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
+    p += 46 + nlen + xlen + clen;
+    if(want && !want(name)) continue;
+    const start = loc + 30 + dv.getUint16(loc + 26, true) + dv.getUint16(loc + 28, true);
+    const raw = u8.subarray(start, start + csize);
+    if(method === 0) out[name] = raw;
+    else if(method === 8){
+      if(typeof DecompressionStream !== 'function') throw new Error('no-inflate');
+      out[name] = await inflateRaw(raw);
+    }
+  }
+  return out;
+}
+
+/** Arma el .xlsx con varias hojas y lo descarga. */
+async function downloadXlsx(fileName, sheets){
+  sheets = sheets.filter(Boolean);
+  if(!sheets.length) return false;
+  const used = new Set();
+  const names = sheets.map(s => xlSheetName(s.name, used));
+  const built = sheets.map((s, i) => xlSheetXML(s, i));
+  const q = n => "'" + n.replace(/'/g, "''") + "'";
+  const defined = [];
+  built.forEach((b, i) => {
+    if(b.filterRef) defined.push(`<definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">${xlEsc(q(names[i]) + '!' + b.filterRef)}</definedName>`);
+    defined.push(`<definedName name="_xlnm.Print_Titles" localSheetId="${i}">${xlEsc(q(names[i]) + '!$' + b.top + ':$' + b.top)}</definedName>`);
+  });
+  const files = [
+    { name:'[Content_Types].xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'
+      + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      + built.map((b, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')
+      + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      + '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
+      + '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>'
+      + '</Types>' },
+    { name:'_rels/.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+      + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>'
+      + '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>'
+      + '</Relationships>' },
+    { name:'docProps/core.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+      + `<dc:title>${xlEsc(fileName.replace(/\.xlsx$/, ''))}</dc:title><dc:creator>${xlEsc(APP_NAME)}</dc:creator>`
+      + `<dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</dcterms:created></cp:coreProperties>` },
+    { name:'docProps/app.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>' + xlEsc(APP_NAME) + '</Application></Properties>' },
+    { name:'xl/workbook.xml', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      + '<bookViews><workbookView activeTab="0"/></bookViews><sheets>'
+      + names.map((n, i) => `<sheet name="${xlEsc(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')
+      + '</sheets>' + (defined.length ? '<definedNames>' + defined.join('') + '</definedNames>' : '')
+      + '<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>' },
+    { name:'xl/_rels/workbook.xml.rels', data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + built.map((b, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')
+      + `<Relationship Id="rId${built.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`
+      + '</Relationships>' },
+    { name:'xl/styles.xml', data:XLSX_STYLES },
+    ...built.map((b, i) => ({ name:`xl/worksheets/sheet${i + 1}.xml`, data:b.xml }))
+  ];
+  const blob = await zipBlob(files, XLSX_MIME);
+  return downloadFile(fileName, blob, XLSX_MIME);
+}
+
+/** Lee la primera hoja (o la que se llame como "productos") de un .xlsx → renglones. */
+async function readXlsxRows(buf, prefer){
+  const files = await unzipFiles(buf, n => /^xl\/(workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/[^/]+\.xml)$/i.test(n));
+  const dec = new TextDecoder();
+  const parse = n => files[n] ? new DOMParser().parseFromString(dec.decode(files[n]), 'application/xml') : null;
+  const all = (doc, tag) => doc ? Array.from(doc.getElementsByTagNameNS('*', tag)) : [];
+  const wb = parse('xl/workbook.xml'), rels = parse('xl/_rels/workbook.xml.rels');
+  const sheets = all(wb, 'sheet').map(s => ({ name:s.getAttribute('name') || '', rid:s.getAttribute('r:id') || s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id') }));
+  const target = rid => { const r = all(rels, 'Relationship').find(x => x.getAttribute('Id') === rid); if(!r) return null; const t = r.getAttribute('Target').replace(/^\//, ''); return t.indexOf('xl/') === 0 ? t : 'xl/' + t; };
+  let pick = sheets.find(s => prefer && prefer.test(saleNorm(s.name))) || sheets[0];
+  let path = pick ? target(pick.rid) : null;
+  if(!path || !files[path]) path = Object.keys(files).filter(n => /^xl\/worksheets\//i.test(n)).sort()[0];
+  if(!path) throw new Error('no-sheet');
+  const shared = all(parse('xl/sharedStrings.xml'), 'si').map(si => all(si, 't').map(t => t.textContent).join(''));
+  const rows = [];
+  all(parse(path), 'row').forEach(row => {
+    const out = [];
+    let auto = 0;
+    Array.from(row.children).filter(c => c.localName === 'c').forEach(c => {
+      const ref = c.getAttribute('r');
+      let ci = auto;
+      if(ref){ const m = ref.match(/^([A-Z]+)/); if(m){ ci = 0; for(const ch of m[1]) ci = ci * 26 + (ch.charCodeAt(0) - 64); ci--; } }
+      auto = ci + 1;
+      const t = c.getAttribute('t');
+      const vEl = Array.from(c.children).find(x => x.localName === 'v');
+      let val = '';
+      if(t === 's') val = shared[Number(vEl ? vEl.textContent : -1)] || '';
+      else if(t === 'inlineStr') val = all(c, 't').map(x => x.textContent).join('');
+      else if(t === 'b') val = vEl && vEl.textContent === '1' ? 'Sí' : 'No';
+      else val = vEl ? vEl.textContent : '';
+      out[ci] = val;
     });
-  }else if(kind === 'detalle'){
-    name = 'productos_vendidos_' + tag;
-    rows.push(['Folio','Fecha','Producto','Código','Categoría','Cantidad','Unidad','Precio unitario','Descuento','Importe','Costo unitario','Ganancia','Nota']);
-    visibleSales().filter(s => !s.cancelled && inR(s.date)).forEach(s => s.items.forEach(it => {
+    for(let i = 0; i < out.length; i++) if(out[i] === undefined) out[i] = '';
+    rows.push(out);
+  });
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+
+/* ---------- Qué lleva cada hoja ---------- */
+function xlSubtitle(range){
+  const b = bizData();
+  return [b.name || APP_NAME, range ? reportRangeLabel(range) : 'Todo lo registrado', 'Descargado el ' + formatDateTime(new Date().toISOString())].join('  ·  ');
+}
+function xlSaleOrigin(s){
+  if(s.origin === 'menu') return 'Menú Digital' + (s.menuCode ? ' ' + s.menuCode : '');
+  if(s.quoteFolio) return 'Cotización ' + s.quoteFolio;
+  return 'Caja';
+}
+function xlPay(id){ return stripEmoji(paymentOf(id).name); }
+function xlPayDetail(s){
+  if(s.paymentMethod === 'mixto' && Array.isArray(s.payments)) return s.payments.map(p => xlPay(p.method) + ' ' + formatMoney(p.amount)).join(' + ');
+  return '';
+}
+function xlUnitName(it){
+  if(it.sizeLabel) return 'pieza';
+  const u = unitOf(it.unit);
+  return u.plain ? 'pieza' : (u.label || u.id).toLowerCase();
+}
+/** Hojas de un tipo de datos (en un rango de fechas o de todo). */
+function xlSheetsFor(kind, range){
+  const inR = iso => !range || (iso && new Date(iso) >= range[0] && new Date(iso) < range[1]);
+  const sub = xlSubtitle(kind === 'productos' || kind === 'clientes' ? null : range);
+  const ver = can('verGanancias') || isOwner();
+  const byDate = (a, b) => new Date(a.date || a.at) - new Date(b.date || b.at);
+  const out = [];
+
+  if(kind === 'ventas'){
+    const all = visibleSales().filter(s => inR(s.date)).sort(byDate);
+    const saleRow = s => {
+      const ret = saleIsReturn(s);
+      return [saleFolio(s), s.date, s.date, ret ? 'Devolución' : 'Venta', s.customerName || '', s.userName || '',
+        ret ? '' : stripEmoji(serviceOf(s.serviceType).name), s.table || '',
+        ret ? refundMethodName(s.paymentMethod) : xlPay(s.paymentMethod), xlPayDetail(s),
+        ret ? '' : (s.listTotal != null ? s.listTotal : ''), ret ? '' : (s.discount || 0), s.subtotal, s.iva, s.total, s.tip || 0,
+        s.credit || 0, s.cash != null ? s.cash : '', s.change != null ? s.change : '', s.payRef || '', xlSaleOrigin(s),
+        ret && s.refNumber ? orderNumberLabel(s.refNumber) : '', s.reason || s.cancelReason || ''];
+    };
+    const cols = [
+      { h:'Folio', t:'text' }, { h:'Fecha', t:'date' }, { h:'Hora', t:'time' }, { h:'Tipo', t:'text' }, { h:'Cliente', t:'text' }, { h:'Atendió', t:'text' },
+      { h:'Servicio', t:'text' }, { h:'Mesa / referencia', t:'text' }, { h:'Forma de pago', t:'text' }, { h:'Detalle del pago', t:'text', w:34 },
+      { h:'Importe', t:'money', sum:true }, { h:'Descuento', t:'money', sum:true }, { h:'Subtotal', t:'money', sum:true }, { h:'IVA', t:'money', sum:true },
+      { h:'Total', t:'money', sum:true }, { h:'Propina', t:'money', sum:true }, { h:'Quedó a deber (fiado)', t:'money', sum:true },
+      { h:'Efectivo recibido', t:'money' }, { h:'Cambio', t:'money' }, { h:'Referencia de pago', t:'text' }, { h:'Origen', t:'text' },
+      { h:'Venta original', t:'text' }, { h:'Motivo', t:'wrap', w:34 }
+    ];
+    const active = all.filter(s => !s.cancelled);
+    out.push({ name:'Ventas', title:'Ventas y devoluciones', subtitle:sub, cols, rows:active.map(saleRow), totals:true,
+               note:'Las devoluciones van en negativo, así el Total ya es lo que vendiste de verdad. Las ventas canceladas están en su propia hoja.' });
+    const canc = all.filter(s => s.cancelled);
+    if(canc.length){
+      const cc = cols.slice(0, 10).concat([{ h:'Total', t:'money', sum:true }, { h:'Cancelada el', t:'datetime' }, { h:'Canceló', t:'text' }, { h:'¿Regresó al inventario?', t:'text' }, { h:'Motivo', t:'wrap', w:34 }]);
+      out.push({ name:'Canceladas', title:'Ventas canceladas', subtitle:sub, cols:cc, totals:true,
+        rows:canc.map(s => saleRow(s).slice(0, 10).concat([s.total, s.cancelledAt || '', s.cancelledBy || '', s.restocked ? 'Sí' : 'No', s.cancelReason || s.reason || ''])) });
+    }
+  }
+
+  else if(kind === 'detalle'){
+    const rows = [];
+    visibleSales().filter(s => !s.cancelled && inR(s.date)).sort(byDate).forEach(s => (s.items || []).forEach(it => {
       const p = findProduct(it.productId);
       const c = itemCost(it);
-      rows.push([saleFolio(s), d2(s.date), it.name, it.sku || (p && p.sku) || '', it.custom ? 'Venta libre' : categoryOf(it.category || (p ? p.category : '')).name,
-        String(it.qty).replace('.', '.'), it.sizeLabel ? 'pieza' : (unitOf(it.unit).plain ? 'pieza' : unitOf(it.unit).short), num(it.listPrice != null ? it.listPrice : it.price), num(it.disc || 0),
-        num(it.price * it.qty), c != null ? num(c) : '', c != null ? num((netOfTax(it.price, saleTaxInfo(s)) - c) * it.qty) : '', it.note || '']);
+      const row = [saleFolio(s), s.date, s.date, it.name, it.sku || (p && p.sku) || '',
+        it.custom ? 'Venta libre' : categoryOf(it.category || (p ? p.category : '')).name,
+        it.qty, xlUnitName(it), it.listPrice != null ? it.listPrice : it.price, it.disc || 0, round2(it.price * it.qty)];
+      if(ver) row.push(c != null ? c : '', c != null ? round2(c * it.qty) : '', c != null ? round2((netOfTax(it.price, saleTaxInfo(s)) - c) * it.qty) : '');
+      row.push(s.customerName || '', s.userName || '', it.note || '');
+      rows.push(row);
     }));
-  }else if(kind === 'productos'){
-    name = 'catalogo_' + stamp;
-    rows.push(['Nombre','Código','Categoría','Precio','Costo','Precio mayoreo','Mayoreo desde','Existencias','Avisar al quedar','Unidad','Activo','Descripción']);
-    DB.getProducts().forEach(p => rows.push([p.name, p.sku || '', categoryOf(p.category).name, num(p.price), p.cost != null ? num(p.cost) : '', p.wholesalePrice ? num(p.wholesalePrice) : '', p.wholesaleMin || '',
-      p.stock != null ? p.stock : '', p.stock != null ? (p.minStock != null ? p.minStock : '') : '', unitOf(p.unit).plain ? 'pieza' : unitOf(p.unit).id, p.active ? 'Sí' : 'No', p.description || '']));
-  }else if(kind === 'clientes'){
-    name = 'clientes_' + stamp;
-    const bal = customerBalances();
-    rows.push(['Nombre','WhatsApp','Correo','RFC','Dirección','Límite de crédito','Debe','Notas','Alta']);
-    DB.getCustomers().forEach(c => rows.push([c.name, c.phone || '', c.email || '', c.rfc || '', c.address || '', c.creditLimit ? num(c.creditLimit) : '', num(bal[c.id] || 0), c.notes || '', c.createdAt ? d2(c.createdAt) : '']));
-  }else if(kind === 'abonos'){
-    name = 'abonos_' + tag;
-    rows.push(['Fecha','Hora','Cliente','Monto','Método','Debía','Quedó debiendo','Recibió','Nota','Estado']);
-    DB.getPayments().filter(p => inR(p.at)).forEach(p => rows.push([d2(p.at), t2(p.at), p.customerName, num(p.amount), paymentOf(p.method).name, num(p.balanceBefore), num(p.balanceAfter), p.by || '', p.note || '', p.cancelled ? 'Cancelado' : 'Activo']));
-  }else if(kind === 'gastos'){
-    name = 'gastos_' + tag;
-    rows.push(['Fecha','Concepto','Tipo de gasto','Método','De la caja','Monto','Registró','Nota']);
-    DB.getExpenses().filter(e => !e.cancelled && inR(e.date || e.at)).forEach(e => rows.push([d2(e.date || e.at), e.concept || '', expenseCat(e.category).name, paymentOf(e.method).name, e.fromCash ? 'Sí' : 'No', num(e.amount), e.by || '', e.note || '']));
-  }else if(kind === 'inventario'){
-    name = 'movimientos_inventario_' + tag;
-    rows.push(['Fecha','Hora','Producto','Movimiento','Cantidad','Antes','Después','Costo unitario','Proveedor','Referencia','Nota','Usuario']);
-    DB.getMoves().filter(m => inR(m.at)).forEach(m => rows.push([d2(m.at), t2(m.at), m.productName, (INV_TYPES[m.type] || INV_TYPES.ajuste).label, m.qty, m.before != null ? m.before : '', m.after, m.unitCost != null ? num(m.unitCost) : '', m.supplier || '', m.ref || '', m.note || '', m.by || '']));
-  }else if(kind === 'cortes'){
-    name = 'cortes_caja_' + stamp;
-    rows.push(['Corte','Abrió','Abrió (usuario)','Cerró','Cerró (usuario)','Fondo','Ventas','Efectivo','Tarjeta','Transferencia','Fiado','Debe haber','Contado','Diferencia','Se quedó en caja']);
-    DB.getCash().filter(c => c.closedAt).forEach(c => { const s = c.summary || cashSummary(c); rows.push([c.number, formatDateTime(c.openedAt), c.openedBy || '', formatDateTime(c.closedAt), c.closedBy || '', num(c.opening), num(s.ventas), num(s.byMethod.efectivo), num(s.byMethod.tarjeta), num(s.byMethod.transferencia), num(s.byMethod.credito), num(c.expected), num(c.counted), num(c.diff), c.keep != null ? num(c.keep) : '']); });
+    const cols = [{ h:'Folio', t:'text' }, { h:'Fecha', t:'date' }, { h:'Hora', t:'time' }, { h:'Producto', t:'text', w:40 }, { h:'Código', t:'text' }, { h:'Categoría', t:'text' },
+      { h:'Cantidad', t:'num' }, { h:'Unidad', t:'text' }, { h:'Precio', t:'money' }, { h:'Descuento', t:'money', sum:true }, { h:'Importe', t:'money', sum:true }];
+    if(ver) cols.push({ h:'Costo unitario', t:'money' }, { h:'Costo total', t:'money', sum:true }, { h:'Ganancia (sin IVA)', t:'money', sum:true });
+    cols.push({ h:'Cliente', t:'text' }, { h:'Atendió', t:'text' }, { h:'Nota', t:'wrap', w:30 });
+    out.push({ name:'Productos vendidos', title:'Productos vendidos (renglón por renglón)', subtitle:sub, cols, rows, totals:true });
   }
-  if(rows.length <= 1){ toast('No hay datos para exportar en estas fechas'); return; }
-  downloadFile(name + '.csv', toCSV(rows), 'text/csv;charset=utf-8');
-  toast('Archivo listo: ' + name + '.csv', { icon:icon('download'), variant:'toast-success', subtitle:(rows.length - 1) + ' renglón' + (rows.length === 2 ? '' : 'es') + ' · se abre en Excel' });
+
+  else if(kind === 'productos'){
+    const cols = [{ h:'Nombre', t:'text', w:40 }, { h:'Código', t:'text' }, { h:'Categoría', t:'text' }, { h:'Precio', t:'money' }];
+    if(ver) cols.push({ h:'Costo', t:'money' });
+    cols.push({ h:'Precio mayoreo', t:'money' }, { h:'Mayoreo desde', t:'num' }, { h:'Existencias', t:'num' }, { h:'Avisar al quedar', t:'num' });
+    if(ver) cols.push({ h:'Valor del inventario (a costo)', t:'money', sum:true });
+    cols.push({ h:'Unidad', t:'text' }, { h:'Tamaños', t:'wrap', w:36 }, { h:'Activo', t:'text' }, { h:'Descripción', t:'wrap', w:40 });
+    const rows = DB.getProducts().slice().sort((a, b) => categoryOf(a.category).name.localeCompare(categoryOf(b.category).name) || a.name.localeCompare(b.name)).map(p => {
+      const r = [p.name, p.sku || '', categoryOf(p.category).name, p.price];
+      if(ver) r.push(p.cost != null ? p.cost : '');
+      r.push(p.wholesalePrice || '', p.wholesalePrice ? (p.wholesaleMin || '') : '', p.stock != null ? p.stock : '', p.stock != null ? (p.minStock != null ? p.minStock : '') : '');
+      if(ver) r.push(p.stock != null && p.cost != null ? round2(Math.max(0, p.stock) * p.cost) : '');
+      r.push(unitOf(p.unit).plain ? 'pieza' : unitOf(p.unit).id,
+        hasSizes(p) ? (p.sizes || []).map(z => z.label + ' ' + formatMoney(z.price)).join(' · ') : '',
+        p.active ? 'Sí' : 'No', p.description || '');
+      return r;
+    });
+    out.push({ name:'Catálogo', title:'Catálogo de productos', subtitle:sub, cols, rows, totals:ver });
+  }
+
+  else if(kind === 'clientes'){
+    const bal = customerBalances();
+    const sales = DB.getSales().filter(s => !s.cancelled && s.customerId);
+    const stats = {};
+    sales.forEach(s => { const x = stats[s.customerId] = stats[s.customerId] || { n:0, total:0, last:null }; if(!saleIsReturn(s)) x.n++; x.total += s.total; if(!x.last || new Date(s.date) > new Date(x.last)) x.last = s.date; });
+    out.push({ name:'Clientes', title:'Clientes', subtitle:sub, totals:true,
+      cols:[{ h:'Nombre', t:'text', w:34 }, { h:'WhatsApp', t:'text' }, { h:'Correo', t:'text' }, { h:'RFC', t:'text' }, { h:'Dirección', t:'wrap', w:36 },
+            { h:'Límite de crédito', t:'money' }, { h:'Debe', t:'money', sum:true }, { h:'Compras', t:'int', sum:true }, { h:'Total comprado', t:'money', sum:true },
+            { h:'Última compra', t:'date' }, { h:'Notas', t:'wrap', w:34 }, { h:'Alta', t:'date' }],
+      rows:DB.getCustomers().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => { const x = stats[c.id] || { n:0, total:0, last:null };
+        return [c.name, c.phone || '', c.email || '', c.rfc || '', c.address || '', c.creditLimit || '', round2(bal[c.id] || 0), x.n, round2(x.total), x.last || '', c.notes || '', c.createdAt || '']; }) });
+  }
+
+  else if(kind === 'abonos'){
+    out.push({ name:'Abonos', title:'Abonos de fiado', subtitle:sub, totals:true,
+      cols:[{ h:'Fecha', t:'date' }, { h:'Hora', t:'time' }, { h:'Cliente', t:'text', w:34 }, { h:'Monto', t:'money', sum:true }, { h:'Forma de pago', t:'text' },
+            { h:'Debía', t:'money' }, { h:'Quedó debiendo', t:'money' }, { h:'Recibió', t:'text' }, { h:'Nota', t:'wrap', w:34 }],
+      rows:DB.getPayments().filter(p => !p.cancelled && inR(p.at)).sort(byDate).map(p => [p.at, p.at, p.customerName || '', p.amount, xlPay(p.method),
+            p.balanceBefore != null ? p.balanceBefore : '', p.balanceAfter != null ? p.balanceAfter : '', p.by || '', p.note || '']) });
+  }
+
+  else if(kind === 'gastos'){
+    if(!ver) return out;
+    out.push({ name:'Gastos', title:'Gastos', subtitle:sub, totals:true,
+      cols:[{ h:'Fecha', t:'date' }, { h:'Concepto', t:'text', w:36 }, { h:'Tipo de gasto', t:'text' }, { h:'Forma de pago', t:'text' }, { h:'¿Salió de la caja?', t:'text' },
+            { h:'Monto', t:'money', sum:true }, { h:'Registró', t:'text' }, { h:'Nota', t:'wrap', w:34 }],
+      rows:DB.getExpenses().filter(e => !e.cancelled && inR(e.date || e.at)).sort(byDate).map(e => [e.date || e.at, e.concept || '', expenseCat(e.category).name, xlPay(e.method),
+            e.fromCash ? 'Sí' : 'No', e.amount, e.by || '', e.note || '']) });
+  }
+
+  else if(kind === 'inventario'){
+    const cols = [{ h:'Fecha', t:'date' }, { h:'Hora', t:'time' }, { h:'Producto', t:'text', w:36 }, { h:'Movimiento', t:'text' }, { h:'Cantidad', t:'num' },
+                  { h:'Había', t:'num' }, { h:'Quedó', t:'num' }];
+    if(ver) cols.push({ h:'Costo unitario', t:'money' });
+    cols.push({ h:'Proveedor', t:'text' }, { h:'Referencia', t:'text' }, { h:'Nota', t:'wrap', w:30 }, { h:'Usuario', t:'text' });
+    out.push({ name:'Inventario', title:'Movimientos de inventario', subtitle:sub, cols, totals:false,
+      rows:DB.getMoves().filter(m => inR(m.at)).sort(byDate).map(m => { const r = [m.at, m.at, m.productName || '', (INV_TYPES[m.type] || INV_TYPES.ajuste).label, m.qty, m.before != null ? m.before : '', m.after != null ? m.after : ''];
+        if(ver) r.push(m.unitCost != null ? m.unitCost : '');
+        r.push(m.supplier || '', m.ref || '', m.note || '', m.by || ''); return r; }) });
+  }
+
+  else if(kind === 'cortes'){
+    out.push({ name:'Cortes de caja', title:'Cortes de caja', subtitle:sub, totals:true,
+      cols:[{ h:'Corte', t:'int' }, { h:'Abrió', t:'datetime' }, { h:'Quién abrió', t:'text' }, { h:'Cerró', t:'datetime' }, { h:'Quién cerró', t:'text' },
+            { h:'Fondo inicial', t:'money' }, { h:'Ventas', t:'money', sum:true }, { h:'Efectivo', t:'money', sum:true }, { h:'Tarjeta', t:'money', sum:true },
+            { h:'Transferencia', t:'money', sum:true }, { h:'Fiado', t:'money', sum:true }, { h:'Entradas', t:'money', sum:true }, { h:'Salidas', t:'money', sum:true },
+            { h:'Gastos de la caja', t:'money', sum:true }, { h:'Debía haber', t:'money' }, { h:'Se contó', t:'money' }, { h:'Diferencia', t:'money', sum:true },
+            { h:'Se quedó en caja', t:'money' }, { h:'Nota', t:'wrap', w:30 }],
+      rows:DB.getCash().filter(c => c.closedAt && inR(c.closedAt)).sort((a, b) => new Date(a.openedAt) - new Date(b.openedAt)).map(c => { const s = c.summary || cashSummary(c);
+        return [c.number, c.openedAt, c.openedBy || '', c.closedAt, c.closedBy || '', c.opening, s.ventas, s.byMethod.efectivo, s.byMethod.tarjeta, s.byMethod.transferencia, s.byMethod.credito,
+                s.entradas || 0, s.salidas || 0, s.gastosCaja || 0, c.expected, c.counted, c.diff, c.keep != null ? c.keep : '', c.note || '']; }) });
+  }
+  return out.filter(s => s.rows.length);
+}
+
+/** Hojas extra del reporte: resumen y agrupados. */
+function xlReportSheets(){
+  const d = reportData();
+  const ver = can('verGanancias');
+  const sub = xlSubtitle(d.r);
+  const net = d.net || 0;
+  const K = (label, v, t) => [label, t ? { v, t } : v];
+  const sec = label => Object.assign([label, ''], { _kind:'section' });
+  const bold = (label, v) => Object.assign([label, v], { _kind:'bold' });
+  const rows = [];
+  rows.push(sec('VENTAS'));
+  rows.push(K('Importe de lo vendido', d.listTotal));
+  rows.push(K('− Descuentos', -d.discounts));
+  if(d.ivaAdded) rows.push(K('+ IVA', d.ivaAdded));
+  rows.push(K('− Devoluciones (' + d.returns.length + ')', -d.returnsTotal));
+  rows.push(bold('Ventas netas', net));
+  if(d.ivaIncl) rows.push(K('IVA que ya venía en los precios', d.ivaIncl));
+  if(d.iva) rows.push(K('IVA del periodo (para tu contador)', d.iva));
+  if(d.tips) rows.push(K('Propinas (aparte)', d.tips));
+  rows.push(K('Número de ventas', d.orders.length, 'int'));
+  rows.push(K('Ticket promedio', d.orders.length ? round2(net / d.orders.length) : 0));
+  if(d.cancelled) rows.push(K('Ventas canceladas', d.cancelled, 'int'));
+  if(ver){
+    rows.push(sec('GANANCIA'));
+    rows.push(K('Costo de lo vendido', d.prof.cost));
+    rows.push(K('Ganancia (sin IVA)', d.prof.profit));
+    rows.push(K('− Gastos (' + d.exps.length + ')', -d.gastos));
+    rows.push(bold('Te queda', round2(d.prof.profit - d.gastos)));
+    if(d.prof.missing > 0) rows.push(K('Artículos sin precio de producción (no entran en la ganancia)', d.prof.missing, 'num'));
+  }
+  rows.push(sec('CÓMO TE PAGARON'));
+  PAYMENT_METHODS.filter(p => p.id !== 'mixto' && (d.byMethod[p.id] || p.id !== 'credito')).forEach(p => rows.push(K(stripEmoji(p.name), d.byMethod[p.id] || 0)));
+  const abonosTot = d.abonos.reduce((a, p) => a + Number(p.amount || 0), 0);
+  if(abonosTot) rows.push(K('Abonos de fiado recibidos', abonosTot));
+  const out = [{ name:'Resumen', title:'Reporte de ventas', subtitle:sub, filter:false,
+                 cols:[{ h:'Concepto', t:'text', w:46 }, { h:'Monto', t:'money', w:18 }], rows }];
+
+  const prods = Object.values(d.byProd).filter(p => Math.abs(p.qty) > 0.0001).sort((a, b) => b.total - a.total);
+  if(prods.length){
+    const cols = [{ h:'Producto', t:'text', w:40 }, { h:'Código', t:'text' }, { h:'Categoría', t:'text' }, { h:'Cantidad', t:'num' }, { h:'Unidad', t:'text' },
+                  { h:'Importe', t:'money', sum:true }, { h:'% de lo vendido', t:'pct' }];
+    if(ver) cols.push({ h:'Ganancia (sin IVA)', t:'money', sum:true });
+    const tot = prods.reduce((a, p) => a + p.total, 0) || 1;
+    out.push({ name:'Por producto', title:'Ventas por producto', subtitle:sub, cols, totals:true,
+      rows:prods.map(p => { const r = [p.name, p.sku || '', p.cat || '', r3(p.qty), p.sizeLabel || !p.unit || unitOf(p.unit).plain ? 'pieza' : (unitOf(p.unit).label || p.unit).toLowerCase(), round2(p.total), p.total / tot];
+        if(ver) r.push(round2(p.profit)); return r; }) });
+  }
+  const cats = Object.values(d.byCat).filter(c => Math.abs(c.total) > 0.004).sort((a, b) => b.total - a.total);
+  if(cats.length){
+    const tot = cats.reduce((a, c) => a + c.total, 0) || 1;
+    out.push({ name:'Por categoría', title:'Ventas por categoría', subtitle:sub, totals:true,
+      cols:[{ h:'Categoría', t:'text', w:30 }, { h:'Importe', t:'money', sum:true }, { h:'% de lo vendido', t:'pct' }],
+      rows:cats.map(c => [c.name, round2(c.total), c.total / tot]) });
+  }
+  const days = Object.keys(d.byDay).sort();
+  if(days.length > 1){
+    const cnt = {}; d.orders.forEach(s => { const k = dayKey(s.date); cnt[k] = (cnt[k] || 0) + 1; });
+    out.push({ name:'Por día', title:'Ventas por día', subtitle:sub, totals:true,
+      cols:[{ h:'Día', t:'date' }, { h:'Número de ventas', t:'int', sum:true }, { h:'Ventas netas', t:'money', sum:true }],
+      rows:days.map(k => { const [y, m, dd] = k.split('-').map(Number); return [new Date(y, m - 1, dd), cnt[k] || 0, round2(d.byDay[k])]; }) });
+  }
+  const users = Object.entries(d.byUser).sort((a, b) => b[1].total - a[1].total);
+  if(users.length > 1 || (users.length === 1 && users[0][0] !== 'Sin usuario')){
+    out.push({ name:'Por quién cobró', title:'Ventas por usuario', subtitle:sub, totals:true,
+      cols:[{ h:'Usuario', t:'text', w:28 }, { h:'Número de ventas', t:'int', sum:true }, { h:'Total', t:'money', sum:true }],
+      rows:users.map(([n, v]) => [n, v.count, round2(v.total)]) });
+  }
+  return out;
+}
+
+const XL_KIND_NAMES = { ventas:'ventas', detalle:'productos_vendidos', productos:'catalogo', clientes:'clientes', abonos:'abonos',
+                        gastos:'gastos', inventario:'inventario', cortes:'cortes_de_caja' };
+function xlFileTag(range){
+  if(!range) return dayKey(new Date());
+  const last = new Date(range[1].getTime() - 1);
+  return dayKey(range[0]) + (isSameDay(range[0], last) ? '' : '_a_' + dayKey(last));
+}
+function xlBizSlug(){ return mdSlug(bizData().name || APP_NAME) || 'vendo'; }
+let xlBusy = false;
+async function xlRun(fileName, build, what){
+  if(xlBusy) return;
+  xlBusy = true;
+  try{
+    const sheets = build().filter(s => s && s.rows && s.rows.length);
+    if(!sheets.length){ toast('No hay datos para bajar en estas fechas'); return; }
+    await downloadXlsx(fileName, sheets);
+    const n = sheets.reduce((a, s) => a + s.rows.length, 0);
+    toast('Excel listo: ' + fileName, { icon:icon('download'), variant:'toast-success',
+      subtitle:(sheets.length > 1 ? sheets.length + ' hojas · ' : '') + n + ' renglón' + (n === 1 ? '' : 'es') + (what ? ' · ' + what : '') });
+  }catch(e){
+    toast('No se pudo armar el Excel', { icon:icon('alert'), variant:'toast-danger', subtitle:String(e && e.message || e).slice(0, 80) });
+  }finally{ xlBusy = false; }
+}
+/** Un tipo de datos → su propio Excel. */
+function exportExcel(kind, range){
+  return xlRun(xlBizSlug() + '_' + (XL_KIND_NAMES[kind] || kind) + '_' + xlFileTag(range) + '.xlsx', () => xlSheetsFor(kind, range));
+}
+/** El reporte del periodo completo (Reportes › Descargar Excel). */
+function exportReportExcel(){
+  const r = reportRange();
+  return xlRun(xlBizSlug() + '_reporte_' + xlFileTag(r) + '.xlsx', () => {
+    const sh = xlReportSheets();
+    ['ventas', 'detalle', 'abonos'].concat(can('verGanancias') ? ['gastos'] : []).forEach(k => sh.push(...xlSheetsFor(k, r)));
+    return sh;
+  }, reportRangeLabel(r));
+}
+/** Todo lo guardado, en un solo Excel (una hoja por tema). */
+function exportAllExcel(){
+  return xlRun(xlBizSlug() + '_todo_' + dayKey(new Date()) + '.xlsx', () =>
+    ['ventas', 'detalle', 'productos', 'clientes', 'abonos', 'gastos', 'inventario', 'cortes'].reduce((a, k) => a.concat(xlSheetsFor(k, null)), []));
 }
 
 /* =========================================================
    DATOS Y RESPALDO
-   Hoy todo vive en ESTE navegador. Desde aquí se descarga un
-   respaldo completo, se restaura en otro aparato, se baja todo a
-   Excel, se suben productos desde Excel y se prepara la base de
-   datos (estructura SQL + envío a tu servidor).
+   Todo vive en ESTE navegador. Desde aquí se guarda una copia:
+     · Respaldo (.json): la copia completa para restaurar todo
+       aquí mismo o en otro aparato.
+     · Excel (.xlsx): tus datos acomodados para verlos, imprimirlos
+       o mandárselos a tu contador.
+   Y se suben productos desde Excel.
 ========================================================= */
-const SYNC_KEY = 'mesa_sync';
-function syncCfg(){ return Object.assign({ url:'', token:'', lastAt:null, lastOk:null, lastMsg:'' }, Store.get(SYNC_KEY, {}) || {}); }
 function backupObject(){
   const data = {};
   try{
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
-      if(!k || k.indexOf('mesa_') !== 0 || DATA_NOT_IN_BACKUP.indexOf(k) >= 0 || k === SYNC_KEY) continue;
+      if(!k || k.indexOf('mesa_') !== 0 || DATA_NOT_IN_BACKUP.indexOf(k) >= 0) continue;
       const raw = localStorage.getItem(k);
       try{ data[k] = JSON.parse(raw); }catch(e){ data[k] = raw; }
     }
   }catch(e){}
-  const m = Store.meta();
-  return { app:'Vendo', schema:DATA_SCHEMA_VERSION, exportedAt:new Date().toISOString(), deviceId:m.deviceId,
-           tables: DATA_COLLECTIONS.reduce((o, c) => { o[c.key] = c.table; return o; }, {}), data };
+  return { app:'Vendo', version:DATA_SCHEMA_VERSION, exportedAt:new Date().toISOString(), business:bizData().name || '', data };
 }
 function downloadBackup(){
   if(!requireOwner('Solo el Dueño puede descargar el respaldo')) return;
   const obj = backupObject();
-  const b = bizData();
-  const name = 'respaldo_' + (mdSlug(b.name || APP_NAME) || 'vendo') + '_' + dayKey(new Date()) + '.json';
+  const name = 'respaldo_' + xlBizSlug() + '_' + dayKey(new Date()) + '.json';
   downloadFile(name, JSON.stringify(obj), 'application/json');
   const m = Store.meta(); m.lastBackupAt = new Date().toISOString(); Store.saveMeta();
   toast('Respaldo descargado', { icon:icon('download'), variant:'toast-success', subtitle:name + ' · guárdalo en tu correo o en la nube' });
@@ -17706,6 +18593,7 @@ function pickBackupFile(){
   inp.type = 'file'; inp.accept = '.json,application/json';
   inp.onchange = () => {
     const f = inp.files && inp.files[0]; if(!f) return;
+    if(/\.xlsx?$/i.test(f.name)){ toast('Para restaurar se usa el respaldo .json', { icon:icon('alert'), variant:'toast-danger', subtitle:'El Excel es para ver tus datos; el .json guarda todo para regresarlo' }); return; }
     const rd = new FileReader();
     rd.onload = () => {
       let obj = null;
@@ -17726,7 +18614,7 @@ function pickBackupFile(){
 function restoreBackup(obj){
   try{
     const keep = {};
-    ['mesa_session', 'mesa_meta', 'mesa_printer'].forEach(k => { const v = localStorage.getItem(k); if(v != null) keep[k] = v; });
+    ['mesa_session', 'mesa_meta', 'mesa_printer', 'mesa_scanner'].forEach(k => { const v = localStorage.getItem(k); if(v != null) keep[k] = v; });
     const quitar = [];
     for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(k && k.indexOf('mesa_') === 0 && !(k in keep)) quitar.push(k); }
     quitar.forEach(k => localStorage.removeItem(k));
@@ -17759,7 +18647,7 @@ function openDataSheet(){
       <button class="sheet-close" onclick="closeModal(); render();">${icon('close')}</button>
     </div>
     <div class="storage-card">
-      <div class="storage-top"><span>${icon('database')} Guardado en este navegador</span><b>${(u.bytes / 1024 / 1024).toFixed(2)} MB de ~5 MB</b></div>
+      <div class="storage-top"><span>${icon('shield')} Guardado en este navegador</span><b>${(u.bytes / 1024 / 1024).toFixed(2)} MB de ~5 MB</b></div>
       <div class="trial-bar"><div class="trial-bar-fill ${pct > 80 ? 'hot' : ''}" style="width:${Math.max(2, pct)}%"></div></div>
       <small>${prods} productos · ${sales} ventas · ${DB.getCustomers().length} clientes${pct > 80 ? ' · <b style="color:var(--accent-2)">casi lleno: baja un respaldo y quita fotos pesadas</b>' : ''}</small>
     </div>
@@ -17767,52 +18655,51 @@ function openDataSheet(){
       <b>${last ? 'Último respaldo: ' + formatDateTime(last) : 'Aún no haces ningún respaldo'}</b>
       Tus datos viven solo en este aparato. Si se borra el navegador o cambias de celular, con el respaldo recuperas todo. Hazlo cada semana.
     </span></div>
+    <div class="section-title">Respaldo (.json)</div>
     <div class="acc-list">
       <button class="acc-row" onclick="downloadBackup()">
         <span class="acc-ico green">${icon('download')}</span>
-        <span class="acc-txt"><span class="acc-label">Descargar respaldo completo</span><span class="acc-sub">Un archivo .json con todo: productos, ventas, clientes, caja…</span></span>
+        <span class="acc-txt"><span class="acc-label">Descargar respaldo completo</span><span class="acc-sub">Todo tu negocio en un archivo .json</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
       <button class="acc-row" onclick="pickBackupFile()">
         <span class="acc-ico blue">${icon('upload')}</span>
-        <span class="acc-txt"><span class="acc-label">Restaurar un respaldo</span><span class="acc-sub">Para pasar tus datos a otro aparato</span></span>
+        <span class="acc-txt"><span class="acc-label">Restaurar un respaldo</span><span class="acc-sub">Aquí o en otro aparato, desde el .json</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
     </div>
-    <div class="section-title">Excel</div>
+    <div class="section-title">Excel (.xlsx)</div>
     <div class="acc-list">
-      <button class="acc-row" onclick="openExportSheet()">
+      <button class="acc-row" onclick="exportAllExcel()">
         <span class="acc-ico gold">${icon('document')}</span>
-        <span class="acc-txt"><span class="acc-label">Bajar mis datos a Excel</span><span class="acc-sub">Ventas, productos, clientes, gastos, inventario y cortes</span></span>
+        <span class="acc-txt"><span class="acc-label">Todo en un solo Excel</span><span class="acc-sub">Una hoja por cada tema</span></span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>
+      <button class="acc-row" onclick="openExportSheet()">
+        <span class="acc-ico violet">${icon('download')}</span>
+        <span class="acc-txt"><span class="acc-label">Bajar solo una parte</span><span class="acc-sub">Solo ventas, solo clientes…</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
       <button class="acc-row" onclick="openImportProducts()">
         <span class="acc-ico green">${icon('upload')}</span>
-        <span class="acc-txt"><span class="acc-label">Subir productos desde Excel</span><span class="acc-sub">Da de alta o actualiza muchos productos de un jalón</span></span>
+        <span class="acc-txt"><span class="acc-label">Subir productos desde Excel</span><span class="acc-sub">Muchos productos de un jalón</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
     </div>
-    <div class="section-title">Base de datos</div>
-    <div class="acc-list">
-      <button class="acc-row" onclick="openDbSheet()">
-        <span class="acc-ico violet">${icon('database')}</span>
-        <span class="acc-txt"><span class="acc-label">Pasar a una base de datos</span><span class="acc-sub">${syncCfg().url ? 'Servidor conectado · ' + (syncCfg().lastAt ? 'último envío ' + formatDateTime(syncCfg().lastAt) : 'sin enviar aún') : 'Estructura lista para tu programador'}</span></span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
-    </div>
+    <p class="print-tip">Los Excel salen acomodados: encabezados fijos, pesos con formato de dinero, fechas que se pueden ordenar y filtrar, y totales al final. Para un periodo en especial usa <b>Reportes</b>.</p>
   `, { dismissible:true });
 }
 function openExportSheet(){
   const items = [
-    ['ventas', 'Ventas y devoluciones', 'Una fila por venta, con pagos y totales'],
-    ['detalle', 'Productos vendidos', 'Una fila por producto de cada venta, con ganancia'],
-    ['productos', 'Catálogo de productos', 'Precios, costos, códigos y existencias'],
-    ['clientes', 'Clientes', 'Con lo que te debe cada uno'],
+    ['ventas', 'Ventas y devoluciones', 'Un renglón por venta, con totales'],
+    ['detalle', 'Productos vendidos', 'Un renglón por producto vendido'],
+    ['productos', 'Catálogo de productos', 'Precios, códigos y existencias'],
+    ['clientes', 'Clientes', 'Lo que te debe y te compra cada uno'],
     ['abonos', 'Abonos de fiado', 'Pagos que te hicieron los clientes'],
     ['gastos', 'Gastos', 'Todos los gastos registrados'],
     ['inventario', 'Movimientos de inventario', 'Entradas, ventas, mermas y ajustes'],
     ['cortes', 'Cortes de caja', 'Lo que cuadró, sobró o faltó'],
-  ];
+  ].filter(x => x[0] !== 'gastos' || can('verGanancias') || isOwner());
   openModal(`
     <div class="sheet-header">
       <div class="sheet-header-left">
@@ -17821,9 +18708,9 @@ function openExportSheet(){
       </div>
       <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
     </div>
-    <p class="sheet-text" style="margin-top:-6px;">Son archivos .csv: se abren directo en Excel, Google Sheets o Numbers. Para un periodo en especial usa <b>Reportes</b>.</p>
+    <p class="sheet-text" style="margin-top:-6px;">Cada opción baja un archivo de Excel (.xlsx) con todo lo registrado. Se abre en Excel, Google Sheets o Numbers.</p>
     <div class="acc-list">${items.map(([k, t, s]) => `
-      <button class="acc-row" onclick="exportCSV('${k}')">
+      <button class="acc-row" onclick="exportExcel('${k}')">
         <span class="acc-ico green">${icon('download')}</span>
         <span class="acc-txt"><span class="acc-label">${t}</span><span class="acc-sub">${s}</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
@@ -17831,7 +18718,7 @@ function openExportSheet(){
   `, { dismissible:true });
 }
 
-/* ---------- Subir productos desde Excel (CSV) ---------- */
+/* ---------- Subir productos desde Excel ---------- */
 function parseCSV(text){
   text = String(text || '').replace(/^﻿/, '');
   const first = text.split(/\r?\n/)[0] || '';
@@ -17855,6 +18742,8 @@ function parseCSV(text){
 function csvNum(v){
   if(v == null) return NaN;
   let s = String(v).trim().replace(/[$\s]/g, '');
+  if(s === '') return NaN;
+  if(/^-?\d+(\.\d+)?(e-?\d+)?$/i.test(s)) return parseFloat(s);                            // número tal cual de Excel
   if(/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');   // 1.234,50
   else s = s.replace(/,(?=\d{3}(\D|$))/g, '').replace(',', '.');                          // 1,234.50 · 12,5
   return parseFloat(s);
@@ -17871,72 +18760,92 @@ function openImportProducts(){
       </div>
       <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
     </div>
-    <p class="sheet-text" style="margin-top:-6px;">1) Baja la plantilla, 2) llénala en Excel (una fila por producto) y guárdala como <b>CSV</b>, 3) súbela aquí. Si el código o el nombre ya existe, se actualiza; si no, se crea.</p>
+    <p class="sheet-text" style="margin-top:-6px;">1) Baja la plantilla, 2) llénala en Excel (un renglón por producto) y guárdala, 3) súbela aquí. Si el código o el nombre ya existe, se actualiza; si no, se crea. También puedes subir el “Catálogo de productos” que bajas aquí, ya corregido.</p>
     <div class="acc-list">
       <button class="acc-row" onclick="downloadImportTemplate()">
         <span class="acc-ico gold">${icon('download')}</span>
-        <span class="acc-txt"><span class="acc-label">Bajar plantilla</span><span class="acc-sub">Nombre, Precio, Costo, Categoría, Código, Existencias…</span></span>
+        <span class="acc-txt"><span class="acc-label">Bajar plantilla de Excel</span><span class="acc-sub">Ya trae las columnas y 2 ejemplos</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
       <label class="acc-row" style="cursor:pointer;">
         <span class="acc-ico green">${icon('upload')}</span>
-        <span class="acc-txt"><span class="acc-label">Elegir mi archivo .csv</span><span class="acc-sub">También sirve el que bajas en “Catálogo de productos”</span></span>
+        <span class="acc-txt"><span class="acc-label">Elegir mi archivo de Excel</span><span class="acc-sub">La plantilla llena o tu catálogo</span></span>
         <span class="acc-chev">${icon('chevronRight')}</span>
-        <input type="file" accept=".csv,text/csv,.txt" style="display:none" onchange="readImportFile(this)">
+        <input id="importFile" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" style="display:none" onchange="readImportFile(this)">
       </label>
     </div>
     <div id="importResult"></div>
   `, { dismissible:true });
 }
 function downloadImportTemplate(){
-  const rows = [['Nombre','Precio','Costo','Categoría','Código','Existencias','Avisar al quedar','Unidad','Precio mayoreo','Mayoreo desde','Descripción'],
-                ['Refresco de cola 600 ml','22','13','Bebidas','7501055300075','24','6','pieza','20','12',''],
-                ['Queso Oaxaca','180','120','Lácteos','','5.5','1','kilo','','','Se vende por kilo']];
-  downloadFile('plantilla_productos.csv', toCSV(rows), 'text/csv;charset=utf-8');
+  const cols = [{ h:'Nombre', t:'text', w:34 }, { h:'Precio', t:'money' }, { h:'Costo', t:'money' }, { h:'Categoría', t:'text' }, { h:'Código', t:'text', w:18 },
+                { h:'Existencias', t:'num' }, { h:'Avisar al quedar', t:'num' }, { h:'Unidad', t:'text' }, { h:'Precio mayoreo', t:'money' }, { h:'Mayoreo desde', t:'num' }, { h:'Descripción', t:'wrap', w:34 }];
+  const rows = [['Refresco de cola 600 ml', 22, 13, 'Bebidas', '7501055300075', 24, 6, 'pieza', 20, 12, ''],
+                ['Queso Oaxaca', 180, 120, 'Lácteos', '', 5.5, 1, 'kilo', '', '', 'Se vende por kilo']];
+  return xlRun('plantilla_productos.xlsx', () => [{ name:'Productos', title:'Plantilla para subir productos',
+    subtitle:'Borra los ejemplos y escribe un producto por renglón. Solo Nombre y Precio son obligatorios. Unidad: pieza, kilo, gramo, litro, metro, paquete, caja…',
+    cols, rows, totals:false }]);
 }
-function readImportFile(input){
+async function readImportFile(input){
   const f = input.files && input.files[0]; if(!f) return;
-  const rd = new FileReader();
-  rd.onload = () => {
-    const rows = parseCSV(rd.result);
-    if(rows.length < 2){ toast('El archivo no tiene productos', { icon:icon('alert'), variant:'toast-danger' }); return; }
-    const head = rows[0].map(h => saleNorm(h).trim());
-    const col = (...names) => head.findIndex(h => names.some(n => h === n || h.indexOf(n) === 0));
-    const ix = { name:col('nombre','producto','descripcion del producto'), price:col('precio de venta','precio'), cost:col('costo','precio de produccion','precio de compra'),
-                 cat:col('categoria'), sku:col('codigo','sku','clave'), stock:col('existencias','stock','cantidad'), min:col('avisar','minimo'),
-                 unit:col('unidad'), wp:col('precio mayoreo','mayoreo'), wm:col('mayoreo desde','desde'), desc:col('descripcion') };
-    if(ix.wp === ix.wm) ix.wm = col('mayoreo desde','desde');
-    if(ix.name < 0 || ix.price < 0){ toast('Faltan las columnas “Nombre” y “Precio”', { icon:icon('alert'), variant:'toast-danger', subtitle:'Usa la plantilla' }); return; }
-    const products = DB.getProducts();
-    const out = { nuevos:[], actualiza:[], errores:[] };
-    rows.slice(1).forEach((r, k) => {
-      const g = i => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '';
-      const name = g(ix.name).slice(0, 80);
-      const price = csvNum(g(ix.price));
-      if(!name){ return; }
-      if(!(price >= 0)){ out.errores.push('Fila ' + (k + 2) + ': el precio de "' + name + '" no es un número'); return; }
-      const sku = g(ix.sku).slice(0, 40);
-      const ex = (sku && products.find(p => p.sku && String(p.sku).toLowerCase() === sku.toLowerCase())) || products.find(p => saleNorm(p.name) === saleNorm(name));
-      const unitTxt = saleNorm(g(ix.unit));
-      const unit = (SALE_UNITS.find(u => saleNorm(u.id) === unitTxt || saleNorm(u.label) === unitTxt || (u.short && saleNorm(u.short) === unitTxt)) || SALE_UNITS[0]).id;
-      const stockRaw = g(ix.stock);
-      const row = { name, price:round2(price), cost:isNaN(csvNum(g(ix.cost))) ? null : round2(csvNum(g(ix.cost))), cat:g(ix.cat), sku,
-                    stock:stockRaw === '' ? undefined : r3(csvNum(stockRaw)), min:isNaN(csvNum(g(ix.min))) ? null : r3(csvNum(g(ix.min))), unit,
-                    wp:isNaN(csvNum(g(ix.wp))) ? null : round2(csvNum(g(ix.wp))), wm:isNaN(csvNum(g(ix.wm))) ? null : r3(csvNum(g(ix.wm))), desc:g(ix.desc).slice(0, 160) };
-      if(row.stock !== undefined && isNaN(row.stock)) row.stock = undefined;
-      (ex ? out.actualiza : out.nuevos).push(Object.assign(row, { id: ex ? ex.id : null }));
-    });
-    importPreview = out;
-    const box = document.getElementById('importResult');
-    if(box) box.innerHTML = `
-      <div class="card kv-card" style="margin-top:14px;">
-        <div class="kv-row"><span>Productos nuevos</span><b>${out.nuevos.length}</b></div>
-        <div class="kv-row"><span>Se actualizan</span><b>${out.actualiza.length}</b></div>
-        ${out.errores.length ? `<div class="kv-row"><span>Con errores (se saltan)</span><b class="neg">${out.errores.length}</b></div><div class="kv-note">${out.errores.slice(0, 4).map(escapeHtml).join('<br>')}</div>` : ''}
-      </div>
-      <button class="btn primary block" style="margin-top:12px;" onclick="applyImport()" ${out.nuevos.length + out.actualiza.length ? '' : 'disabled'}>${icon('check')} Subir ${out.nuevos.length + out.actualiza.length} productos</button>`;
-  };
-  rd.readAsText(f);
+  input.value = '';
+  let rows;
+  try{
+    if(/\.xls$/i.test(f.name)){ toast('Ese Excel es de una versión muy vieja', { icon:icon('alert'), variant:'toast-danger', subtitle:'En Excel usa “Guardar como” › Libro de Excel (.xlsx)' }); return; }
+    if(/\.xlsx$/i.test(f.name) || /spreadsheetml/.test(f.type)) rows = await readXlsxRows(await f.arrayBuffer(), /producto|catalogo|plantilla/);
+    else rows = parseCSV(await f.text());
+  }catch(e){
+    toast('No se pudo leer el archivo', { icon:icon('alert'), variant:'toast-danger',
+      subtitle: String(e && e.message) === 'no-inflate' ? 'Actualiza tu navegador para abrir archivos de Excel' : 'Revisa que sea un Excel (.xlsx)' });
+    return;
+  }
+  importRows(rows);
+}
+/** Revisa los renglones del archivo y enseña qué se va a crear o actualizar. */
+function importRows(rows){
+  rows = rows || [];
+  /* El encabezado puede no estar en el primer renglón (la plantilla trae título arriba) */
+  let hi = rows.findIndex((r, i) => i < 15 && r.some(c => /^(nombre|producto)$/.test(saleNorm(String(c)).trim())) && r.some(c => /^precio/.test(saleNorm(String(c)).trim())));
+  if(hi < 0) hi = 0;
+  const data = rows.slice(hi + 1).filter(r => !/^total$/i.test(String(r[0] || '').trim()));
+  if(!data.length){ toast('El archivo no tiene productos', { icon:icon('alert'), variant:'toast-danger' }); return; }
+  const head = rows[hi].map(h => saleNorm(String(h)).trim());
+  const col = (...names) => head.findIndex(h => names.some(n => h === n || h.indexOf(n) === 0));
+  const ix = { name:col('nombre','producto','descripcion del producto'), price:col('precio de venta','precio'), cost:col('costo','precio de produccion','precio de compra'),
+               cat:col('categoria'), sku:col('codigo','sku','clave'), stock:col('existencias','stock','cantidad'), min:col('avisar','minimo'),
+               unit:col('unidad'), wp:col('precio mayoreo','mayoreo'), wm:col('mayoreo desde','desde'), desc:col('descripcion') };
+  if(ix.price === ix.wp) ix.price = head.findIndex(h => h === 'precio' || h === 'precio de venta');
+  if(ix.wp === ix.wm) ix.wm = col('mayoreo desde','desde');
+  if(ix.name < 0 || ix.price < 0){ toast('Faltan las columnas “Nombre” y “Precio”', { icon:icon('alert'), variant:'toast-danger', subtitle:'Usa la plantilla' }); return; }
+  const products = DB.getProducts();
+  const out = { nuevos:[], actualiza:[], errores:[] };
+  data.forEach((r, k) => {
+    const g = i => i >= 0 ? String(r[i] == null ? '' : r[i]).trim() : '';
+    const name = g(ix.name).slice(0, 80);
+    const price = csvNum(g(ix.price));
+    if(!name || r.filter(c => String(c == null ? '' : c).trim() !== '').length < 2){ return; }
+    if(!(price >= 0)){ out.errores.push('Renglón ' + (hi + k + 2) + ': el precio de "' + name + '" no es un número'); return; }
+    let sku = g(ix.sku).slice(0, 40);
+    if(/^\d+(\.\d+)?e\+?\d+$/i.test(sku)) sku = String(Math.round(Number(sku)));      // 7.50106E+12 → 7501055300075
+    const ex = (sku && products.find(p => p.sku && String(p.sku).toLowerCase() === sku.toLowerCase())) || products.find(p => saleNorm(p.name) === saleNorm(name));
+    const unitTxt = saleNorm(g(ix.unit));
+    const unit = (SALE_UNITS.find(u => saleNorm(u.id) === unitTxt || saleNorm(u.label) === unitTxt || (u.short && saleNorm(u.short) === unitTxt) || (u.many && saleNorm(u.many) === unitTxt)) || SALE_UNITS[0]).id;
+    const stockRaw = g(ix.stock);
+    const row = { name, price:round2(price), cost:isNaN(csvNum(g(ix.cost))) ? null : round2(csvNum(g(ix.cost))), cat:g(ix.cat), sku,
+                  stock:stockRaw === '' ? undefined : r3(csvNum(stockRaw)), min:isNaN(csvNum(g(ix.min))) ? null : r3(csvNum(g(ix.min))), unit,
+                  wp:isNaN(csvNum(g(ix.wp))) ? null : round2(csvNum(g(ix.wp))), wm:isNaN(csvNum(g(ix.wm))) ? null : r3(csvNum(g(ix.wm))), desc:g(ix.desc).slice(0, 160) };
+    if(row.stock !== undefined && isNaN(row.stock)) row.stock = undefined;
+    (ex ? out.actualiza : out.nuevos).push(Object.assign(row, { id: ex ? ex.id : null }));
+  });
+  importPreview = out;
+  const box = document.getElementById('importResult');
+  if(box) box.innerHTML = `
+    <div class="card kv-card" style="margin-top:14px;">
+      <div class="kv-row"><span>Productos nuevos</span><b>${out.nuevos.length}</b></div>
+      <div class="kv-row"><span>Se actualizan</span><b>${out.actualiza.length}</b></div>
+      ${out.errores.length ? `<div class="kv-row"><span>Con errores (se saltan)</span><b class="neg">${out.errores.length}</b></div><div class="kv-note">${out.errores.slice(0, 4).map(escapeHtml).join('<br>')}</div>` : ''}
+    </div>
+    <button class="btn primary block" style="margin-top:12px;" onclick="applyImport()" ${out.nuevos.length + out.actualiza.length ? '' : 'disabled'}>${icon('check')} Subir ${out.nuevos.length + out.actualiza.length} productos</button>`;
 }
 function applyImport(){
   const out = importPreview; if(!out) return;
@@ -17976,77 +18885,6 @@ function applyImport(){
   goTo('products');
 }
 
-/* ---------- Base de datos ---------- */
-function openDbSheet(){
-  const m = Store.meta();
-  const s = syncCfg();
-  const pend = Object.keys(m.updated || {}).filter(k => !s.lastAt || m.updated[k] > s.lastAt);
-  openModal(`
-    <div class="sheet-header">
-      <div class="sheet-header-left">
-        <button class="sheet-back" onclick="openDataSheet()" aria-label="Volver">${icon('chevronLeft')}</button>
-        <h2>Base de datos</h2>
-      </div>
-      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
-    </div>
-    <p class="sheet-text" style="margin-top:-6px;">${APP_NAME} ya guarda todo ordenado en <b>${DATA_COLLECTIONS.length} colecciones</b>, cada una igual a una tabla. Cuando quieras usar varios aparatos o tener tus datos en la nube, dale a tu programador la estructura SQL y tu respaldo.</p>
-    <div class="card kv-card">
-      <div class="kv-row"><span>Versión de los datos</span><b>${DATA_SCHEMA_VERSION}</b></div>
-      <div class="kv-row"><span>Este aparato</span><b style="font-family:var(--mono); font-size:12px;">${escapeHtml(m.deviceId)}</b></div>
-      <div class="kv-row"><span>Último cambio</span><b>${m.lastChange ? formatDateTime(m.lastChange) : '—'}</b></div>
-      <div class="kv-row"><span>Cambios sin enviar</span><b>${s.url ? pend.length + ' colección' + (pend.length === 1 ? '' : 'es') : '—'}</b></div>
-    </div>
-    <div class="acc-list" style="margin-top:12px;">
-      <button class="acc-row" onclick="downloadFile('vendo_schema.sql', VENDO_SCHEMA_SQL, 'text/plain;charset=utf-8'); toast('Estructura descargada', { icon:icon('download'), variant:'toast-success', subtitle:'vendo_schema.sql' });">
-        <span class="acc-ico violet">${icon('database')}</span>
-        <span class="acc-txt"><span class="acc-label">Descargar estructura SQL</span><span class="acc-sub">Tablas para PostgreSQL / MySQL con cada campo explicado</span></span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
-      <button class="acc-row" onclick="downloadBackup()">
-        <span class="acc-ico green">${icon('download')}</span>
-        <span class="acc-txt"><span class="acc-label">Descargar mis datos (.json)</span><span class="acc-sub">Lo que se sube a esas tablas</span></span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
-    </div>
-    <div class="section-title">Servidor (cuando lo tengas)</div>
-    <div class="field">
-      <label for="syUrl">Dirección para recibir los datos</label>
-      <input id="syUrl" type="url" inputmode="url" value="${escapeHtml(s.url)}" placeholder="https://mi-servidor.com/api/vendo/sync">
-    </div>
-    <div class="field">
-      <label for="syToken">Clave de acceso (token)</label>
-      <input id="syToken" type="password" value="${escapeHtml(s.token)}" placeholder="La que te dé tu programador" autocomplete="off">
-      <div class="field-hint" style="color:var(--ink-soft);">Se manda un POST con tu respaldo en JSON. ${s.lastAt ? 'Último envío: ' + formatDateTime(s.lastAt) + (s.lastOk ? ' ✓' : ' ✗ ' + escapeHtml(s.lastMsg || '')) : ''}</div>
-    </div>
-    <div class="sheet-actions">
-      <button class="btn ghost block" onclick="saveSyncCfg()">Guardar</button>
-      <button class="btn primary block" onclick="saveSyncCfg(true)">${icon('upload')} Enviar ahora</button>
-    </div>
-  `, { dismissible:true });
-}
-function saveSyncCfg(send){
-  const url = ((document.getElementById('syUrl') || {}).value || '').trim();
-  const token = ((document.getElementById('syToken') || {}).value || '').trim();
-  if(url && !/^https?:\/\//i.test(url)){ toast('La dirección debe empezar con https://'); return; }
-  const s = syncCfg(); s.url = url; s.token = token; Store.set(SYNC_KEY, s);
-  if(send) syncNow(); else toast('Guardado', { icon:icon('check'), variant:'toast-success' });
-}
-async function syncNow(){
-  const s = syncCfg();
-  if(!s.url){ toast('Primero escribe la dirección de tu servidor'); return; }
-  toast('Enviando tus datos…', { icon:icon('upload') });
-  try{
-    const res = await fetch(s.url, { method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, s.token ? { 'Authorization':'Bearer ' + s.token } : {}), body:JSON.stringify(backupObject()) });
-    s.lastAt = new Date().toISOString(); s.lastOk = res.ok; s.lastMsg = res.ok ? '' : 'Error ' + res.status;
-    Store.set(SYNC_KEY, s);
-    toast(res.ok ? 'Datos enviados a tu servidor' : 'El servidor respondió con error ' + res.status, { icon:icon(res.ok ? 'check' : 'alert'), variant:res.ok ? 'toast-success' : 'toast-danger' });
-  }catch(e){
-    s.lastAt = new Date().toISOString(); s.lastOk = false; s.lastMsg = 'Sin conexión'; Store.set(SYNC_KEY, s);
-    toast('No se pudo conectar con el servidor', { icon:icon('alert'), variant:'toast-danger', subtitle:'Revisa la dirección y tu internet' });
-  }
-  if(document.getElementById('syUrl')) openDbSheet();
-}
-
 /* =========================================================
    VENTAS Y COBRO (configuración)
 ========================================================= */
@@ -18072,14 +18910,13 @@ function openPosSettings(){
           ${[16, 8, 0].map(v => `<button class="${Number(c.taxRate) === v ? 'active' : ''}" ${dis} onclick="setPosCfg('taxRate', ${v})">${v}%${v === 8 ? ' (frontera)' : ''}</button>`).join('')}
         </div>
       </div>` : ''}
-    <div class="doc-note">${icon('tag')}<span><b>Así se cobra un producto de $100:</b>${c.taxMode === 'agregar' ? 'Subtotal ' + formatMoney(ejemplo.subtotal) + ' + IVA ' + formatMoney(ejemplo.iva) + ' = <b>' + formatMoney(ejemplo.total) + '</b>' : (c.taxMode === 'incluido' ? 'Total <b>' + formatMoney(ejemplo.total) + '</b> (de ahí, ' + formatMoney(ejemplo.iva) + ' son de IVA)' : 'Total <b>' + formatMoney(ejemplo.total) + '</b>, sin IVA en el ticket')}. Las ventas que ya hiciste no cambian.</span></div>
+    <div class="doc-note">${icon('tag')}<span><b>Así se cobra un producto de $100:</b>${c.taxMode === 'agregar' ? 'Subtotal ' + formatMoney(ejemplo.subtotal) + ' + IVA ' + formatMoney(ejemplo.iva) + ' = <strong>' + formatMoney(ejemplo.total) + '</strong>' : (c.taxMode === 'incluido' ? 'Total <strong>' + formatMoney(ejemplo.total) + '</strong> (de ahí, ' + formatMoney(ejemplo.iva) + ' son de IVA)' : 'Total <strong>' + formatMoney(ejemplo.total) + '</strong>, sin IVA en el ticket')}. Las ventas que ya hiciste no cambian.</span></div>
 
     <div class="section-title">Al cobrar</div>
     <div class="qe-card">
       ${posToggle('creditOn', icon('card'), 'gold', 'Permitir fiado', 'Vender a crédito a tus clientes y recibir abonos.', c, dis)}
       ${posToggle('tipsOn', icon('coins'), 'green', 'Pedir propina', 'Aparece al cobrar con ' + c.tipOptions.join('%, ') + '% u otra cantidad.', c, dis)}
       ${posToggle('requireCash', icon('cashbox'), 'blue', 'Abrir caja antes de vender', 'No deja cobrar si la caja está cerrada.', c, dis)}
-      ${posToggle('scanBeep', icon('barcode'), 'violet', 'Sonido al escanear', 'Un "bip" cuando el lector encuentra el producto.', c, dis)}
     </div>
     ${c.tipsOn ? `
       <div class="field" style="margin-top:14px;">
@@ -18205,8 +19042,6 @@ function homeToolsHTML(){
       </button>`).join('')}</div>`;
 }
 
-/* Estructura de la base de datos (también en vendo_schema.sql) */
-const VENDO_SCHEMA_SQL = "-- =====================================================================\n--  VENDO · Punto de venta\n--  Estructura de base de datos (PostgreSQL 13+; funciona casi igual en\n--  MySQL 8 cambiando JSONB por JSON y TIMESTAMPTZ por DATETIME).\n--\n--  HOY los datos viven en el navegador (localStorage). Cada clave\n--  \"mesa_*\" es una colección y corresponde a una tabla de aquí:\n--\n--    mesa_user            -> negocios (datos de la cuenta y del negocio)\n--    mesa_users           -> usuarios          mesa_shifts      -> turnos\n--    mesa_categories      -> categorias        mesa_products    -> productos (+ producto_tamanos)\n--    mesa_customers       -> clientes          mesa_payments    -> abonos\n--    mesa_sales           -> ventas (+ venta_articulos + venta_pagos)\n--                            (las devoluciones son ventas con tipo = 'devolucion')\n--    mesa_cash            -> cortes_caja (+ caja_movimientos)\n--    mesa_expenses        -> gastos            mesa_inv_moves   -> movimientos_inventario\n--    mesa_parked          -> ventas_en_espera  mesa_quotes      -> cotizaciones\n--    mesa_md_incoming     -> pedidos_menu      mesa_todos       -> pendientes\n--    mesa_pos_cfg, mesa_menu, mesa_quote_prefs, mesa_print      -> configuracion (clave/valor)\n--    mesa_counter, mesa_quote_counter, mesa_return_counter,\n--    mesa_cash_counter    -> folios\n--    mesa_meta            -> dispositivos (id del aparato, versión, últimos cambios)\n--\n--  CÓMO MIGRAR\n--   1) En la app: Mi cuenta › Datos y respaldo › \"Descargar respaldo\".\n--      Sale un .json así:\n--        { \"app\":\"Vendo\", \"schema\":3, \"exportedAt\":\"...\", \"deviceId\":\"dev-...\",\n--          \"data\": { \"mesa_products\":[...], \"mesa_sales\":[...], ... } }\n--   2) Crea estas tablas y sube cada lista a su tabla. Los nombres de\n--      campo del JSON están anotados en cada columna (json: nombre).\n--   3) Los ids del JSON son texto único (ej. \"v1a2b3c4d5\"): úsalos tal\n--      cual como llave primaria; así no se duplica nada al volver a subir.\n--   4) Para sincronizar en vivo: Mi cuenta › Datos y respaldo ›\n--      Base de datos › \"Servidor\". La app manda por POST el mismo JSON a\n--      la dirección que pongas (con \"Authorization: Bearer <token>\").\n--      Tu servidor solo tiene que hacer UPSERT por id en cada tabla.\n-- =====================================================================\n\nCREATE TABLE negocios (\n  id              TEXT PRIMARY KEY,               -- genera uno por cuenta\n  nombre          TEXT,                           -- json: business.name\n  giro            TEXT,                           -- json: business.giro\n  tipo            TEXT,                           -- json: business.kind ('productos' | 'servicios')\n  direccion       TEXT,                           -- json: business.address\n  telefono        TEXT,                           -- json: business.phone\n  logo            TEXT,                           -- json: business.logo (data URL; en servidor guarda la URL del archivo)\n  horario         JSONB,                          -- json: business.hours (7 días)\n  dueno_nombre    TEXT,                           -- json: name\n  dueno_telefono  TEXT,                           -- json: phone\n  pais            TEXT,                           -- json: country\n  prueba_inicio   TIMESTAMPTZ,                    -- json: trialStart\n  membresia_pagada BOOLEAN DEFAULT FALSE,         -- json: membershipPaid\n  preferencias    JSONB,                          -- json: prefs\n  creado_en       TIMESTAMPTZ DEFAULT now()       -- json: createdAt\n);\n\nCREATE TABLE dispositivos (\n  id              TEXT PRIMARY KEY,               -- json: mesa_meta.deviceId\n  negocio_id      TEXT REFERENCES negocios(id),\n  version_datos   INT,                            -- json: mesa_meta.schema\n  ultimo_cambio   TIMESTAMPTZ,                    -- json: mesa_meta.lastChange\n  ultima_sincronizacion TIMESTAMPTZ\n);\n\nCREATE TABLE usuarios (\n  id              TEXT PRIMARY KEY,               -- json: id\n  negocio_id      TEXT REFERENCES negocios(id),\n  nombre          TEXT NOT NULL,                  -- json: name\n  rol             TEXT NOT NULL,                  -- json: role ('dueno' | 'admin' | 'empleado')\n  nip_hash        TEXT,                           -- json: pin  (¡en servidor guárdalo con hash, nunca en claro!)\n  telefono        TEXT,                           -- json: phone\n  permisos        JSONB,                          -- json: perms\n  foto            TEXT,                           -- json: photo\n  creado_en       TIMESTAMPTZ                     -- json: createdAt\n);\n\nCREATE TABLE turnos (\n  id              TEXT PRIMARY KEY,               -- json: id\n  usuario_id      TEXT REFERENCES usuarios(id),   -- json: userId\n  usuario_nombre  TEXT,                           -- json: userName\n  rol             TEXT,                           -- json: role\n  inicio          TIMESTAMPTZ NOT NULL,           -- json: start\n  fin             TIMESTAMPTZ                     -- json: end\n);\n\nCREATE TABLE categorias (\n  id              TEXT PRIMARY KEY,               -- json: id\n  negocio_id      TEXT REFERENCES negocios(id),\n  nombre          TEXT NOT NULL,                  -- json: name\n  emoji           TEXT,                           -- json: emoji\n  color           TEXT                            -- json: color\n);\n\nCREATE TABLE productos (\n  id              TEXT PRIMARY KEY,               -- json: id\n  negocio_id      TEXT REFERENCES negocios(id),\n  categoria_id    TEXT REFERENCES categorias(id), -- json: category\n  nombre          TEXT NOT NULL,                  -- json: name\n  descripcion     TEXT,                           -- json: description\n  sku             TEXT,                           -- json: sku (código de barras o clave)\n  precio          NUMERIC(12,2) NOT NULL,         -- json: price\n  costo           NUMERIC(12,2),                  -- json: cost (precio de producción / compra)\n  precio_mayoreo  NUMERIC(12,2),                  -- json: wholesalePrice\n  mayoreo_desde   NUMERIC(12,3),                  -- json: wholesaleMin\n  unidad          TEXT DEFAULT 'pieza',           -- json: unit (pieza, kilo, litro, metro, paquete…)\n  paso_unidad     NUMERIC(12,3),                  -- json: unitStep\n  existencias     NUMERIC(14,3),                  -- json: stock (NULL = no lleva conteo)\n  minimo          NUMERIC(14,3),                  -- json: minStock\n  activo          BOOLEAN DEFAULT TRUE,           -- json: active\n  foto            TEXT,                           -- json: image\n  vende_por_tamano BOOLEAN DEFAULT FALSE,         -- json: sizesOn\n  unidad_tamano   TEXT,                           -- json: sizeUnit\n  creado_en       TIMESTAMPTZ,                    -- json: createdAt\n  actualizado_en  TIMESTAMPTZ                     -- json: updatedAt\n);\nCREATE UNIQUE INDEX productos_sku ON productos (negocio_id, sku) WHERE sku IS NOT NULL;\n\nCREATE TABLE producto_tamanos (\n  id              TEXT PRIMARY KEY,               -- json: sizes[].id\n  producto_id     TEXT REFERENCES productos(id) ON DELETE CASCADE,\n  etiqueta        TEXT NOT NULL,                  -- json: sizes[].label\n  precio          NUMERIC(12,2) NOT NULL,         -- json: sizes[].price\n  equivale        NUMERIC(12,3)                   -- json: sizes[].unitQty (0.5 = medio litro)\n);\n\nCREATE TABLE clientes (\n  id              TEXT PRIMARY KEY,               -- json: id\n  negocio_id      TEXT REFERENCES negocios(id),\n  nombre          TEXT NOT NULL,                  -- json: name\n  telefono        TEXT,                           -- json: phone\n  correo          TEXT,                           -- json: email\n  rfc             TEXT,                           -- json: rfc\n  direccion       TEXT,                           -- json: address\n  limite_credito  NUMERIC(12,2),                  -- json: creditLimit\n  notas           TEXT,                           -- json: notes\n  creado_en       TIMESTAMPTZ,                    -- json: createdAt\n  actualizado_en  TIMESTAMPTZ                     -- json: updatedAt\n);\n\nCREATE TABLE cortes_caja (\n  id              TEXT PRIMARY KEY,               -- json: id\n  negocio_id      TEXT REFERENCES negocios(id),\n  dispositivo_id  TEXT,                           -- json: deviceId\n  numero          INT,                            -- json: number\n  abierta_en      TIMESTAMPTZ NOT NULL,           -- json: openedAt\n  abrio           TEXT,                           -- json: openedBy\n  fondo           NUMERIC(12,2) DEFAULT 0,        -- json: opening\n  cerrada_en      TIMESTAMPTZ,                    -- json: closedAt (NULL = caja abierta)\n  cerro           TEXT,                           -- json: closedBy\n  esperado        NUMERIC(12,2),                  -- json: expected\n  contado         NUMERIC(12,2),                  -- json: counted\n  diferencia      NUMERIC(12,2),                  -- json: diff\n  se_queda        NUMERIC(12,2),                  -- json: keep\n  denominaciones  JSONB,                          -- json: denoms\n  resumen         JSONB,                          -- json: summary (foto del corte)\n  nota            TEXT                            -- json: note\n);\n\nCREATE TABLE caja_movimientos (\n  id              TEXT PRIMARY KEY,               -- json: movements[].id\n  caja_id         TEXT REFERENCES cortes_caja(id) ON DELETE CASCADE,\n  tipo            TEXT NOT NULL,                  -- json: type ('entrada' | 'salida')\n  monto           NUMERIC(12,2) NOT NULL,         -- json: amount\n  motivo          TEXT,                           -- json: reason\n  nota            TEXT,                           -- json: note\n  fecha           TIMESTAMPTZ NOT NULL,           -- json: at\n  usuario         TEXT                            -- json: by\n);\n\nCREATE TABLE ventas (\n  id                 TEXT PRIMARY KEY,            -- json: id\n  negocio_id         TEXT REFERENCES negocios(id),\n  dispositivo_id     TEXT,                        -- json: deviceId\n  tipo               TEXT NOT NULL DEFAULT 'venta', -- json: type ('devolucion' en devoluciones)\n  folio              INT,                         -- json: number (ventas)\n  folio_texto        TEXT,                        -- json: folio  (devoluciones: D-0001)\n  venta_original_id  TEXT REFERENCES ventas(id),  -- json: refId (devoluciones)\n  fecha              TIMESTAMPTZ NOT NULL,        -- json: date\n  cancelada          BOOLEAN DEFAULT FALSE,       -- json: cancelled\n  cancelada_en       TIMESTAMPTZ,                 -- json: cancelledAt\n  cancelada_por      TEXT,                        -- json: cancelledBy\n  regreso_inventario BOOLEAN,                     -- json: restocked\n  cliente_id         TEXT REFERENCES clientes(id),-- json: customerId\n  cliente_nombre     TEXT,                        -- json: customerName\n  usuario_id         TEXT,                        -- json: userId\n  usuario_nombre     TEXT,                        -- json: userName\n  turno_id           TEXT,                        -- json: shiftId\n  caja_id            TEXT REFERENCES cortes_caja(id), -- json: cashId\n  servicio           TEXT,                        -- json: serviceType ('comer' | 'llevar' | 'domicilio')\n  mesa_referencia    TEXT,                        -- json: table\n  metodo_pago        TEXT,                        -- json: paymentMethod (efectivo, tarjeta, transferencia, credito, mixto)\n  importe            NUMERIC(12,2),               -- json: listTotal (antes de descuentos)\n  descuento          NUMERIC(12,2) DEFAULT 0,     -- json: discount\n  descuento_lineas   NUMERIC(12,2) DEFAULT 0,     -- json: lineDiscount\n  descuento_pedido   NUMERIC(12,2) DEFAULT 0,     -- json: orderDiscount\n  subtotal           NUMERIC(12,2) NOT NULL,      -- json: subtotal (negativo en devoluciones)\n  iva                NUMERIC(12,2) NOT NULL,      -- json: iva\n  total              NUMERIC(12,2) NOT NULL,      -- json: total\n  propina            NUMERIC(12,2) DEFAULT 0,     -- json: tip\n  tipo_iva           TEXT DEFAULT 'agregar',      -- json: taxMode ('agregar' | 'incluido' | 'ninguno')\n  tasa_iva           NUMERIC(6,4) DEFAULT 0.16,   -- json: taxRate\n  efectivo_recibido  NUMERIC(12,2),               -- json: cash\n  cambio             NUMERIC(12,2),               -- json: change\n  a_credito          NUMERIC(12,2) DEFAULT 0,     -- json: credit (lo que quedó fiado)\n  referencia_pago    TEXT,                        -- json: payRef\n  origen             TEXT DEFAULT 'caja',         -- json: origin ('caja' | 'menu')\n  pedido_menu_id     TEXT,                        -- json: menuOrderId\n  folio_menu         TEXT,                        -- json: menuCode\n  cotizacion_id      TEXT,                        -- json: quoteId\n  motivo             TEXT                         -- json: reason (devoluciones)\n);\nCREATE INDEX ventas_fecha ON ventas (negocio_id, fecha);\nCREATE INDEX ventas_cliente ON ventas (cliente_id);\n\nCREATE TABLE venta_articulos (\n  id               BIGSERIAL PRIMARY KEY,\n  venta_id         TEXT REFERENCES ventas(id) ON DELETE CASCADE,\n  renglon          INT NOT NULL,                  -- posición en items[]\n  producto_id      TEXT,                          -- json: items[].productId (\"_libre_…\" = venta libre)\n  nombre           TEXT NOT NULL,                 -- json: items[].name\n  sku              TEXT,                          -- json: items[].sku\n  categoria_id     TEXT,                          -- json: items[].category\n  cantidad         NUMERIC(14,3) NOT NULL,        -- json: items[].qty (negativa en devoluciones)\n  unidad           TEXT,                          -- json: items[].unit\n  tamano_id        TEXT,                          -- json: items[].sizeId\n  tamano           TEXT,                          -- json: items[].sizeLabel\n  precio_unitario  NUMERIC(12,4) NOT NULL,        -- json: items[].price (ya con descuento del renglón)\n  precio_lista     NUMERIC(12,2),                 -- json: items[].listPrice\n  descuento        NUMERIC(12,2) DEFAULT 0,       -- json: items[].disc\n  costo_unitario   NUMERIC(12,2),                 -- json: items[].cost\n  mayoreo          BOOLEAN DEFAULT FALSE,         -- json: items[].wholesale\n  nota             TEXT                           -- json: items[].note\n);\n\nCREATE TABLE venta_pagos (                        -- solo cuando metodo_pago = 'mixto'\n  id               BIGSERIAL PRIMARY KEY,\n  venta_id         TEXT REFERENCES ventas(id) ON DELETE CASCADE,\n  metodo           TEXT NOT NULL,                 -- json: payments[].method\n  monto            NUMERIC(12,2) NOT NULL         -- json: payments[].amount\n);\n\nCREATE TABLE abonos (\n  id               TEXT PRIMARY KEY,              -- json: id\n  cliente_id       TEXT REFERENCES clientes(id),  -- json: customerId\n  cliente_nombre   TEXT,                          -- json: customerName\n  monto            NUMERIC(12,2) NOT NULL,        -- json: amount\n  metodo           TEXT NOT NULL,                 -- json: method\n  fecha            TIMESTAMPTZ NOT NULL,          -- json: at\n  usuario          TEXT,                          -- json: by\n  caja_id          TEXT,                          -- json: cashId\n  saldo_antes      NUMERIC(12,2),                 -- json: balanceBefore\n  saldo_despues    NUMERIC(12,2),                 -- json: balanceAfter\n  nota             TEXT,                          -- json: note\n  cancelado        BOOLEAN DEFAULT FALSE          -- json: cancelled\n);\n\nCREATE TABLE gastos (\n  id               TEXT PRIMARY KEY,              -- json: id\n  negocio_id       TEXT REFERENCES negocios(id),\n  fecha            TIMESTAMPTZ NOT NULL,          -- json: date\n  concepto         TEXT,                          -- json: concept\n  categoria        TEXT,                          -- json: category (mercancia, renta, servicios, sueldos…)\n  metodo           TEXT,                          -- json: method\n  de_caja          BOOLEAN DEFAULT FALSE,         -- json: fromCash\n  caja_id          TEXT,                          -- json: cashId\n  monto            NUMERIC(12,2) NOT NULL,        -- json: amount\n  nota             TEXT,                          -- json: note\n  usuario          TEXT,                          -- json: by\n  cancelado        BOOLEAN DEFAULT FALSE          -- json: cancelled\n);\n\nCREATE TABLE movimientos_inventario (\n  id               TEXT PRIMARY KEY,              -- json: id\n  fecha            TIMESTAMPTZ NOT NULL,          -- json: at\n  producto_id      TEXT,                          -- json: productId\n  producto_nombre  TEXT,                          -- json: productName\n  tipo             TEXT NOT NULL,                 -- json: type (venta, devolucion, cancelacion, entrada, ajuste, merma, inicial)\n  cantidad         NUMERIC(14,3) NOT NULL,        -- json: qty (+ entra, − sale)\n  antes            NUMERIC(14,3),                 -- json: before\n  despues          NUMERIC(14,3),                 -- json: after\n  costo_unitario   NUMERIC(12,2),                 -- json: unitCost\n  proveedor        TEXT,                          -- json: supplier\n  referencia       TEXT,                          -- json: ref (#0012, D-0003…)\n  nota             TEXT,                          -- json: note\n  usuario          TEXT                           -- json: by\n);\nCREATE INDEX movs_producto ON movimientos_inventario (producto_id, fecha);\n\nCREATE TABLE ventas_en_espera (\n  id               TEXT PRIMARY KEY,              -- json: id\n  nombre           TEXT,                          -- json: name (mesa 4, Sr. López)\n  fecha            TIMESTAMPTZ,                   -- json: at\n  usuario          TEXT,                          -- json: by\n  carrito          JSONB,                         -- json: cart + customItems + checkout\n  total            NUMERIC(12,2)                  -- json: total\n);\n\nCREATE TABLE cotizaciones (\n  id               TEXT PRIMARY KEY,              -- json: id\n  numero           INT,                           -- json: number\n  folio            TEXT,                          -- json: folio\n  fecha            TIMESTAMPTZ,                   -- json: date\n  vigencia_dias    INT,                           -- json: validDays\n  cliente_id       TEXT,                          -- json: customerId\n  cliente_nombre   TEXT,                          -- json: customer.name\n  cliente_telefono TEXT,                          -- json: customer.phone\n  notas            TEXT,                          -- json: notes\n  articulos        JSONB,                         -- json: items\n  descuento        NUMERIC(12,2),                 -- json: discount\n  subtotal         NUMERIC(12,2),                 -- json: subtotal\n  iva              NUMERIC(12,2),                 -- json: iva\n  total            NUMERIC(12,2),                 -- json: total\n  estado           TEXT,                          -- json: status ('pendiente' | 'vendida')\n  venta_id         TEXT,                          -- json: saleId\n  usuario          TEXT                           -- json: userName\n);\n\nCREATE TABLE pedidos_menu (\n  id               TEXT PRIMARY KEY,              -- json: id\n  folio            TEXT,                          -- json: code (MD-XXXX)\n  fecha            TIMESTAMPTZ,                   -- json: createdAt\n  cliente_nombre   TEXT,                          -- json: customer.name\n  original         JSONB,                         -- json: original (lo que mandó el cliente)\n  articulos        JSONB,                         -- json: lines (con cambios del negocio)\n  estado           TEXT,                          -- json: status (nuevo, confirmado, rechazado, cancelado)\n  servicio         TEXT,                          -- json: service\n  pago             TEXT,                          -- json: payment\n  venta_id         TEXT,                          -- json: saleId\n  motivo_rechazo   TEXT                           -- json: rejectReason\n);\n\nCREATE TABLE pendientes (\n  id               TEXT PRIMARY KEY,              -- json: id\n  texto            TEXT NOT NULL,                 -- json: text\n  hecho            BOOLEAN DEFAULT FALSE,         -- json: done\n  fecha            TIMESTAMPTZ                    -- json: date\n);\n\nCREATE TABLE configuracion (\n  negocio_id       TEXT REFERENCES negocios(id),\n  clave            TEXT NOT NULL,                 -- mesa_pos_cfg, mesa_menu, mesa_quote_prefs, mesa_print\n  valor            JSONB,\n  PRIMARY KEY (negocio_id, clave)\n);\n\nCREATE TABLE folios (\n  negocio_id       TEXT REFERENCES negocios(id),\n  nombre           TEXT NOT NULL,                 -- ventas, cotizaciones, devoluciones, cortes\n  ultimo           INT NOT NULL DEFAULT 0,\n  PRIMARY KEY (negocio_id, nombre)\n);\n\n-- Saldo de cada cliente (fiado): lo que se le fió − abonos − devoluciones a su cuenta\nCREATE VIEW saldos_clientes AS\nSELECT c.id AS cliente_id, c.nombre,\n       COALESCE((SELECT SUM(CASE WHEN v.metodo_pago = 'credito' THEN v.total + COALESCE(v.propina,0)\n                                 WHEN v.metodo_pago = 'mixto' THEN (SELECT COALESCE(SUM(p.monto),0) FROM venta_pagos p WHERE p.venta_id = v.id AND p.metodo = 'credito')\n                                 ELSE 0 END)\n                 FROM ventas v WHERE v.cliente_id = c.id AND NOT v.cancelada), 0)\n     - COALESCE((SELECT SUM(a.monto) FROM abonos a WHERE a.cliente_id = c.id AND NOT a.cancelado), 0) AS saldo\nFROM clientes c;\n";
 </script>
 <script>
 /* =========================================================================
