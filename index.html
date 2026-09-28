@@ -3347,7 +3347,8 @@
   /* ---------- Caja ---------- */
   .cash-hero{ display:flex; align-items:center; gap:14px; background:linear-gradient(135deg, var(--brand-2) 0%, var(--brand-deep) 70%); color:#fff; border-radius:20px; padding:18px; box-shadow:0 12px 26px rgba(14,122,61,.25); }
   .cash-hero.off{ background:var(--surface); color:var(--ink); border:1px solid var(--border); box-shadow:var(--shadow-card); }
-  .cash-hero.exp{ background:linear-gradient(135deg, #E86A5C 0%, #C8473A 80%); box-shadow:0 12px 26px rgba(200,71,58,.22); }
+  .cash-hero.exp{ background:linear-gradient(135deg, #2B3A5E 0%, var(--ink) 75%); box-shadow:0 12px 26px rgba(22,33,62,.18); }
+  .mov-amt.exp{ color:var(--ink); }
   .cash-hero-ico{ width:48px; height:48px; border-radius:15px; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .cash-hero.off .cash-hero-ico{ background:var(--surface-alt); color:var(--ink-soft); }
   .cash-hero-ico svg{ width:24px; height:24px; }
@@ -3464,6 +3465,22 @@
   .sc-serial .acc-sub{ white-space:normal; font-size:12px; }
   .sc-serial .btn{ padding:10px 13px; font-size:13px; flex-shrink:0; }
   .sc-serial .btn svg{ width:16px; height:16px; }
+
+  /* ---- Filtro de periodo (Ventas, Gastos) ---- */
+  .period-bar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:2px 0 16px; }
+  .period-btn{ font-family:inherit; cursor:pointer; }
+  .period-btn .pb-chev{ display:flex; color:var(--ink-soft); margin-left:1px; }
+  .period-btn .pb-chev svg{ width:16px; height:16px; }
+  .period-range{ font-size:13px; font-weight:700; color:var(--ink-soft); }
+  .period-list .acc-row{ padding-top:12px; padding-bottom:12px; }
+  .period-list .acc-sub{ white-space:normal; }
+  .period-dates{ margin-top:14px; }
+  .catmgr-color{ width:14px; height:14px; border-radius:50%; display:block; }
+  .tool-tile b{ line-height:1.2; }
+  @media (min-width:700px){
+    .navbtn.nav-2l span:last-child{ white-space:normal; line-height:1.15; text-align:center; }
+    .tool-grid{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+  }
 </style>
 
 </head>
@@ -3529,10 +3546,9 @@
     <button class="navbtn" data-view="history" data-icon="receipt" onclick="goTo('history')"><span class="navicon"></span><span>Historial</span></button>
     <button class="navbtn" data-view="stats" data-icon="chart" onclick="goTo('stats')"><span class="navicon"></span><span>Ventas</span></button>
     <button class="navbtn" data-view="menu" data-icon="menuBook" onclick="goTo('menu')"><span class="navicon"></span><span>Menú Digital</span></button>
-    <button class="navbtn" data-view="products" data-icon="box" onclick="goTo('products')"><span class="navicon"></span><span>Productos</span></button>
-    <button class="navbtn nav-pc" data-view="customers" data-icon="users" onclick="goTo('customers')"><span class="navicon"></span><span>Clientes</span></button>
-    <button class="navbtn nav-pc" data-view="cash" data-icon="cashbox" onclick="goTo('cash')"><span class="navicon"></span><span>Caja</span></button>
-    <button class="navbtn nav-pc" data-view="reports" data-icon="document" onclick="goTo('reports')"><span class="navicon"></span><span>Reportes</span></button>
+    <button class="navbtn" data-view="products" data-icon="box" onclick="goTo('products')"><span class="navicon"></span><span>Inventarios</span></button>
+    <button class="navbtn nav-pc nav-2l" data-view="customers" data-icon="users" onclick="goTo('customers')"><span class="navicon"></span><span>Clientes y fiado</span></button>
+    <button class="navbtn nav-pc nav-2l" data-view="cash" data-icon="cashbox" onclick="goTo('cash')"><span class="navicon"></span><span>Caja y gastos</span></button>
     <button class="navbtn" data-view="account" data-icon="person" onclick="goTo('account')"><span class="navicon"></span><span>Mi cuenta</span></button>
   </nav>
 </div>
@@ -3925,7 +3941,7 @@ function defaultCategories(){
     { id:'malteadas', name:'Malteadas', emoji:'🥤', color:'#D96A8A', demo:true },
   ];
 }
-const UNCATEGORIZED = { id:'_none', name:'Sin categoría', emoji:'🍽️', color:'#8A93AC' };
+const UNCATEGORIZED = { id:'_none', name:'Sin categoría', emoji:'', color:'#8A93AC' };
 
 const SERVICE_TYPES = [
   { id:'comer',     name:'Comer aquí',  emoji:'🍽️' },
@@ -3945,7 +3961,7 @@ function basicPayMethods(){ return PAYMENT_METHODS.filter(p => !p.special); }
 
 /* =========================================================
    VENTAS Y COBRO — configuración del negocio
-   (Mi cuenta › Ventas y cobro). Se guarda en mesa_pos_cfg.
+   (Mi cuenta › Cobro e IVA). Se guarda en mesa_pos_cfg.
 ========================================================= */
 const POS_CFG_KEY = 'mesa_pos_cfg';
 function posDefaultCfg(){
@@ -3955,7 +3971,8 @@ function posDefaultCfg(){
     tipsOn:false,           /* pedir propina al cobrar */
     tipOptions:[10, 15, 20],
     creditOn:true,          /* permitir ventas fiadas */
-    requireCash:false,      /* pedir abrir la caja antes de vender */
+    /* La caja del día ya no es opcional: siempre se pide para vender
+       (ver "CAJA OBLIGATORIA PARA VENDER"). */
     quickBills:[50, 100, 200, 500],
     scanBeep:true
   };
@@ -4480,11 +4497,12 @@ function vibrate(pattern){
 }
 
 /* ---------- Navegación ---------- */
-/* Secciones nuevas (Caja, Clientes, Reportes…): se registran aquí con su
+/* Secciones nuevas (Caja y gastos, Clientes y fiado…): se registran aquí con su
    función de pintado. En el celular se abren desde Inicio; en PC también
    tienen su botón en el menú lateral. */
 const EXTRA_VIEWS = {};
 function goTo(view){
+  if(view === 'reports') view = 'stats';          /* Reportes ahora vive dentro de Ventas */
   currentView = view;
   render.fresh = true;
   render();
@@ -4641,7 +4659,7 @@ function renderHome(){
         <div class="stat-label">Pedidos de hoy<span class="stat-card-chev">${icon('chevronRight')}</span></div>
         <div class="stat-value">${pedidosHoy}</div>
       </button>
-      <button class="stat-card wide stat-tap" onclick="goTo('stats')">
+      <button class="stat-card wide stat-tap" onclick="openReportFor('today')">
         <div class="stat-card-row">
           <div class="stat-icon">${icon('ticket')}</div>
           <div>
@@ -4841,7 +4859,7 @@ function renderSale(){
     </div>` : `<div class="chip-row sticky-index">
       <button class="chip ${saleCategoryFilter==='todos'?'active':''}" style="${saleCategoryFilter==='todos'?'background:var(--sec-sale)':''}" onclick="setSaleCategory('todos')">Todos</button>
       ${categories.map(c => `
-        <button class="chip ${saleCategoryFilter===c.id?'active':''}" style="${saleCategoryFilter===c.id?'background:var(--sec-sale)':''}" onclick="setSaleCategory('${c.id}')">${c.emoji} ${escapeHtml(c.name)}</button>
+        <button class="chip ${saleCategoryFilter===c.id?'active':''}" style="${saleCategoryFilter===c.id?'background:var(--sec-sale)':''}" onclick="setSaleCategory('${c.id}')">${catEmo(c)}${escapeHtml(c.name)}</button>
       `).join('')}
     </div>`;
 
@@ -4924,7 +4942,7 @@ function renderSale(){
         <span class="alert-ico">${icon('alert')}</span>
         <span class="alert-txt">
           <span class="alert-title">Estos productos son solo un ejemplo</span>
-          <span class="alert-sub">Edítalos o bórralos en la sección de Productos y pon los tuyos con tus precios y tus fotos.</span>
+          <span class="alert-sub">Edítalos o bórralos en Inventarios y pon los tuyos con tus precios y tus fotos.</span>
         </span>
       </div>
     ` : ''}
@@ -5051,6 +5069,8 @@ function addToCart(productId, qtyAdd, opts){
     });
     return;
   }
+  // Primera venta: antes del primer producto tiene que estar abierta la caja del día.
+  if(!saleStartGate(() => addToCart(productId, qtyAdd, opts))) return;
 
   const item = cart.find(c => c.productId === productId && !c.sizeId && !c.note && !c.disc && c.manualPrice == null);
   if(item){ item.qty = r3(item.qty + qtyAdd); } else { cart.push({ productId, qty:qtyAdd }); }
@@ -5085,6 +5105,7 @@ function changeQtyFromGrid(productId, delta){
     });
     return;
   }
+  if(!item && delta > 0 && !saleStartGate(() => changeQtyFromGrid(productId, delta))) return;
   if(item){
     item.qty = r3(item.qty + delta * step);
     if(item.qty < step / 2){ cart = cart.filter(c => c !== item); }
@@ -5159,11 +5180,18 @@ function qpSave(){
     toast('Solo te quedan ' + fmtStock(p, st.stock), { icon:icon('alert'), variant:'toast-danger', subtitle:p.name });
     return;
   }
-  if(ya) ya.qty = q; else cart.push({ productId:p.id, qty:q });
-  qtyPad = null;
-  closeModal();
-  vibrate(20);
-  render();
+  const pid = p.id;
+  const apply = () => {
+    const linea = cart.find(c => c.productId === pid && !c.sizeId && !c.note && !c.disc && c.manualPrice == null);
+    if(linea) linea.qty = q; else cart.push({ productId:pid, qty:q });
+    qtyPad = null;
+    closeModal();
+    vibrate(20);
+    render();
+  };
+  // Primera venta del día: se pide la caja antes de agregar.
+  if(!saleStartGate(apply, { after:() => openQtyPad(pid) })) return;
+  apply();
 }
 function qpRemove(){
   cart = cart.filter(c => !(c.productId === qtyPad.productId && !c.sizeId && !c.note && !c.disc && c.manualPrice == null));
@@ -5251,6 +5279,7 @@ function changeSizeQty(productId, sizeId, delta){
   }
   if(!item){
     if(delta <= 0) return;
+    if(!saleStartGate(() => changeSizeQty(productId, sizeId, delta))) return;
     item = { productId, sizeId, qty:0, unitPrice: size.price, sizeLabel: size.label };
     cart.push(item);
   }
@@ -5776,7 +5805,7 @@ function saveOrderDiscount(){
 function setServiceType(id){ checkout.serviceType = id; openCartSheet('checkout'); }
 function setPaymentMethod(id){
   if(id === 'credito'){
-    if(!posCfg().creditOn){ toast('Las ventas fiadas están apagadas', { subtitle:'Actívalas en Mi cuenta › Ventas y cobro' }); return; }
+    if(!posCfg().creditOn){ toast('Las ventas fiadas están apagadas', { subtitle:'Actívalas en Mi cuenta › Cobro e IVA' }); return; }
     if(!requirePerm('darCredito', 'No tienes permiso para fiar')) return;
   }
   checkout.paymentMethod = id;
@@ -5928,10 +5957,9 @@ function saleItemFromCart(c){
 function confirmarCobro(){
   if(cart.length === 0){ toast('El carrito está vacío'); return; }
 
-  /* Caja obligatoria (si el negocio lo pidió en Ventas y cobro) */
-  if(posCfg().requireCash && typeof cashCurrent === 'function' && !cashCurrent()){
-    askConfirm({ title:'La caja está cerrada', text:'Para cobrar, primero abre la caja con el efectivo con el que empiezas.', ok:'Abrir caja', icon:icon('store') },
-      () => { if(typeof openCashOpen === 'function') openCashOpen(); });
+  /* Caja obligatoria: para cobrar siempre tiene que estar abierta la caja del día */
+  if(!cashReadyForSale()){
+    cashGate(() => confirmarCobro(), { ok:'Abrir caja y cobrar', what:'cobrar', after:() => openCartSheet('checkout') });
     return;
   }
 
@@ -6134,6 +6162,8 @@ function applyPrintVars(){
 
 /* Las termicas dibujan los emojis como imagen y salen borrosos:
    en el ticket impreso se quitan. */
+/** Emoji de una categoría con su espacio, o nada si no tiene. */
+function catEmo(c){ return c && c.emoji ? c.emoji + ' ' : ''; }
 function stripEmoji(txt){
   return String(txt == null ? '' : txt)
     .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
@@ -7748,162 +7778,138 @@ function deleteSale(saleId){
    VISTA: VENTAS (dashboard)
 ========================================================= */
 function renderStats(){
-  const all = visibleSales();
-  const active = all.filter(s => !s.cancelled);
-  const orders = active.filter(s => !saleIsReturn(s));
-  const now = new Date();
-
-  const hoy = active.filter(s => isSameDay(new Date(s.date), now));
-  const semana = active.filter(s => isSameWeek(new Date(s.date), now));
-  const mes = active.filter(s => isSameMonth(new Date(s.date), now));
-
-  const sum = arr => arr.reduce((a,s)=>a+s.total,0);
-  const cnt = arr => arr.filter(s => !saleIsReturn(s)).length;
-  const ticketProm = orders.length ? sum(orders)/orders.length : 0;
-  const gan = computeProfit(active);
-  const reportBtn = `<button class="report-cta" onclick="goTo('reports')"><span class="acc-ico green">${icon('document')}</span><span class="acc-txt"><span class="acc-label">Reporte por fechas</span><span class="acc-sub">Elige el periodo, imprímelo o bájalo a Excel</span></span><span class="acc-chev">${icon('chevronRight')}</span></button>`;
-
-  if(orders.length === 0){
-    return `
-      <h1 class="page-title">Ventas</h1>
-      <p class="page-sub">Estadísticas del negocio</p>
+  const ver = can('verGanancias');
+  const head = `
+    <h1 class="page-title">Ventas</h1>
+    <p class="page-sub">${can('verTodasVentas') ? 'Tus ventas, ganancias y gastos del periodo que elijas' : 'Las ventas que tú cobraste en el periodo que elijas'}</p>`;
+  if(!visibleSales().some(s => !s.cancelled)){
+    return head + `
       <div class="empty-state">
         ${illustration('chartEmpty')}
         <div class="empty-title">Aún no hay ventas registradas</div>
-        <div class="empty-text">Cuando cobres tu primer pedido, verás aquí las estadísticas reales.</div>
-      </div>
-      ${reportBtn}
-    `;
+        <div class="empty-text">Cuando cobres tu primer pedido, verás aquí tus ventas, gráficas y reportes.</div>
+      </div>`;
   }
 
-  // Por método de pago (el pago mixto se reparte en sus partes; sin propinas)
-  const byPayment = {};
-  PAYMENT_METHODS.filter(p => p.id !== 'mixto').forEach(p => byPayment[p.id] = { total:0, count:0 });
-  active.forEach(s => {
-    const vistos = {};
-    salePayParts(s, { excludeTip:true }).forEach(pt => {
-      const b = byPayment[pt.method]; if(!b) return;
-      b.total += pt.amount;
-      if(!saleIsReturn(s) && !vistos[pt.method]){ b.count += 1; vistos[pt.method] = 1; }
-    });
-  });
-  const payList = PAYMENT_METHODS.filter(p => p.id !== 'mixto' && (p.id !== 'credito' || byPayment.credito.count || posCfg().creditOn));
-  const maxPayment = Math.max(1, ...payList.map(p => Math.abs(byPayment[p.id].total)));
-
-  // Por tipo de servicio
+  /* Todo lo de abajo es del periodo elegido en el filtro */
+  const d = reportData();
+  const cats = Object.values(d.byCat).filter(c => Math.abs(c.total) > 0.004).sort((a, b) => b.total - a.total);
+  const maxCat = Math.max(1, ...cats.map(c => c.total));
+  const prods = Object.values(d.byProd).filter(p => p.qty > 0).sort((a, b) => b.total - a.total);
+  const users = Object.entries(d.byUser).sort((a, b) => b[1].total - a[1].total);
+  const maxUser = Math.max(1, ...users.map(u => u[1].total));
+  const days = Object.keys(d.byDay).sort();
+  const pays = PAYMENT_METHODS.filter(p => p.id !== 'mixto' && (d.byMethod[p.id] || p.id !== 'credito' || posCfg().creditOn));
+  const maxPay = Math.max(1, ...pays.map(p => Math.abs(d.byMethod[p.id] || 0)));
   const byService = {};
   SERVICE_TYPES.forEach(s => byService[s.id] = { total:0, count:0 });
-  active.forEach(s => { const b = byService[s.serviceType]; if(!b) return; b.total += s.total; if(!saleIsReturn(s)) b.count += 1; });
-  const maxService = Math.max(1, ...Object.values(byService).map(v=>Math.abs(v.total)));
-
-  // Productos más vendidos (ya con devoluciones restadas)
-  const productMap = {};
-  active.forEach(s => s.items.forEach(it => {
-    const k = it.productId + '|' + (it.sizeLabel || '');
-    if(!productMap[k]) productMap[k] = { name: it.name, qty:0, revenue:0, unit:it.unit, sizeLabel:it.sizeLabel };
-    productMap[k].qty += it.qty;
-    productMap[k].revenue += it.price * it.qty;
-  }));
-  const topProducts = Object.values(productMap).filter(p => p.qty > 0).sort((a,b)=>b.qty-a.qty).slice(0,5);
-
-  // Este mes: descuentos, devoluciones, propinas, fiado y gastos
-  const mesOrders = mes.filter(s => !saleIsReturn(s));
-  const descMes = mesOrders.reduce((a, s) => a + (Number(s.discount) || 0), 0);
-  const devMes = mes.filter(saleIsReturn).reduce((a, s) => a + Math.abs(s.total), 0);
-  const propMes = mesOrders.reduce((a, s) => a + (Number(s.tip) || 0), 0);
+  d.active.forEach(s => { const b = byService[s.serviceType]; if(!b) return; b.total += s.total; if(!saleIsReturn(s)) b.count += 1; });
+  const maxService = Math.max(1, ...Object.values(byService).map(v => Math.abs(v.total)));
+  const horas = d.byHour.map((v, h) => ({ h, v })).filter(x => x.v);
+  const h0 = horas.length ? Math.min(...horas.map(x => x.h)) : 9, h1 = horas.length ? Math.max(...horas.map(x => x.h)) : 20;
+  const rango = []; for(let h = h0; h <= h1; h++) rango.push(h);
+  const maxH = Math.max(1, ...rango.map(h => d.byHour[h]));
+  const hLabel = h => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
+  const ticket = d.orders.length ? d.net / d.orders.length : 0;
+  const abonosTot = d.abonos.reduce((a, p) => a + Number(p.amount || 0), 0);
   const porCobrar = typeof totalReceivable === 'function' ? totalReceivable() : 0;
-  const gastosMes = typeof expensesBetween === 'function' ? expensesBetween(periodRange('month')[0], periodRange('month')[1]).reduce((a, e) => a + (Number(e.amount) || 0), 0) : 0;
-  const ganMes = computeProfit(mes);
+  const pedidos = n => n + ' pedido' + (n === 1 ? '' : 's');
 
-  return `
-    <h1 class="page-title">Ventas</h1>
-    <p class="page-sub">${can('verTodasVentas') ? 'Estadísticas calculadas a partir de tus ventas reales' : 'Estadísticas de las ventas que tú cobraste'}</p>
-
+  return head + salesPeriodFilterHTML() + `
     <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">Hoy</div>
-        <div class="stat-value">${formatMoney(sum(hoy))}</div>
-        <div class="stat-label" style="margin-top:4px;">${cnt(hoy)} pedido${cnt(hoy)===1?'':'s'}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Esta semana</div>
-        <div class="stat-value">${formatMoney(sum(semana))}</div>
-        <div class="stat-label" style="margin-top:4px;">${cnt(semana)} pedido${cnt(semana)===1?'':'s'}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Este mes</div>
-        <div class="stat-value">${formatMoney(sum(mes))}</div>
-        <div class="stat-label" style="margin-top:4px;">${cnt(mes)} pedido${cnt(mes)===1?'':'s'}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Ticket promedio</div>
-        <div class="stat-value">${formatMoney(ticketProm)}</div>
-        <div class="stat-label" style="margin-top:4px;">${orders.length} pedidos en total</div>
-      </div>
-      ${can('verGanancias') ? `
-      <div class="stat-card wide">
-        <div class="stat-card-row">
-          <div class="stat-icon">${icon('chart')}</div>
-          <div>
-            <div class="stat-label">Ganancia neta total</div>
-            <div class="stat-value" style="${gan.profit < 0 ? 'color:var(--accent-2);' : ''}">${formatMoney(gan.profit)}</div>
-            <div class="stat-label" style="margin-top:4px;">Precio de venta − precio de producción (sin IVA)</div>
-            ${gan.missing > 0 ? `<div class="stat-label" style="margin-top:2px; color:var(--accent-2);">${fmtNum(gan.missing)} artículo${gan.missing === 1 ? '' : 's'} sin precio de producción no ${gan.missing === 1 ? 'se cuenta' : 'se cuentan'}</div>` : ''}
-          </div>
-        </div>
-      </div>` : ''}
+      <div class="stat-card"><div class="stat-label">Ventas netas</div><div class="stat-value">${formatMoney(d.net)}</div><div class="stat-label" style="margin-top:4px;">con IVA, sin propinas</div></div>
+      <div class="stat-card"><div class="stat-label">Pedidos</div><div class="stat-value">${d.orders.length}</div><div class="stat-label" style="margin-top:4px;">ticket promedio ${formatMoney(ticket)}</div></div>
+      ${ver ? `
+        <div class="stat-card"><div class="stat-label">Ganancia</div><div class="stat-value" style="${d.prof.profit < 0 ? 'color:var(--accent-2);' : ''}">${formatMoney(d.prof.profit)}</div><div class="stat-label" style="margin-top:4px;">de lo vendido, sin IVA</div></div>
+        <div class="stat-card"><div class="stat-label">Te queda</div><div class="stat-value" style="${d.prof.profit - d.gastos < 0 ? 'color:var(--accent-2);' : ''}">${formatMoney(d.prof.profit - d.gastos)}</div><div class="stat-label" style="margin-top:4px;">después de ${formatMoney(d.gastos)} de gastos</div></div>` : `
+        <div class="stat-card"><div class="stat-label">Devoluciones</div><div class="stat-value">${formatMoney(d.returnsTotal)}</div><div class="stat-label" style="margin-top:4px;">${d.returns.length} en el periodo</div></div>
+        <div class="stat-card"><div class="stat-label">Descuentos</div><div class="stat-value">${formatMoney(d.discounts)}</div><div class="stat-label" style="margin-top:4px;">que se dieron</div></div>`}
     </div>
 
-    ${reportBtn}
+    <div class="inv-actions rep-actions">
+      <button class="btn ghost" onclick="withSalesOrigin(printReport)">${icon('print')} Imprimir</button>
+      <button class="btn ghost" onclick="withSalesOrigin(() => exportReportExcel())">${icon('download')} Descargar Excel</button>
+    </div>
 
     <div class="section-title">Gráficas</div>
     <div id="statsCharts">${statsChartsHTML()}</div>
 
-    <div class="section-title">Este mes en detalle</div>
+    ${!d.all.length && !d.exps.length ? `
+      <div class="empty-state">${illustration('chartEmpty')}<div class="empty-title">Sin ventas en este periodo</div><div class="empty-text">Toca el filtro de arriba y elige otras fechas.</div></div>` : `
+
+    <div class="section-title">Resumen</div>
     <div class="card kv-card">
-      <div class="kv-row"><span>Ventas del mes</span><b>${formatMoney(sum(mes))}</b></div>
-      <div class="kv-row"><span>Descuentos que diste</span><b>${descMes > 0 ? '−' : ''}${formatMoney(descMes)}</b></div>
-      <div class="kv-row"><span>Devoluciones</span><b class="${devMes > 0 ? 'neg' : ''}">${devMes > 0 ? '−' : ''}${formatMoney(devMes)}</b></div>
-      ${propMes > 0 ? `<div class="kv-row"><span>Propinas (aparte de las ventas)</span><b>${formatMoney(propMes)}</b></div>` : ''}
-      ${porCobrar > 0 ? `<div class="kv-row tap" onclick="goTo('customers')"><span>Te deben (fiado) · ver clientes</span><b class="warn">${formatMoney(porCobrar)}</b></div>` : ''}
-      ${can('verGanancias') ? `
-        <div class="kv-row"><span>Ganancia de lo vendido</span><b>${formatMoney(ganMes.profit)}</b></div>
-        <div class="kv-row"><span>Gastos del mes</span><b>${gastosMes > 0 ? '−' : ''}${formatMoney(gastosMes)}</b></div>
-        <div class="kv-row grand"><span>Te queda después de gastos</span><b class="${ganMes.profit - gastosMes < 0 ? 'neg' : ''}">${formatMoney(ganMes.profit - gastosMes)}</b></div>` : ''}
+      <div class="kv-row"><span>Importe de lo vendido</span><b>${formatMoney(d.listTotal)}</b></div>
+      <div class="kv-row"><span>− Descuentos</span><b>${d.discounts > 0 ? '−' : ''}${formatMoney(d.discounts)}</b></div>
+      ${d.ivaAdded ? `<div class="kv-row"><span>+ IVA</span><b>+${formatMoney(d.ivaAdded)}</b></div>` : ''}
+      <div class="kv-row"><span>− Devoluciones (${d.returns.length})</span><b class="${d.returnsTotal > 0 ? 'neg' : ''}">${d.returnsTotal > 0 ? '−' : ''}${formatMoney(d.returnsTotal)}</b></div>
+      <div class="kv-row grand"><span>Ventas netas</span><b>${formatMoney(d.net)}</b></div>
+      ${d.ivaIncl ? `<div class="kv-row"><span>IVA que ya venía en los precios</span><b>${formatMoney(d.ivaIncl)}</b></div>` : ''}
+      ${d.iva ? `<div class="kv-row"><span>IVA del periodo (para tu contador)</span><b>${formatMoney(d.iva)}</b></div>` : ''}
+      ${d.tips ? `<div class="kv-row"><span>Propinas (aparte)</span><b>${formatMoney(d.tips)}</b></div>` : ''}
+      ${d.cancelled ? `<div class="kv-row"><span>Ventas canceladas</span><b>${d.cancelled}</b></div>` : ''}
+      ${ver ? `
+        <div class="kv-row"><span>Costo de lo vendido</span><b>${formatMoney(d.prof.cost)}</b></div>
+        <div class="kv-row"><span>Ganancia (sin IVA)</span><b>${formatMoney(d.prof.profit)}</b></div>
+        <div class="kv-row"><span>Gastos (${d.exps.length})</span><b>${d.gastos > 0 ? '−' : ''}${formatMoney(d.gastos)}</b></div>
+        <div class="kv-row grand"><span>Te queda</span><b class="${d.prof.profit - d.gastos < 0 ? 'neg' : ''}">${formatMoney(d.prof.profit - d.gastos)}</b></div>
+        ${d.prof.missing > 0 ? `<div class="kv-note">${fmtNum(d.prof.missing)} artículo${d.prof.missing === 1 ? '' : 's'} sin precio de producción no ${d.prof.missing === 1 ? 'entra' : 'entran'} en la ganancia.</div>` : ''}` : ''}
+      ${porCobrar > 0.004 && can('darCredito') ? `<div class="kv-row tap" onclick="custFilter='deben'; goTo('customers')"><span>Te deben de fiado (a hoy) · ver clientes</span><b class="warn">${formatMoney(porCobrar)}</b></div>` : ''}
     </div>
 
-    <div class="section-title">Ventas por método de pago</div>
+    <div class="section-title">Cómo te pagaron</div>
     <div class="card">
-      ${payList.map(p => {
-        const v = byPayment[p.id];
-        return `<div class="bar-row">
-          <div class="bar-row-top"><span>${p.emoji} ${p.name}</span><span class="bv">${formatMoney(v.total)} · ${v.count}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, v.total/maxPayment)*100}%; background:var(--sec-stats);"></div></div>
-        </div>`;
-      }).join('')}
+      ${pays.map(p => `<div class="bar-row">
+        <div class="bar-row-top"><span>${p.emoji} ${p.name}</span><span class="bv">${formatMoney(d.byMethod[p.id] || 0)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, (d.byMethod[p.id] || 0) / maxPay) * 100}%; background:var(--sec-stats);"></div></div>
+      </div>`).join('')}
+      ${abonosTot ? `<div class="kv-row" style="margin-top:10px;"><span>💵 Abonos de fiado recibidos</span><b>${formatMoney(abonosTot)}</b></div>` : ''}
     </div>
 
-    <div class="section-title">Ventas por tipo de servicio</div>
+    <div class="section-title">Por tipo de servicio</div>
     <div class="card">
-      ${SERVICE_TYPES.map(s => {
-        const v = byService[s.id];
-        return `<div class="bar-row">
-          <div class="bar-row-top"><span>${s.emoji} ${s.name}</span><span class="bv">${formatMoney(v.total)} · ${v.count}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, v.total/maxService)*100}%; background:var(--ink);"></div></div>
-        </div>`;
-      }).join('')}
+      ${SERVICE_TYPES.map(s => { const v = byService[s.id]; return `<div class="bar-row">
+        <div class="bar-row-top"><span>${s.emoji} ${s.name}</span><span class="bv">${formatMoney(v.total)} · ${v.count}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, v.total / maxService) * 100}%; background:var(--ink);"></div></div>
+      </div>`; }).join('')}
     </div>
 
-    <div class="section-title">Productos más vendidos</div>
-    <div class="card">
-      ${topProducts.length ? topProducts.map((p,i) => `
-        <div class="top-product-row">
-          <div class="top-product-rank">${i+1}</div>
-          <div class="top-product-name">${escapeHtml(p.name)}<div class="top-product-qty">${escapeHtml(p.unit && !p.sizeLabel && !unitOf(p.unit).plain ? fmtQty(p.qty, p.unit) : fmtNum(p.qty))} vendidos</div></div>
-          <div class="top-product-rev">${formatMoney(p.revenue)}</div>
-        </div>
-      `).join('') : '<div class="todo-empty">Aún no hay productos vendidos.</div>'}
-    </div>
+    ${cats.length ? `
+      <div class="section-title">Por categoría</div>
+      <div class="card">${cats.map(c => `<div class="bar-row">
+        <div class="bar-row-top"><span>${catEmo(c)}${escapeHtml(c.name)}</span><span class="bv">${formatMoney(c.total)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, c.total / maxCat) * 100}%; background:var(--ink);"></div></div>
+      </div>`).join('')}</div>` : ''}
+
+    ${prods.length ? `
+      <div class="section-title">Productos más vendidos</div>
+      <div class="card rep-table">
+        <div class="rep-tr head"><span>Producto</span><span>Cant.</span><span>Importe</span>${ver ? '<span>Ganancia</span>' : ''}</div>
+        ${prods.slice(0, 30).map(p => `<div class="rep-tr"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.unit && !p.sizeLabel && !unitOf(p.unit).plain ? fmtQty(p.qty, p.unit) : fmtNum(p.qty))}</span><span>${formatMoney(p.total)}</span>${ver ? `<span class="${p.profit < 0 ? 'neg' : ''}">${formatMoney(p.profit)}</span>` : ''}</div>`).join('')}
+        ${prods.length > 30 ? `<div class="kv-note">Y ${prods.length - 30} más · están todos en “Descargar Excel”.</div>` : ''}
+      </div>` : ''}
+
+    ${users.length > 1 || (users.length === 1 && users[0][0] !== 'Sin usuario') ? `
+      <div class="section-title">Por quién cobró</div>
+      <div class="card">${users.map(([n, v]) => `<div class="bar-row">
+        <div class="bar-row-top"><span>${escapeHtml(n)}</span><span class="bv">${formatMoney(v.total)} · ${pedidos(v.count)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, v.total / maxUser) * 100}%; background:var(--teal, var(--ink));"></div></div>
+      </div>`).join('')}</div>` : ''}
+
+    ${horas.length > 1 ? `
+      <div class="section-title">¿A qué hora vendes más?</div>
+      <div class="card">
+        <div class="chart-plot">${rango.map(h => `<div class="chart-col" title="${hLabel(h)}: ${formatMoney(d.byHour[h])}"><span class="vbar ${d.byHour[h] ? '' : 'zero'}" style="opacity:${d.byHour[h] === maxH ? 1 : .55}; ${d.byHour[h] ? 'height:' + Math.max(5, d.byHour[h] / maxH * 100) + '%' : ''}"></span></div>`).join('')}</div>
+        <div class="chart-x">${rango.map((h, i) => `<span>${rango.length > 10 && i % 2 ? '' : hLabel(h)}</span>`).join('')}</div>
+      </div>` : ''}
+
+    ${days.length > 1 ? `
+      <div class="section-title">Por día</div>
+      <div class="card">
+        <div class="chart-plot">${days.slice(-31).map(k => `<div class="chart-col" title="${k}: ${formatMoney(d.byDay[k])}"><span class="vbar ${d.byDay[k] > 0 ? '' : 'zero'}" style="opacity:1; ${d.byDay[k] > 0 ? 'height:' + Math.max(4, d.byDay[k] / Math.max(1, ...days.map(x => d.byDay[x])) * 100) + '%' : ''}"></span></div>`).join('')}</div>
+        <div class="chart-x">${days.slice(-31).map((k, i, a) => `<span>${a.length > 12 && i % Math.ceil(a.length / 8) ? '' : Number(k.slice(8))}</span>`).join('')}</div>
+      </div>` : ''}
+    `}
   `;
 }
 
@@ -8046,12 +8052,12 @@ function renderProducts(){
   const categories = DB.getCategories();
   const puedeEditar = can('gestionarProductos');
   const seg = `<div class="seg hist-seg" role="tablist">
-      <button role="tab" class="${productsTab === 'catalogo' ? 'active' : ''}" onclick="setProductsTab('catalogo')">${icon('box')} Catálogo</button>
-      <button role="tab" class="${productsTab === 'inventario' ? 'active' : ''}" onclick="setProductsTab('inventario')">${icon('boxes')} Inventario${lowStockProducts().length ? ` <span class="seg-count">${lowStockProducts().length}</span>` : ''}</button>
+      <button role="tab" class="${productsTab === 'catalogo' ? 'active' : ''}" onclick="setProductsTab('catalogo')">${icon('box')} Productos</button>
+      <button role="tab" class="${productsTab === 'inventario' ? 'active' : ''}" onclick="setProductsTab('inventario')">${icon('boxes')} Existencias${lowStockProducts().length ? ` <span class="seg-count">${lowStockProducts().length}</span>` : ''}</button>
     </div>`;
   const head = `
-    <h1 class="page-title">Productos</h1>
-    <p class="page-sub">${puedeEditar ? 'Administra tu catálogo y tus existencias' : 'Consulta el catálogo y las existencias'}</p>
+    <h1 class="page-title">Inventarios</h1>
+    <p class="page-sub">${puedeEditar ? 'Tus productos, categorías y existencias' : 'Consulta los productos y las existencias'}</p>
     ${seg}`;
   if(productsTab === 'inventario' && typeof inventoryTabHTML === 'function') return head + inventoryTabHTML();
 
@@ -8113,7 +8119,7 @@ function renderProducts(){
       if(items.length === 0) return '';
       return `
         <div class="cat-header">
-          <span class="cat-emoji">${cat.emoji}</span>
+          ${cat.emoji ? `<span class="cat-emoji">${cat.emoji}</span>` : ''}
           <span class="cat-name">${escapeHtml(cat.name)}</span>
           <span class="cat-count">· ${items.length}</span>
         </div>
@@ -8125,7 +8131,7 @@ function renderProducts(){
       if(orphans.length === 0) return '';
       return `
         <div class="cat-header">
-          <span class="cat-emoji">${UNCATEGORIZED.emoji}</span>
+          ${UNCATEGORIZED.emoji ? `<span class="cat-emoji">${UNCATEGORIZED.emoji}</span>` : ''}
           <span class="cat-name">${UNCATEGORIZED.name}</span>
           <span class="cat-count">· ${orphans.length}</span>
         </div>
@@ -8326,7 +8332,7 @@ function openCategoryManager(){
       const count = products.filter(p => p.category === c.id).length;
       return `
         <div class="catmgr-row">
-          <div class="catmgr-dot" style="background:${c.color}22">${c.emoji}</div>
+          <div class="catmgr-dot" style="background:${c.color}22">${c.emoji || `<span class="catmgr-color" style="background:${c.color}"></span>`}</div>
           <div class="catmgr-name">${escapeHtml(c.name)}</div>
           <div class="catmgr-count">${count} prod.</div>
           <div class="catmgr-actions">
@@ -8355,8 +8361,9 @@ function openCategoryForm(categoryId){
       <input id="cfName" type="text" placeholder="Ej. Bebidas" value="${editing ? escapeHtml(editing.name) : ''}">
     </div>
     <div class="field">
-      <label>Ícono (emoji, opcional)</label>
-      <input id="cfEmoji" type="text" maxlength="4" placeholder="🏷️" value="${editing ? escapeHtml(editing.emoji) : ''}">
+      <label>Emoji (opcional)</label>
+      <input id="cfEmoji" type="text" maxlength="4" placeholder="Sin emoji" value="${editing ? escapeHtml(editing.emoji || '') : ''}">
+      <div class="field-hint" style="color:var(--ink-soft);">Si lo dejas vacío, la categoría se muestra solo con su nombre.</div>
     </div>
     <div class="field">
       <label>Color</label>
@@ -8370,7 +8377,7 @@ function openCategoryForm(categoryId){
 function saveCategoryForm(categoryId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
   const name = document.getElementById('cfName').value.trim();
-  const emoji = document.getElementById('cfEmoji').value.trim() || '🏷️';
+  const emoji = document.getElementById('cfEmoji').value.trim();
   const color = document.getElementById('cfColor').value || '#25D366';
   if(!name){ toast('Escribe un nombre para la categoría'); return; }
 
@@ -8542,7 +8549,7 @@ function openProductForm(productId){
     <div class="field">
       <label>Categoría</label>
       <select id="pfCategory">
-        ${categories.map(c => `<option value="${c.id}" ${editing && editing.category===c.id ? 'selected':''}>${c.emoji} ${c.name}</option>`).join('')}
+        ${categories.map(c => `<option value="${c.id}" ${editing && editing.category===c.id ? 'selected':''}>${catEmo(c)}${c.name}</option>`).join('')}
       </select>
     </div>
     ${typeof mdUnitFieldHTML === 'function' ? mdUnitFieldHTML(editing) : ''}
@@ -9947,8 +9954,8 @@ function renderAccount(){
       <button class="acc-row" onclick="goTo('products')">
         <span class="acc-ico green">${icon('box')}</span>
         <span class="acc-txt">
-          <span class="acc-label">Productos y categorías</span>
-          <span class="acc-sub">${DB.getProducts().length} productos registrados</span>
+          <span class="acc-label">Inventarios</span>
+          <span class="acc-sub">${DB.getProducts().length} producto${DB.getProducts().length === 1 ? '' : 's'} · categorías y existencias</span>
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
@@ -9968,7 +9975,7 @@ function renderAccount(){
         <span class="acc-ico green">${icon('cashbox')}</span>
         <span class="acc-txt">
           <span class="acc-label">Caja y gastos</span>
-          <span class="acc-sub">${typeof cashCurrent === 'function' && cashCurrent() ? 'Caja abierta desde ' + fmtTime(cashCurrent().openedAt) : 'Apertura, entradas, salidas, cortes y gastos'}</span>
+          <span class="acc-sub">${typeof cashCurrent === 'function' && cashCurrent() ? (cashIsStale(cashCurrent()) ? 'Falta el corte de la caja ' + cashDayName(cashCurrent().openedAt) : 'Caja abierta desde ' + fmtTime(cashCurrent().openedAt)) : 'Apertura, entradas, salidas, cortes y gastos'}</span>
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
@@ -9980,19 +9987,11 @@ function renderAccount(){
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
-      <button class="acc-row" onclick="productsTab='inventario'; goTo('products')">
-        <span class="acc-ico blue">${icon('boxes')}</span>
+      <button class="acc-row" onclick="goTo('stats')">
+        <span class="acc-ico violet">${icon('chart')}</span>
         <span class="acc-txt">
-          <span class="acc-label">Inventario</span>
-          <span class="acc-sub">Existencias, entradas de mercancía y movimientos</span>
-        </span>
-        <span class="acc-chev">${icon('chevronRight')}</span>
-      </button>
-      <button class="acc-row" onclick="goTo('reports')">
-        <span class="acc-ico violet">${icon('document')}</span>
-        <span class="acc-txt">
-          <span class="acc-label">Reportes</span>
-          <span class="acc-sub">Por fechas, con ganancia, gastos y Excel</span>
+          <span class="acc-label">Ventas</span>
+          <span class="acc-sub">Reportes por fechas, ganancia y Excel</span>
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
@@ -10003,7 +10002,7 @@ function renderAccount(){
       <button class="acc-row" onclick="openPosSettings()">
         <span class="acc-ico green">${icon('card')}</span>
         <span class="acc-txt">
-          <span class="acc-label">Ventas y cobro</span>
+          <span class="acc-label">Cobro e IVA</span>
           <span class="acc-sub">${escapeHtml(posSettingsSub())}</span>
         </span>
         <span class="acc-chev">${icon('chevronRight')}</span>
@@ -10745,7 +10744,7 @@ const PERMS = [
   { id:'cambiarPrecio',      label:'Cambiar precios al vender', sub:'Cobrar un producto a otro precio en el carrito.', icon:'edit' },
   { id:'hacerDevoluciones',  label:'Hacer devoluciones',     sub:'Regresar productos de una venta y el dinero al cliente.', icon:'undo' },
   { id:'darCredito',         label:'Fiar (vender a crédito)', sub:'Anotar ventas en la cuenta de un cliente y recibir abonos.', icon:'card' },
-  { id:'manejarCaja',        label:'Abrir y cerrar la caja', sub:'Fondo inicial, entradas, salidas y cortes de caja.', icon:'cashbox' },
+  { id:'manejarCaja',        label:'Abrir y cerrar la caja', sub:'Abrir la caja del día (sin ella no se puede vender), entradas, salidas y cortes.', icon:'cashbox' },
   { id:'registrarGastos',    label:'Registrar gastos',       sub:'Anotar pagos del negocio (proveedor, luz, renta…).', icon:'wallet' }
 ];
 
@@ -12724,11 +12723,11 @@ function dmRender(){
       ${d.cfg.paused ? `<div class="dm-banner">${icon('pause')}<span><b>Por ahora no estamos recibiendo pedidos</b>Puedes ver el menú; vuelve a intentarlo más tarde.</span></div>`
         : (mdClosedNow(d.cfg) ? `<div class="dm-banner">${icon('clock')}<span><b>Estamos cerrados en este momento</b>Puedes ver el menú${hrsNextOpen(mdMenuHours(d.cfg)) ? '; recibimos pedidos de nuevo ' + hrsNextOpen(mdMenuHours(d.cfg)) : ''}.</span></div>` : '')}
       ${cats.length ? `
-        <nav class="dm-chips" id="dmChips">${cats.map((c, i) => `<button class="dm-chip ${i === 0 ? 'active' : ''}" data-target="dms-${c.id}" onclick="dmGoSection('dms-${c.id}')">${c.emoji} ${escapeHtml(c.name)}</button>`).join('')}</nav>
+        <nav class="dm-chips" id="dmChips">${cats.map((c, i) => `<button class="dm-chip ${i === 0 ? 'active' : ''}" data-target="dms-${c.id}" onclick="dmGoSection('dms-${c.id}')">${catEmo(c)}${escapeHtml(c.name)}</button>`).join('')}</nav>
         ${cats.map(c => {
           const list = d.prods.filter(p => c.id === UNCATEGORIZED.id ? !d.cats.some(x => x.id === p.category) : p.category === c.id);
           return `<section class="dm-sec" id="dms-${c.id}">
-            <div class="dm-sec-head"><span class="dm-sec-emoji">${c.emoji}</span><div><h2 class="dm-sec-title">${escapeHtml(c.name)}</h2><div class="dm-sec-count">${list.length} producto${list.length === 1 ? '' : 's'}</div></div></div>
+            <div class="dm-sec-head">${c.emoji ? `<span class="dm-sec-emoji">${c.emoji}</span>` : ''}<div><h2 class="dm-sec-title">${escapeHtml(c.name)}</h2><div class="dm-sec-count">${list.length} producto${list.length === 1 ? '' : 's'}</div></div></div>
             <div class="dm-grid">${list.map(p => dmCardHTML(p, c, mdOrdersBlocked(d.cfg))).join('')}</div>
           </section>`;
         }).join('')}
@@ -12897,7 +12896,7 @@ function dmProductHTML(){
     </div>
     ${(p.description || '').trim() ? `<p class="dm-pd-desc">${escapeHtml(p.description)}</p>` : '<div style="height:12px"></div>'}
     <div class="dm-pd-tags">
-      <span class="dm-unit" style="margin:0;">${c.emoji} ${escapeHtml(c.name)}</span>
+      <span class="dm-unit" style="margin:0;">${catEmo(c)}${escapeHtml(c.name)}</span>
       ${unitTagText(p) ? `<span class="dm-unit" style="margin:0;">${unitTagText(p)}${!hasSizes(p) && u.frac ? ' · de ' + fmtQty(step, u.id) + ' en ' + fmtQty(step, u.id) : ''}</span>` : ''}
       ${out ? '<span class="md-pill st-pendiente">Agotado</span>' : ''}
     </div>
@@ -13179,7 +13178,7 @@ function docMode(b){ return bizKind(b) === 'servicios' ? 'ambos' : 'ticket'; }
 function applyGiroLabels(){
   const set = SERVICE_SETS[giroKind()] || SERVICE_SETS.retail;
   SERVICE_TYPES.forEach(s => { const x = set[s.id]; if(x){ s.name = x[0]; s.emoji = x[1]; } });
-  UNCATEGORIZED.emoji = '🏷️';
+  UNCATEGORIZED.emoji = '';
 }
 
 /* Encabezado del ticket cuando el negocio aún no tiene nombre. */
@@ -13949,7 +13948,7 @@ function mdiRenderLineEditor(){
     <div class="field">
       <label for="mdiLeProd">Producto</label>
       <select id="mdiLeProd" onchange="mdiLeProduct(this.value)">
-        ${cats.map(c => { const g = group(c); return g.length ? `<optgroup label="${escapeHtml(c.emoji + ' ' + c.name)}">${g.map(opt).join('')}</optgroup>` : ''; }).join('')}
+        ${cats.map(c => { const g = group(c); return g.length ? `<optgroup label="${escapeHtml(catEmo(c) + c.name)}">${g.map(opt).join('')}</optgroup>` : ''; }).join('')}
         ${group(null).length ? `<optgroup label="Sin categoría">${group(null).map(opt).join('')}</optgroup>` : ''}
       </select>
     </div>
@@ -14046,6 +14045,8 @@ function mdiConfirm(id){
     toast('No hay existencias suficientes', { icon:icon('alert'), variant:'toast-danger', subtitle:faltan[0], duration:3000 });
     return;
   }
+  /* Confirmar un pedido es registrar una venta: se necesita la caja del día abierta */
+  if(!cashGate(() => mdiConfirm(id), { ok:'Abrir caja y confirmar', what:'confirmar pedidos', after:() => mdiOpen(id) })) return;
   const t = mdTotals(o.lines);
   const sale = mdiAttachUser({
     id: uid('v'),
@@ -14082,6 +14083,7 @@ function mdiConfirm(id){
     orderedAt: o.createdAt,
     menuModified: mdiIsModified(o)
   });
+  { const cs = cashCurrent(); if(cs) sale.cashId = cs.id; }
   const sales = DB.getSales(); sales.push(sale); DB.saveSales(sales);
   /* Lo que se descuenta de existencias, para regresarlo si se cancela. */
   const tomado = {};
@@ -14436,7 +14438,8 @@ renderStats = function(){
   let html = withSalesOrigin(_muRenderStats);
   html = html.replace(/(<p class="page-sub">[\s\S]*?<\/p>)/, '$1' + statsOriginSegHTML());
   if(statsOrigin === 'all'){
-    const act = visibleSales().filter(s => !s.cancelled);
+    const rr = reportRange();
+    const act = visibleSales().filter(s => !s.cancelled && new Date(s.date) >= rr[0] && new Date(s.date) < rr[1]);
     const caja = act.filter(s => !saleIsMenu(s)), menu = act.filter(saleIsMenu);
     const sum = a => a.reduce((x, s) => x + s.total, 0);
     const max = Math.max(1, sum(caja), sum(menu));
@@ -14484,11 +14487,11 @@ function mdiStatsHTML(){
   const pend = orders.filter(o => o.status === 'nuevo');
   const decididos = conf.length + rech.length;
   const modificados = conf.filter(o => mdiIsModified(o)).length;
-  const hoy = menuSales.filter(s => isSameDay(new Date(s.date), now));
-  const semana = menuSales.filter(s => isSameWeek(new Date(s.date), now));
-  const mes = menuSales.filter(s => isSameMonth(new Date(s.date), now));
-  const ticket = menuSales.length ? sum(menuSales) / menuSales.length : 0;
-  const share = pct(sum(menuSales), sum(totalSales));
+  const rr = reportRange();
+  const inRR = s => new Date(s.date) >= rr[0] && new Date(s.date) < rr[1];
+  const perMenu = menuSales.filter(inRR), perAll = totalSales.filter(inRR);
+  const ticket = perMenu.length ? sum(perMenu) / perMenu.length : 0;
+  const share = pct(sum(perMenu), sum(perAll));
 
   /* Pedidos por hora del día (todos los que llegaron) */
   const horas = new Array(24).fill(0);
@@ -14514,7 +14517,7 @@ function mdiStatsHTML(){
   rech.forEach(o => { const k = o.rejectReason || 'Sin motivo'; motivos[k] = (motivos[k] || 0) + 1; });
   const maxMot = Math.max(1, ...Object.values(motivos));
 
-  return head + `
+  return head + salesPeriodFilterHTML() + `
     <div class="stat-grid">
       <div class="stat-card md-stat">
         <div class="stat-label">Pedidos recibidos</div>
@@ -14540,16 +14543,14 @@ function mdiStatsHTML(){
 
     <div class="section-title">Ventas del Menú Digital</div>
     <div class="stat-grid">
-      <div class="stat-card md-stat"><div class="stat-label">Hoy</div><div class="stat-value">${formatMoney(sum(hoy))}</div><div class="stat-label" style="margin-top:4px;">${hoy.length} pedido${hoy.length === 1 ? '' : 's'}</div></div>
-      <div class="stat-card md-stat"><div class="stat-label">Esta semana</div><div class="stat-value">${formatMoney(sum(semana))}</div><div class="stat-label" style="margin-top:4px;">${semana.length} pedido${semana.length === 1 ? '' : 's'}</div></div>
-      <div class="stat-card md-stat"><div class="stat-label">Este mes</div><div class="stat-value">${formatMoney(sum(mes))}</div><div class="stat-label" style="margin-top:4px;">${mes.length} pedido${mes.length === 1 ? '' : 's'}</div></div>
-      <div class="stat-card md-stat"><div class="stat-label">Ticket promedio</div><div class="stat-value">${formatMoney(ticket)}</div><div class="stat-label" style="margin-top:4px;">${menuSales.length} en total</div></div>
+      <div class="stat-card md-stat"><div class="stat-label">Vendido (${escapeHtml(reportState.period === 'custom' ? 'otras fechas' : periodName(reportState.period).toLowerCase())})</div><div class="stat-value">${formatMoney(sum(perMenu))}</div><div class="stat-label" style="margin-top:4px;">${perMenu.length} pedido${perMenu.length === 1 ? '' : 's'}</div></div>
+      <div class="stat-card md-stat"><div class="stat-label">Ticket promedio</div><div class="stat-value">${formatMoney(ticket)}</div><div class="stat-label" style="margin-top:4px;">en el periodo</div></div>
       <div class="stat-card wide md-stat">
         <div style="flex:1; min-width:0;">
           <div class="stat-label">Parte de tus ventas que llega por el Menú Digital</div>
           <div class="stat-value">${share}%</div>
           <div class="bar-track" style="margin-top:10px;"><div class="bar-fill" style="width:${share}%; background:var(--sec-menu);"></div></div>
-          <div class="stat-label" style="margin-top:6px;">${formatMoney(sum(menuSales))} de ${formatMoney(sum(totalSales))} vendidos en total</div>
+          <div class="stat-label" style="margin-top:6px;">${formatMoney(sum(perMenu))} de ${formatMoney(sum(perAll))} vendidos en el periodo</div>
         </div>
       </div>
     </div>
@@ -14770,9 +14771,13 @@ function muRealCobro(){
   }
 }
 const _muConfirmarCobro = confirmarCobro;
+/* Opciones de la caja obligatoria al momento de cobrar */
+const COBRO_CASH_GATE = { ok:'Abrir caja y cobrar', what:'cobrar', after:() => openCartSheet('checkout') };
 confirmarCobro = function(){
   if(cart.length === 0){ toast('El carrito está vacío'); return; }
+  /* Servicios: primero se elige Ticket o Cotización (la cotización no pide caja) */
   if(docMode() === 'ambos' && !quoteToCharge){ openCobroChooser(); return; }
+  if(!cashGate(muRealCobro, COBRO_CASH_GATE)) return;
   muRealCobro();
 };
 function openCobroChooser(){
@@ -14798,8 +14803,13 @@ function openCobroChooser(){
     </div>
   `, { dismissible:true });
 }
-/* Ticket: se vuelve a la hoja de cobro (por si falta el efectivo) y se cobra */
-function cobroTicket(){ openCartSheet('checkout'); muRealCobro(); }
+/* Ticket: se vuelve a la hoja de cobro (por si falta el efectivo) y se cobra.
+   Es una venta, así que aquí sí se pide la caja del día. */
+function cobroTicket(){
+  openCartSheet('checkout');
+  if(!cashGate(muRealCobro, COBRO_CASH_GATE)) return;
+  muRealCobro();
+}
 
 /* ---------- Cotización: datos del cliente ---------- */
 let quoteDraft = null;
@@ -14943,6 +14953,8 @@ function chargeQuote(id){
   const prods = DB.getProducts();
   const faltan = q.items.filter(it => !isCustomId(it.productId) && !prods.some(p => p.id === it.productId));
   if(faltan.length){ toast('Hay productos que ya no están en tu catálogo', { icon:icon('alert'), variant:'toast-danger', subtitle:faltan.map(f => f.baseName || f.name).join(', ') }); return; }
+  /* Cobrar la cotización es una venta: se necesita la caja del día abierta */
+  if(!cashGate(() => chargeQuote(id), { ok:'Abrir caja y cobrar', what:'cobrar' })) return;
   if(cart.length){
     askConfirm({ title:'Tu carrito tiene productos', text:'¿Cambiarlos por los de la cotización ' + escapeHtml(q.folio) + '?', ok:'Cambiar', icon:icon('cart') }, () => { cart = []; chargeQuote(id); });
     return;
@@ -15649,7 +15661,7 @@ function muMigrateDemo(){
      · Inventario con movimientos (kardex) y entradas de mercancía
      · Devoluciones parciales con reingreso al inventario
      · Ventas en espera / cuentas abiertas, venta libre y lector de códigos
-     · Reportes por fechas con Excel (.xlsx) e impresión
+     · Ventas con filtro de periodo, reportes, Excel (.xlsx) e impresión
      · Datos y respaldo: respaldo .json, Excel e importar productos
      · Lector de códigos Bluetooth, USB (teclado o puerto COM) y cámara
 ========================================================================= */
@@ -15768,11 +15780,11 @@ function renderCustomers(){
   sales.forEach(s => { if(!lastBuy[s.customerId] || s.date > lastBuy[s.customerId]) lastBuy[s.customerId] = s.date; totalBuy[s.customerId] = (totalBuy[s.customerId] || 0) + s.total; });
   return `
     ${subViewBackHTML()}
-    <h1 class="page-title">Clientes</h1>
-    <p class="page-sub">Quién te compra, cuánto y quién te debe</p>
+    <h1 class="page-title">Clientes y fiado</h1>
+    <p class="page-sub">Quién te compra, quién te debe y sus abonos</p>
 
     <div class="mdi-today">
-      <div><span>Clientes</span><b>${list.length}</b><small>registrados</small></div>
+      <div><span>Clientes</span><b>${list.length}</b><small>${list.length === 1 ? 'registrado' : 'registrados'}</small></div>
       <div><span>Te deben</span><b class="${deben.length ? 'warn' : ''}">${formatMoney(totalReceivable())}</b><small>${deben.length} cliente${deben.length === 1 ? '' : 's'}</small></div>
       <div><span>Cobrado este mes</span><b>${formatMoney(cobradoMes)}</b><small>en abonos</small></div>
     </div>
@@ -16251,6 +16263,158 @@ function cashCurrent(){ return DB.getCash().find(c => !c.closedAt) || null; }
 function cashById(id){ return DB.getCash().find(c => c.id === id) || null; }
 function cashLast(){ return DB.getCash().filter(c => c.closedAt).sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt))[0] || null; }
 
+/* =========================================================
+   CAJA OBLIGATORIA PARA VENDER
+   ---------------------------------------------------------
+   Para vender siempre tiene que estar abierta la caja DEL DÍA.
+   · Ver productos, reportes, clientes, el historial o armar una
+     cotización NO la pide.
+   · La primera venta del día sí: al agregar el primer producto
+     (o al cobrar, en negocios de servicios, donde el carrito puede
+     ser solo una cotización) se pide el fondo y la caja se abre ahí
+     mismo. Luego se sigue con lo que se estaba haciendo.
+   · Si quedó abierta la caja de un día anterior, primero se hace
+     su corte y enseguida se abre la de hoy.
+   · El día de trabajo no se corta a medianoche: la caja de anoche
+     sigue sirviendo hasta las 4:00 am, o hasta una hora después del
+     cierre si el Horario del negocio dice que cierran más tarde.
+========================================================= */
+const CASH_LATE_LIMIT = 4 * 60;     /* minutos después de medianoche */
+let cashGateNext = null;            /* qué seguir haciendo después del corte: { action } */
+
+/** Hasta qué hora de la madrugada sirve la caja abierta el día `day`. */
+function cashLateLimit(day){
+  let lim = CASH_LATE_LIMIT;
+  const days = typeof bizHours === 'function' ? bizHours() : null;
+  const x = days && days[day.getDay()];
+  if(x && x.open && x.from !== x.to && hrsMin(x.to) < hrsMin(x.from)){
+    lim = Math.max(lim, Math.min(hrsMin(x.to) + 60, 11 * 60));
+  }
+  return lim;
+}
+/** ¿Esta caja abierta es de un día anterior? */
+function cashIsStale(sess, now){
+  if(!sess || sess.closedAt) return false;
+  now = now || new Date();
+  const opened = new Date(sess.openedAt);
+  if(isNaN(opened) || isSameDay(opened, now)) return false;
+  const ayer = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  if(isSameDay(opened, ayer) && now.getHours() * 60 + now.getMinutes() < cashLateLimit(ayer)) return false;
+  return true;
+}
+/** ¿Se puede vender ahorita? (hay caja abierta y es la de hoy) */
+function cashReadyForSale(){ const s = cashCurrent(); return !!s && !cashIsStale(s); }
+/** "de hoy", "de ayer" o "del sábado 26 de septiembre" */
+function cashDayName(iso){
+  const d = new Date(iso), now = new Date();
+  if(isSameDay(d, now)) return 'de hoy';
+  if(isSameDay(d, new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))) return 'de ayer';
+  return 'del ' + d.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' });
+}
+
+/** Revisa la caja antes de una venta. Regresa true si ya se puede seguir.
+    Si no, pide lo que falte (abrirla o hacer el corte de la de ayer) y,
+    cuando la caja queda lista, hace `action`.
+    o = { ok:'texto del botón', what:'vender', after:()=>{} }
+    `after` es lo que se hace si antes hubo que pasar por el corte
+    (esa pantalla reemplaza la hoja que estaba abierta). */
+function cashGate(action, o){
+  o = o || {};
+  if(cashReadyForSale()) return true;
+  const s = cashCurrent();
+  vibrate(20);
+  if(!can('manejarCaja')){
+    askConfirm({
+      title: s ? 'Falta cerrar la caja ' + cashDayName(s.openedAt) : 'La caja está cerrada',
+      text: s ? 'Para vender hoy hay que hacer el corte de esa caja y abrir la de hoy. Pídele al Dueño o al Administrador que lo haga.'
+              : 'Para ' + (o.what || 'vender') + ' tiene que estar abierta la caja del día. Pídele al Dueño o al Administrador que la abra.',
+      ok:'Entendido', hideCancel:true, icon:icon('cashbox')
+    });
+    return false;
+  }
+  if(s){
+    const sum = cashSummary(s);
+    askConfirm({
+      title:'Falta cerrar la caja ' + cashDayName(s.openedAt),
+      text:'Para vender hoy necesitas una caja nueva. Primero haz el corte de esa caja (debe haber <b>' + formatMoney(sum.expected) + '</b> en efectivo) y enseguida abres la de hoy.',
+      ok:'Hacer el corte', cancel:'Ahora no', icon:icon('cashbox')
+    }, () => { cashGateNext = { action: o.after || action || null }; openCashCut('Z'); });
+    return false;
+  }
+  cashAskOpen(action, o);
+  return false;
+}
+/** Al empezar una venta (primer producto al carrito). En negocios de
+    servicios el carrito puede ser para una cotización, así que ahí la
+    caja se pide hasta cobrar con ticket. */
+function saleStartGate(action, o){
+  if(cart.length) return true;
+  if(typeof docMode === 'function' && docMode() !== 'ticket') return true;
+  return cashGate(action, Object.assign({ ok:'Abrir caja y vender', what:'vender' }, o || {}));
+}
+/** Abre la caja con el fondo que se indique. */
+function cashOpenNow(amount){
+  const list = DB.getCash();
+  const sess = { id:uid('k'), number:DB.nextCounter('mesa_cash_counter'), openedAt:new Date().toISOString(), openedBy:meName(), openedById:meId(),
+                 opening:Math.max(0, round2(Number(amount) || 0)), movements:[], closedAt:null, deviceId:Store.meta().deviceId };
+  list.push(sess); DB.saveCash(list);
+  return sess;
+}
+/** Ventanita para abrir la caja sin salir de lo que se estaba haciendo. */
+function cashAskOpen(action, o){
+  o = o || {};
+  const what = o.what || 'vender';
+  const last = cashLast();
+  /* "Otra vez" solo si ya hubo una caja de HOY que se cerró (no la de ayer) */
+  const yaHoy = last && isSameDay(new Date(last.openedAt), new Date()) && isSameDay(new Date(last.closedAt), new Date());
+  const sug = last && last.keep != null ? last.keep : '';
+  askConfirm({
+    title: yaHoy ? 'Abre la caja otra vez' : 'Abre la caja de hoy',
+    text: yaHoy ? 'Ya hiciste el corte de hoy. Para ' + what + ' ábrela de nuevo. ¿Con cuánto efectivo empiezas?'
+                : 'Para ' + what + ' necesitas abrir la caja del día. ¿Con cuánto efectivo empiezas? Es el fondo (feria) para dar cambio.',
+    ok: o.ok || 'Abrir caja',
+    icon: icon('cashbox'),
+    extraHTML: `
+      <div class="qp-big"><span>$</span><input id="cgOpening" type="number" inputmode="decimal" min="0" step="any" value="${sug}" placeholder="0" aria-label="Fondo con el que empiezas"></div>
+      <div class="qp-quick">${[0, 200, 500, 1000].map(v => `<button type="button" class="filter-chip" onclick="document.getElementById('cgOpening').value=${v};">${formatMoney(v).replace('.00', '')}</button>`).join('')}</div>
+      ${last && last.keep != null ? `<p class="md-hint">En el último corte se quedaron ${formatMoney(last.keep)} en la caja.</p>` : ''}`,
+    validate: layer => {
+      const el = layer.querySelector('#cgOpening');
+      const v = el && el.value !== '' ? parseFloat(el.value) : 0;
+      /* Un lector de códigos puede "escribir" un código aquí por error */
+      if(!(v >= 0) || v > 1000000){
+        toast('Revisa la cantidad del fondo', { icon:icon('alert'), variant:'toast-danger' });
+        if(el){ el.focus(); el.select(); }
+        return false;
+      }
+      return true;
+    }
+  }, card => {
+    const el = card && card.querySelector('#cgOpening');
+    const v = Math.max(0, round2(parseFloat(el && el.value) || 0));
+    if(!cashReadyForSale()) cashOpenNow(v);
+    vibrate([15, 60, 15]);
+    if(action){ action(); return; }
+    toast('Caja abierta', { icon:icon('check'), variant:'toast-success', subtitle:'Fondo ' + formatMoney(v) + ' · ya puedes vender' });
+    render();
+  });
+}
+/** Corte de una caja que quedó abierta de otro día (desde Inicio o Caja). */
+function cashCloseOld(){
+  if(!requirePerm('manejarCaja', 'No tienes permiso para cerrar la caja')) return;
+  cashGateNext = { action:null };
+  openCashCut('Z');
+}
+/** Después del corte de la caja vieja: abrir la de hoy y seguir. */
+function cashGateResume(){
+  const next = cashGateNext; cashGateNext = null;
+  closeModal(); render();
+  const act = next && next.action;
+  if(cashReadyForSale()){ if(act) act(); return; }
+  if(!can('manejarCaja')) return;
+  cashAskOpen(act);
+}
+
 /** Todo lo que pasó en una sesión de caja. */
 function cashSummary(sess){
   const from = new Date(sess.openedAt).getTime();
@@ -16344,7 +16508,7 @@ function renderCash(){
     </div>`;
   const head = `
     ${subViewBackHTML()}
-    <h1 class="page-title">Caja</h1>
+    <h1 class="page-title">Caja y gastos</h1>
     <p class="page-sub">El dinero de tu negocio: apertura, entradas, salidas, gastos y cortes</p>
     ${tabs}`;
   if(cashTab === 'gastos') return head + expensesTabHTML();
@@ -16364,10 +16528,11 @@ function renderCash(){
       </div>
       ${puede ? `<button class="btn primary block" style="margin-top:14px;" onclick="openCashOpen()">${icon('cashbox')} Abrir caja</button>`
               : `<p class="md-hint" style="text-align:center;">Pídele al Dueño o al Administrador que abra la caja.</p>`}
-      <div class="doc-note" style="margin-top:14px;">${icon('alert')}<span><b>¿Para qué sirve?</b>Al cerrar, ${APP_NAME} te dice cuánto efectivo debe haber: lo cuentas y ves si cuadra, sobra o falta. Si no la usas, puedes vender igual.</span></div>
+      <div class="doc-note" style="margin-top:14px;">${icon('alert')}<span><b>Para vender necesitas la caja abierta</b>En la primera venta del día ${APP_NAME} te pide el fondo y la abre ahí mismo. Si solo vas a ver productos, reportes o clientes, no hace falta. Al cerrarla te dice cuánto efectivo debe haber: lo cuentas y ves si cuadra, sobra o falta.</span></div>
     `;
   }
   const sum = cashSummary(sess);
+  const vieja = cashIsStale(sess);
   const movs = (sess.movements || []).slice().reverse();
   const exps = DB.getExpenses().filter(e => !e.cancelled && new Date(e.date || e.at) >= new Date(sess.openedAt)).slice().reverse();
   return head + `
@@ -16379,6 +16544,12 @@ function renderCash(){
         <small>Abierta ${fmtDay(sess.openedAt)} ${fmtTime(sess.openedAt)}${sess.openedBy ? ' · ' + escapeHtml(sess.openedBy) : ''} · fondo ${formatMoney(sum.opening)}</small>
       </div>
     </div>
+    ${vieja ? `
+      <button class="alert-card danger" style="margin-top:12px;" onclick="${puede ? 'cashCloseOld()' : "toast('Pídele al Dueño o al Administrador que haga el corte')"}">
+        <span class="alert-ico">${icon('alert')}</span>
+        <span class="alert-txt"><span class="alert-title">Esta caja es ${cashDayName(sess.openedAt)}</span><span class="alert-sub">Para vender hoy, haz su corte y abre la caja de hoy.</span></span>
+        <span class="acc-chev">${icon('chevronRight')}</span>
+      </button>` : ''}
     <div class="mdi-today" style="margin-top:12px;">
       <div><span>Vendido</span><b>${formatMoney(sum.ventas)}</b><small>${sum.orders} venta${sum.orders === 1 ? '' : 's'}</small></div>
       <div><span>💵 Efectivo</span><b>${formatMoney(sum.byMethod.efectivo)}</b><small>en ventas</small></div>
@@ -16392,7 +16563,7 @@ function renderCash(){
       </div>
       <div class="cash-actions two">
         <button class="btn ghost" onclick="openCashCut('X')">${icon('document')} Corte parcial</button>
-        <button class="btn dark" onclick="openCashCut('Z')">${icon('check')} Cerrar caja</button>
+        <button class="btn dark" onclick="${vieja ? 'cashCloseOld()' : "openCashCut('Z')"}">${icon('check')} Cerrar caja</button>
       </div>` : ''}
     <div class="section-title">Movimientos de esta caja</div>
     ${(movs.length || exps.length || sum.abonos.efectivo) ? `<div class="card mov-card">
@@ -16406,7 +16577,7 @@ function renderCash(){
         <button class="mov-row" onclick="openExpense('${e.id}')">
           <span class="mov-ico">${expenseCat(e.category).emoji}</span>
           <span class="mov-main"><b>Gasto · ${escapeHtml(e.concept || expenseCat(e.category).name)}</b><small>${fmtTime(e.date || e.at)} · ${e.fromCash ? 'de la caja' : paymentOf(e.method).name}</small></span>
-          <span class="mov-amt warn">${e.fromCash ? '−' : ''}${formatMoney(e.amount)}</span>
+          <span class="mov-amt exp">${e.fromCash ? '−' : ''}${formatMoney(e.amount)}</span>
         </button>`).join('')}
       ${sum.abonos.efectivo ? `<div class="mov-row"><span class="mov-ico">💵</span><span class="mov-main"><b>Abonos de clientes</b><small>en efectivo</small></span><span class="mov-amt ok">+${formatMoney(sum.abonos.efectivo)}</span></div>` : ''}
     </div>` : `<div class="todo-empty">Sin entradas, salidas ni gastos todavía.</div>`}
@@ -16416,7 +16587,9 @@ EXTRA_VIEWS.cash = renderCash;
 
 function openCashOpen(){
   if(!requirePerm('manejarCaja', 'No tienes permiso para abrir la caja')) return;
-  if(cashCurrent()){ toast('La caja ya está abierta'); goTo('cash'); return; }
+  const cur = cashCurrent();
+  if(cur && cashIsStale(cur)){ toast('Primero haz el corte de la caja ' + cashDayName(cur.openedAt), { icon:icon('cashbox') }); cashCloseOld(); return; }
+  if(cur){ toast('La caja ya está abierta'); goTo('cash'); return; }
   const last = cashLast();
   const sug = last ? (last.keep != null ? last.keep : 0) : 0;
   openModal(`
@@ -16439,9 +16612,7 @@ function saveCashOpen(){
   if(!requirePerm('manejarCaja', 'No tienes permiso para abrir la caja')) return;
   if(cashCurrent()){ closeModal(); return; }
   const v = Math.max(0, round2(parseFloat((document.getElementById('coOpening') || {}).value) || 0));
-  const list = DB.getCash();
-  const sess = { id:uid('k'), number:DB.nextCounter('mesa_cash_counter'), openedAt:new Date().toISOString(), openedBy:meName(), openedById:meId(), opening:v, movements:[], closedAt:null, deviceId:Store.meta().deviceId };
-  list.push(sess); DB.saveCash(list);
+  cashOpenNow(v);
   vibrate([15, 60, 15]);
   closeModal();
   toast('Caja abierta', { icon:icon('check'), variant:'toast-success', subtitle:'Fondo ' + formatMoney(v) });
@@ -16518,6 +16689,7 @@ function openCashCut(kind){
       <h2>Cerrar caja</h2>
       <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
     </div>
+    ${cashIsStale(sess) ? `<div class="doc-note warn-note">${icon('cashbox')}<span><b>Caja ${cashDayName(sess.openedAt)}</b>Cuenta el efectivo y ciérrala. Enseguida abres la caja de hoy para seguir vendiendo.</span></div>` : ''}
     <div class="pay-due"><span>Debe haber en efectivo</span><b>${formatMoney(sum.expected)}</b><small>${sum.orders} venta${sum.orders === 1 ? '' : 's'} · vendido ${formatMoney(sum.ventas)}</small></div>
     <div class="field">
       <label for="ccCounted">¿Cuánto efectivo hay? (cuéntalo)</label>
@@ -16571,6 +16743,7 @@ function saveCashClose(){
   const denoms = {};
   document.querySelectorAll('#ccDenoms input[data-d]').forEach(i => { const n = parseInt(i.value, 10) || 0; if(n) denoms[i.dataset.d] = n; });
   const list = DB.getCash(); const sess = list.find(c => !c.closedAt); if(!sess) return;
+  const eraVieja = cashIsStale(sess);
   sess.closedAt = new Date().toISOString();
   sess.closedBy = meName(); sess.closedById = meId();
   const sum = cashSummary(sess);
@@ -16579,6 +16752,9 @@ function saveCashClose(){
   sess.note = ((document.getElementById('ccNote') || {}).value || '').trim().slice(0, 80);
   sess.summary = sum;
   DB.saveCash(list);
+  /* Si era la caja de otro día, al terminar se ofrece abrir la de hoy */
+  if(eraVieja){ if(!cashGateNext) cashGateNext = { action:null }; }
+  else cashGateNext = null;
   vibrate([15, 60, 15]);
   openCutDetail(sess.id, true);
   render();
@@ -16588,17 +16764,20 @@ function openCutDetail(id, justClosed){
   const sum = sess.summary || cashSummary(sess);
   const rows = cashDocRows(sess, sum, 'Z');
   const d = sess.diff || 0;
+  const sigue = justClosed && !!cashGateNext && !cashCurrent();
   openModal(`
     <div class="sheet-header">
       <h2>${justClosed ? 'Caja cerrada' : 'Corte #' + String(sess.number || '').padStart(3, '0')}</h2>
-      <button class="sheet-close" onclick="closeModal(); render();">${icon('close')}</button>
+      <button class="sheet-close" onclick="cashGateNext=null; closeModal(); render();">${icon('close')}</button>
     </div>
     ${justClosed ? `<div class="done-box ${Math.abs(d) < 0.005 ? '' : 'warn'}"><span class="done-ico">${icon(Math.abs(d) < 0.005 ? 'check' : 'alert')}</span><span class="done-txt"><b>${Math.abs(d) < 0.005 ? '¡La caja cuadró!' : (d > 0 ? 'Sobraron ' : 'Faltaron ') + formatMoney(Math.abs(d))}</b><span>Contaste ${formatMoney(sess.counted)} · debía haber ${formatMoney(sess.expected)}</span></span></div>` : ''}
     <div class="ticket">${linesDocScreenHTML(rows)}</div>
     <div class="ticket-actions">
       <button class="btn ghost" onclick="printLinesDoc(cashDocRows(cashById('${sess.id}'), cashById('${sess.id}').summary, 'Z'), 'Corte')">${icon('print')} Imprimir</button>
       <button class="btn ghost" onclick="openWhatsApp('', linesDocText(cashDocRows(cashById('${sess.id}'), cashById('${sess.id}').summary, 'Z')))">${icon('whatsapp')} WhatsApp</button>
-      <button class="btn dark block" onclick="closeModal(); render();">Listo</button>
+      ${sigue
+        ? `<button class="btn primary block" onclick="cashGateResume()">${icon('cashbox')} Abrir la caja de hoy</button>`
+        : `<button class="btn dark block" onclick="closeModal(); render();">Listo</button>`}
     </div>
   `, { dismissible:true });
 }
@@ -16638,7 +16817,7 @@ function expensesBetween(a, b){ return DB.getExpenses().filter(e => !e.cancelled
 let expPeriod = 'month';
 let expDraft = null;
 function expensesTabHTML(){
-  const r = periodRange(expPeriod) || periodRange('month');
+  const r = expRange();
   const list = expensesBetween(r[0], r[1]).sort((a, b) => new Date(b.date || b.at) - new Date(a.date || a.at));
   const total = list.reduce((a, e) => a + Number(e.amount || 0), 0);
   const byCat = {};
@@ -16646,9 +16825,7 @@ function expensesTabHTML(){
   const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
   const max = Math.max(1, ...cats.map(k => byCat[k]));
   return `
-    <div class="filter-pill-row" style="margin-bottom:12px;">
-      ${[['today','Hoy'],['week','Esta semana'],['month','Este mes'],['lastmonth','Mes pasado'],['year','Este año']].map(([id, t]) => `<button class="filter-chip ${expPeriod === id ? 'active' : ''}" onclick="expPeriod='${id}'; render();">${t}</button>`).join('')}
-    </div>
+    ${periodBarHTML(expPeriod, expFrom, expTo, 'openExpPeriod()')}
     <div class="cash-hero exp">
       <span class="cash-hero-ico">${icon('wallet')}</span>
       <div class="cash-hero-txt"><span>Gastaste</span><b>${formatMoney(total)}</b><small>${list.length} gasto${list.length === 1 ? '' : 's'}</small></div>
@@ -16659,14 +16836,14 @@ function expensesTabHTML(){
       <div class="card">${cats.map(k => `
         <div class="bar-row">
           <div class="bar-row-top"><span>${expenseCat(k).emoji} ${expenseCat(k).name}</span><span class="bv">${formatMoney(byCat[k])}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${byCat[k] / max * 100}%; background:var(--accent-2);"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${byCat[k] / max * 100}%; background:var(--ink);"></div></div>
         </div>`).join('')}</div>` : ''}
     <div class="section-title">Gastos</div>
     ${list.length ? `<div class="card mov-card">${list.map(e => `
       <button class="mov-row" onclick="openExpense('${e.id}')">
         <span class="mov-ico">${expenseCat(e.category).emoji}</span>
         <span class="mov-main"><b>${escapeHtml(e.concept || expenseCat(e.category).name)}</b><small>${formatDateTime(e.date || e.at)} · ${e.fromCash ? 'de la caja' : paymentOf(e.method).name}${e.by ? ' · ' + escapeHtml(e.by) : ''}</small></span>
-        <span class="mov-amt warn">${formatMoney(e.amount)}</span>
+        <span class="mov-amt exp">${formatMoney(e.amount)}</span>
       </button>`).join('')}</div>` : `<div class="todo-empty">Sin gastos en este periodo.</div>`}
   `;
 }
@@ -16845,6 +17022,8 @@ function openParkedList(){
 }
 function resumeParked(id){
   const p = DB.getParked().find(x => x.id === id); if(!p) return;
+  /* Retomar una venta en espera también es empezar a vender */
+  if(!saleStartGate(() => resumeParked(id))) return;
   const doIt = () => {
     const list = DB.getParked().filter(x => x.id !== id);
     DB.saveParked(list);
@@ -16910,13 +17089,18 @@ function saveCustomItem(){
   const name = ((document.getElementById('ciName') || {}).value || '').trim().slice(0, 60) || 'Artículo varios';
   if(!(price > 0)){ toast('Escribe el precio'); return; }
   if(!(qty > 0)){ toast('Escribe la cantidad'); return; }
-  const id = '_libre_' + uid('');
-  customItems[id] = { name, price };
-  cart.push({ productId:id, qty });
-  vibrate(25);
-  closeModal();
-  if(currentView !== 'sale') goTo('sale'); else render();
-  toast('Agregado: ' + name, { icon:icon('check'), variant:'toast-success toast-top', subtitle:fmtNum(qty) + ' × ' + formatMoney(price) });
+  const add = () => {
+    const id = '_libre_' + uid('');
+    customItems[id] = { name, price };
+    cart.push({ productId:id, qty });
+    vibrate(25);
+    closeModal();
+    if(currentView !== 'sale') goTo('sale'); else render();
+    toast('Agregado: ' + name, { icon:icon('check'), variant:'toast-success toast-top', subtitle:fmtNum(qty) + ' × ' + formatMoney(price) });
+  };
+  // Primera venta del día: se pide la caja antes de agregar.
+  if(!saleStartGate(add)) return;
+  add();
 }
 
 /* =========================================================
@@ -17685,17 +17869,8 @@ const REPORT_PERIODS = [
   ['today','Hoy'], ['yesterday','Ayer'], ['week','Esta semana'], ['lastweek','Semana pasada'],
   ['month','Este mes'], ['lastmonth','Mes pasado'], ['year','Este año'], ['custom','Otras fechas']
 ];
-function openReportFor(p){ reportState.period = p; goTo('reports'); }
-function reportRange(){
-  if(reportState.period === 'custom'){
-    const f = reportState.from || dayKey(new Date()), t = reportState.to || f;
-    const [y1, m1, d1] = f.split('-').map(Number), [y2, m2, d2] = t.split('-').map(Number);
-    let a = new Date(y1, m1 - 1, d1), b = new Date(y2, m2 - 1, d2 + 1);
-    if(b <= a){ const x = a; a = new Date(b.getTime() - 86400000); b = new Date(x.getTime() + 86400000); }
-    return [a, b];
-  }
-  return periodRange(reportState.period) || periodRange('today');
-}
+function openReportFor(p){ reportState.period = p; goTo('stats'); }
+function reportRange(){ return periodRangeFor(reportState.period, reportState.from, reportState.to); }
 function reportRangeLabel(r){
   const f = d => d.toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
   const last = new Date(r[1].getTime() - 1);
@@ -17752,123 +17927,93 @@ function reportData(){
   return { r, all, active, orders, returns, listTotal, discounts, ivaAdded, ivaIncl, returnsTotal, net, iva, tips, prof, exps, gastos, byMethod, abonos, byCat, byProd, byUser, byHour, byDay,
            cancelled: all.filter(s => s.cancelled && !saleIsReturn(s)).length };
 }
-function renderReports(){
-  const d = reportData();
-  const ver = can('verGanancias');
-  const cats = Object.values(d.byCat).filter(c => Math.abs(c.total) > 0.004).sort((a, b) => b.total - a.total);
-  const maxCat = Math.max(1, ...cats.map(c => c.total));
-  const prods = Object.values(d.byProd).filter(p => p.qty > 0).sort((a, b) => b.total - a.total);
-  const users = Object.entries(d.byUser).sort((a, b) => b[1].total - a[1].total);
-  const maxUser = Math.max(1, ...users.map(u => u[1].total));
-  const days = Object.keys(d.byDay).sort();
-  const pays = PAYMENT_METHODS.filter(p => p.id !== 'mixto' && (d.byMethod[p.id] || p.id !== 'credito'));
-  const maxPay = Math.max(1, ...pays.map(p => d.byMethod[p.id]));
-  const horas = d.byHour.map((v, h) => ({ h, v })).filter(x => x.v);
-  const h0 = horas.length ? Math.min(...horas.map(x => x.h)) : 9, h1 = horas.length ? Math.max(...horas.map(x => x.h)) : 20;
-  const rango = []; for(let h = h0; h <= h1; h++) rango.push(h);
-  const maxH = Math.max(1, ...rango.map(h => d.byHour[h]));
-  const hLabel = h => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
-  const ticket = d.orders.length ? d.net / d.orders.length : 0;
-  const abonosTot = d.abonos.reduce((a, p) => a + Number(p.amount || 0), 0);
-  return `
-    ${subViewBackHTML()}
-    <h1 class="page-title">Reportes</h1>
-    <p class="page-sub">${can('verTodasVentas') ? 'Ventas, ganancias y gastos del periodo que elijas' : 'Tus ventas del periodo que elijas'}</p>
-    <div class="filter-pill-row rep-periods">
-      ${REPORT_PERIODS.map(([id, t]) => `<button class="filter-chip ${reportState.period === id ? 'active' : ''}" onclick="reportState.period='${id}'; render();">${t}</button>`).join('')}
-    </div>
-    ${reportState.period === 'custom' ? `
-      <div class="two-fields rep-dates">
-        <div class="field"><label for="repFrom">Desde</label><input id="repFrom" type="date" value="${reportState.from || dayKey(new Date())}" onchange="reportState.from=this.value; render();"></div>
-        <div class="field"><label for="repTo">Hasta</label><input id="repTo" type="date" value="${reportState.to || reportState.from || dayKey(new Date())}" onchange="reportState.to=this.value; render();"></div>
-      </div>` : ''}
-    <div class="rep-range">${icon('calendar')} ${reportRangeLabel(d.r)}</div>
-
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-label">Ventas netas</div><div class="stat-value">${formatMoney(d.net)}</div><div class="stat-label" style="margin-top:4px;">con IVA, sin propinas</div></div>
-      <div class="stat-card"><div class="stat-label">Ventas</div><div class="stat-value">${d.orders.length}</div><div class="stat-label" style="margin-top:4px;">ticket promedio ${formatMoney(ticket)}</div></div>
-      ${ver ? `
-        <div class="stat-card"><div class="stat-label">Ganancia</div><div class="stat-value" style="${d.prof.profit < 0 ? 'color:var(--accent-2);' : ''}">${formatMoney(d.prof.profit)}</div><div class="stat-label" style="margin-top:4px;">de lo vendido, sin IVA</div></div>
-        <div class="stat-card"><div class="stat-label">Te queda</div><div class="stat-value" style="${d.prof.profit - d.gastos < 0 ? 'color:var(--accent-2);' : ''}">${formatMoney(d.prof.profit - d.gastos)}</div><div class="stat-label" style="margin-top:4px;">después de ${formatMoney(d.gastos)} de gastos</div></div>` : `
-        <div class="stat-card"><div class="stat-label">Devoluciones</div><div class="stat-value">${formatMoney(d.returnsTotal)}</div><div class="stat-label" style="margin-top:4px;">${d.returns.length} en el periodo</div></div>
-        <div class="stat-card"><div class="stat-label">Descuentos</div><div class="stat-value">${formatMoney(d.discounts)}</div><div class="stat-label" style="margin-top:4px;">que se dieron</div></div>`}
-    </div>
-
-    <div class="inv-actions rep-actions">
-      <button class="btn ghost" onclick="printReport()">${icon('print')} Imprimir</button>
-      <button class="btn ghost" onclick="exportReportExcel()">${icon('download')} Descargar Excel</button>
-    </div>
-
-    ${!d.all.length && !d.exps.length ? `
-      <div class="empty-state">${illustration('chartEmpty')}<div class="empty-title">Sin movimientos en estas fechas</div><div class="empty-text">Elige otro periodo arriba.</div></div>` : `
-
-    <div class="section-title">Resumen</div>
-    <div class="card kv-card">
-      <div class="kv-row"><span>Importe de lo vendido</span><b>${formatMoney(d.listTotal)}</b></div>
-      <div class="kv-row"><span>− Descuentos</span><b>${d.discounts > 0 ? '−' : ''}${formatMoney(d.discounts)}</b></div>
-      ${d.ivaAdded ? `<div class="kv-row"><span>+ IVA</span><b>+${formatMoney(d.ivaAdded)}</b></div>` : ''}
-      <div class="kv-row"><span>− Devoluciones (${d.returns.length})</span><b class="${d.returnsTotal > 0 ? 'neg' : ''}">${d.returnsTotal > 0 ? '−' : ''}${formatMoney(d.returnsTotal)}</b></div>
-      <div class="kv-row grand"><span>Ventas netas</span><b>${formatMoney(d.net)}</b></div>
-      ${d.ivaIncl ? `<div class="kv-row"><span>IVA que ya venía en los precios</span><b>${formatMoney(d.ivaIncl)}</b></div>` : ''}
-      ${d.iva ? `<div class="kv-row"><span>IVA del periodo (para tu contador)</span><b>${formatMoney(d.iva)}</b></div>` : ''}
-      ${d.tips ? `<div class="kv-row"><span>Propinas (aparte)</span><b>${formatMoney(d.tips)}</b></div>` : ''}
-      ${d.cancelled ? `<div class="kv-row"><span>Ventas canceladas</span><b>${d.cancelled}</b></div>` : ''}
-      ${ver ? `
-        <div class="kv-row"><span>Costo de lo vendido</span><b>${formatMoney(d.prof.cost)}</b></div>
-        <div class="kv-row"><span>Ganancia (sin IVA)</span><b>${formatMoney(d.prof.profit)}</b></div>
-        <div class="kv-row"><span>Gastos (${d.exps.length})</span><b>${d.gastos > 0 ? '−' : ''}${formatMoney(d.gastos)}</b></div>
-        <div class="kv-row grand"><span>Te queda</span><b class="${d.prof.profit - d.gastos < 0 ? 'neg' : ''}">${formatMoney(d.prof.profit - d.gastos)}</b></div>
-        ${d.prof.missing > 0 ? `<div class="kv-note">${fmtNum(d.prof.missing)} artículo${d.prof.missing === 1 ? '' : 's'} sin precio de producción no ${d.prof.missing === 1 ? 'entra' : 'entran'} en la ganancia.</div>` : ''}` : ''}
-    </div>
-
-    <div class="section-title">Cómo te pagaron</div>
-    <div class="card">
-      ${pays.map(p => `<div class="bar-row">
-        <div class="bar-row-top"><span>${p.emoji} ${p.name}</span><span class="bv">${formatMoney(d.byMethod[p.id])}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, d.byMethod[p.id] / maxPay) * 100}%; background:var(--sec-stats);"></div></div>
-      </div>`).join('')}
-      ${abonosTot ? `<div class="kv-row" style="margin-top:10px;"><span>💵 Abonos de fiado recibidos</span><b>${formatMoney(abonosTot)}</b></div>` : ''}
-    </div>
-
-    ${days.length > 1 ? `
-      <div class="section-title">Por día</div>
-      <div class="card">
-        <div class="chart-plot">${days.slice(-31).map(k => `<div class="chart-col" title="${k}: ${formatMoney(d.byDay[k])}"><span class="vbar ${d.byDay[k] > 0 ? '' : 'zero'}" style="opacity:1; ${d.byDay[k] > 0 ? 'height:' + Math.max(4, d.byDay[k] / Math.max(1, ...days.map(x => d.byDay[x])) * 100) + '%' : ''}"></span></div>`).join('')}</div>
-        <div class="chart-x">${days.slice(-31).map((k, i, a) => `<span>${a.length > 12 && i % Math.ceil(a.length / 8) ? '' : Number(k.slice(8))}</span>`).join('')}</div>
-      </div>` : ''}
-
-    ${cats.length ? `
-      <div class="section-title">Por categoría</div>
-      <div class="card">${cats.map(c => `<div class="bar-row">
-        <div class="bar-row-top"><span>${c.emoji} ${escapeHtml(c.name)}</span><span class="bv">${formatMoney(c.total)}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, c.total / maxCat) * 100}%; background:var(--ink);"></div></div>
-      </div>`).join('')}</div>` : ''}
-
-    ${prods.length ? `
-      <div class="section-title">Productos vendidos <span class="title-count">${prods.length}</span></div>
-      <div class="card rep-table">
-        <div class="rep-tr head"><span>Producto</span><span>Cant.</span><span>Importe</span>${ver ? '<span>Ganancia</span>' : ''}</div>
-        ${prods.slice(0, 30).map(p => `<div class="rep-tr"><span>${escapeHtml(p.name)}</span><span>${escapeHtml(p.unit && !p.sizeLabel && !unitOf(p.unit).plain ? fmtQty(p.qty, p.unit) : fmtNum(p.qty))}</span><span>${formatMoney(p.total)}</span>${ver ? `<span class="${p.profit < 0 ? 'neg' : ''}">${formatMoney(p.profit)}</span>` : ''}</div>`).join('')}
-        ${prods.length > 30 ? `<div class="kv-note">Y ${prods.length - 30} más · están todos en “Descargar Excel”.</div>` : ''}
-      </div>` : ''}
-
-    ${users.length > 1 || (users.length === 1 && users[0][0] !== 'Sin usuario') ? `
-      <div class="section-title">Por quién cobró</div>
-      <div class="card">${users.map(([n, v]) => `<div class="bar-row">
-        <div class="bar-row-top"><span>${escapeHtml(n)}</span><span class="bv">${formatMoney(v.total)} · ${v.count}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(0, v.total / maxUser) * 100}%; background:var(--teal, var(--ink));"></div></div>
-      </div>`).join('')}</div>` : ''}
-
-    ${horas.length > 1 ? `
-      <div class="section-title">¿A qué hora vendes más?</div>
-      <div class="card">
-        <div class="chart-plot">${rango.map(h => `<div class="chart-col" title="${hLabel(h)}: ${formatMoney(d.byHour[h])}"><span class="vbar ${d.byHour[h] ? '' : 'zero'}" style="opacity:${d.byHour[h] === maxH ? 1 : .55}; ${d.byHour[h] ? 'height:' + Math.max(5, d.byHour[h] / maxH * 100) + '%' : ''}"></span></div>`).join('')}</div>
-        <div class="chart-x">${rango.map((h, i) => `<span>${rango.length > 10 && i % 2 ? '' : hLabel(h)}</span>`).join('')}</div>
-      </div>` : ''}
-    `}
-  `;
+/* =========================================================
+   FILTRO DE PERIODO
+   En vez de una fila llena de botones (Hoy, Esta semana, Este mes,
+   Este año…), un solo botón con el periodo elegido. Al tocarlo se
+   abre la lista de periodos y la opción de elegir otras fechas.
+   Lo usan Ventas y Caja y gastos › Gastos.
+========================================================= */
+function periodRangeFor(id, from, to){
+  if(id === 'custom'){
+    const f = from || dayKey(new Date()), t = to || f;
+    const [y1, m1, d1] = f.split('-').map(Number), [y2, m2, d2] = t.split('-').map(Number);
+    let a = new Date(y1, m1 - 1, d1), b = new Date(y2, m2 - 1, d2 + 1);
+    if(b <= a){ const x = a; a = new Date(b.getTime() - 86400000); b = new Date(x.getTime() + 86400000); }
+    return [a, b];
+  }
+  return periodRange(id) || periodRange('today');
 }
-EXTRA_VIEWS.reports = renderReports;
+function periodName(id){ return (REPORT_PERIODS.find(p => p[0] === id) || [id, 'Otras fechas'])[1]; }
+function periodBarHTML(id, from, to, openFn){
+  const r = periodRangeFor(id, from, to);
+  return `<div class="period-bar">
+    <button class="filters-trigger-btn period-btn" onclick="${openFn}">
+      <span class="fti-icon">${icon('calendar')}</span>
+      <span>${id === 'custom' ? 'Otras fechas' : periodName(id)}</span>
+      <span class="pb-chev">${icon('chevronDown')}</span>
+    </button>
+    <span class="period-range">${reportRangeLabel(r)}</span>
+  </div>`;
+}
+let periodSheet = null;   // { title, id, from, to, custom, apply(id, from, to) }
+function openPeriodSheet(o){
+  periodSheet = o;
+  const p = periodSheet;
+  const fmt = r => reportRangeLabel(r);
+  openModal(`
+    <div class="sheet-header">
+      <h2>${escapeHtml(p.title || 'Periodo')}</h2>
+      <button class="sheet-close" onclick="closeModal()">${icon('close')}</button>
+    </div>
+    <div class="acc-list period-list">
+      ${REPORT_PERIODS.filter(x => x[0] !== 'custom').map(([id, t]) => `
+        <button class="acc-row ${p.id === id ? 'picked' : ''}" onclick="periodSheetPick('${id}')">
+          <span class="acc-txt"><span class="acc-label">${t}</span><span class="acc-sub">${fmt(periodRange(id))}</span></span>
+          ${p.id === id ? `<span class="tag ok">Elegido</span>` : ''}
+        </button>`).join('')}
+      <button class="acc-row ${p.id === 'custom' ? 'picked' : ''}" onclick="periodSheetPick('custom')">
+        <span class="acc-txt"><span class="acc-label">Otras fechas</span><span class="acc-sub">${p.id === 'custom' ? fmt(periodRangeFor('custom', p.from, p.to)) : 'Elige desde qué día y hasta qué día'}</span></span>
+        ${p.id === 'custom' ? `<span class="tag ok">Elegido</span>` : `<span class="acc-chev">${icon('chevronDown')}</span>`}
+      </button>
+    </div>
+    ${p.custom || p.id === 'custom' ? `
+      <div class="two-fields period-dates">
+        <div class="field"><label for="psFrom">Desde</label><input id="psFrom" type="date" value="${p.from || dayKey(new Date())}"></div>
+        <div class="field"><label for="psTo">Hasta</label><input id="psTo" type="date" value="${p.to || p.from || dayKey(new Date())}"></div>
+      </div>
+      <button class="btn primary block" onclick="periodSheetCustom()">${icon('check')} Ver estas fechas</button>` : ''}
+  `, { dismissible:true });
+}
+function periodSheetPick(id){
+  const p = periodSheet; if(!p) return;
+  vibrate(8);
+  if(id === 'custom'){ p.custom = true; openPeriodSheet(p); setTimeout(() => { const e = document.getElementById('psFrom'); if(e) e.scrollIntoView({ block:'center' }); }, 60); return; }
+  p.apply(id, '', '');
+  closeModal(); render();
+}
+function periodSheetCustom(){
+  const p = periodSheet; if(!p) return;
+  const f = (document.getElementById('psFrom') || {}).value || '';
+  const t = (document.getElementById('psTo') || {}).value || f;
+  if(!f){ toast('Elige desde qué día'); return; }
+  p.apply('custom', f, t);
+  closeModal(); render();
+}
+
+/* Ventas */
+function salesPeriodFilterHTML(){ return periodBarHTML(reportState.period, reportState.from, reportState.to, 'openSalesPeriod()'); }
+function openSalesPeriod(){
+  openPeriodSheet({ title:'Periodo de ventas', id:reportState.period, from:reportState.from, to:reportState.to,
+    apply:(id, f, t) => { reportState.period = id; if(id === 'custom'){ reportState.from = f; reportState.to = t; } statsSel = null; } });
+}
+/* Caja y gastos › Gastos */
+let expFrom = '', expTo = '';
+function expRange(){ return periodRangeFor(expPeriod, expFrom, expTo); }
+function openExpPeriod(){
+  openPeriodSheet({ title:'Periodo de gastos', id:expPeriod, from:expFrom, to:expTo,
+    apply:(id, f, t) => { expPeriod = id; if(id === 'custom'){ expFrom = f; expTo = t; } } });
+}
 
 function printReport(){
   const d = reportData();
@@ -18542,7 +18687,7 @@ async function xlRun(fileName, build, what){
 function exportExcel(kind, range){
   return xlRun(xlBizSlug() + '_' + (XL_KIND_NAMES[kind] || kind) + '_' + xlFileTag(range) + '.xlsx', () => xlSheetsFor(kind, range));
 }
-/** El reporte del periodo completo (Reportes › Descargar Excel). */
+/** El reporte del periodo elegido (Ventas › Descargar Excel). */
 function exportReportExcel(){
   const r = reportRange();
   return xlRun(xlBizSlug() + '_reporte_' + xlFileTag(r) + '.xlsx', () => {
@@ -18686,7 +18831,7 @@ function openDataSheet(){
         <span class="acc-chev">${icon('chevronRight')}</span>
       </button>
     </div>
-    <p class="print-tip">Los Excel salen acomodados: encabezados fijos, pesos con formato de dinero, fechas que se pueden ordenar y filtrar, y totales al final. Para un periodo en especial usa <b>Reportes</b>.</p>
+    <p class="print-tip">Los Excel salen acomodados: encabezados fijos, pesos con formato de dinero, fechas que se pueden ordenar y filtrar, y totales al final. Para un periodo en especial usa <b>Ventas</b>.</p>
   `, { dismissible:true });
 }
 function openExportSheet(){
@@ -18854,7 +18999,7 @@ function applyImport(){
   const catId = name => {
     if(!name) return (cats[0] || UNCATEGORIZED).id;
     let c = cats.find(x => saleNorm(x.name) === saleNorm(name));
-    if(!c){ c = { id:uid('cat'), name:name.slice(0, 40), emoji:'🏷️', color:['#128C7E','#E8A33D','#3B82C4','#D9534F','#8E6CD1','#2FA59A'][cats.length % 6] }; cats.push(c); }
+    if(!c){ c = { id:uid('cat'), name:name.slice(0, 40), emoji:'', color:['#128C7E','#E8A33D','#3B82C4','#D9534F','#8E6CD1','#2FA59A'][cats.length % 6] }; cats.push(c); }
     return c.id;
   };
   const now = new Date().toISOString();
@@ -18895,7 +19040,7 @@ function openPosSettings(){
   const ejemplo = calcTax(100, { mode:c.taxMode, rate:c.taxRate / 100 });
   openModal(`
     <div class="sheet-header">
-      <h2>Ventas y cobro</h2>
+      <h2>Cobro e IVA</h2>
       <button class="sheet-close" onclick="closeModal(); render();">${icon('close')}</button>
     </div>
     ${soyDueno ? '' : `<div class="alert-card" style="margin-bottom:14px;"><span class="alert-ico">${icon('key')}</span><span class="alert-txt"><span class="alert-title">Solo puedes consultar</span><span class="alert-sub">Esto lo cambia el Dueño.</span></span></div>`}
@@ -18916,8 +19061,8 @@ function openPosSettings(){
     <div class="qe-card">
       ${posToggle('creditOn', icon('card'), 'gold', 'Permitir fiado', 'Vender a crédito a tus clientes y recibir abonos.', c, dis)}
       ${posToggle('tipsOn', icon('coins'), 'green', 'Pedir propina', 'Aparece al cobrar con ' + c.tipOptions.join('%, ') + '% u otra cantidad.', c, dis)}
-      ${posToggle('requireCash', icon('cashbox'), 'blue', 'Abrir caja antes de vender', 'No deja cobrar si la caja está cerrada.', c, dis)}
     </div>
+    <div class="doc-note" style="margin-top:12px;">${icon('cashbox')}<span><b>Caja del día obligatoria</b>Para vender siempre tiene que estar abierta la caja de hoy. En la primera venta del día ${APP_NAME} te pide el fondo; si quedó abierta la de un día anterior, primero te pide su corte. Consultar productos, reportes o clientes no la pide.</span></div>
     ${c.tipsOn ? `
       <div class="field" style="margin-top:14px;">
         <label for="pcTips">Porcentajes de propina</label>
@@ -18951,7 +19096,7 @@ function setPosCfg(key, val){
 function posSettingsSub(){
   const c = posCfg();
   const iva = c.taxMode === 'ninguno' ? 'Sin IVA' : (c.taxMode === 'incluido' ? 'IVA incluido ' + fmtPct(c.taxRate) + '%' : 'IVA ' + fmtPct(c.taxRate) + '% aparte');
-  return iva + (c.creditOn ? ' · fiado' : '') + (c.tipsOn ? ' · propinas' : '') + (c.requireCash ? ' · caja obligatoria' : '');
+  return iva + (c.creditOn ? ' · fiado' : '') + (c.tipsOn ? ' · propinas' : '');
 }
 
 /* =========================================================
@@ -18959,6 +19104,14 @@ function posSettingsSub(){
 ========================================================= */
 function homeCashCardHTML(){
   const s = cashCurrent();
+  const puede = can('manejarCaja');
+  if(s && cashIsStale(s)){
+    return `<button class="alert-card danger" onclick="${puede ? 'cashCloseOld()' : "goTo('cash')"}" style="margin-top:16px;">
+      <span class="alert-ico">${icon('cashbox')}</span>
+      <span class="alert-txt"><span class="alert-title">Falta cerrar la caja ${cashDayName(s.openedAt)}</span><span class="alert-sub">${puede ? 'Haz su corte y abre la de hoy antes de vender' : 'Pídele al Dueño o al Administrador que haga el corte'}</span></span>
+      <span class="acc-chev">${icon('chevronRight')}</span>
+    </button>`;
+  }
   if(s){
     const sum = cashSummary(s);
     return `<button class="alert-card cash-card on" onclick="goTo('cash')" style="margin-top:16px;">
@@ -18967,18 +19120,22 @@ function homeCashCardHTML(){
       <span class="acc-chev">${icon('chevronRight')}</span>
     </button>`;
   }
-  if(!posCfg().requireCash && !DB.getCash().length) return '';
-  return `<button class="alert-card cash-card ${posCfg().requireCash ? '' : 'off'}" onclick="${can('manejarCaja') ? 'openCashOpen()' : "goTo('cash')"}" style="margin-top:16px;">
+  return `<button class="alert-card cash-card" onclick="${puede ? 'openCashOpen()' : "goTo('cash')"}" style="margin-top:16px;">
     <span class="alert-ico">${icon('cashbox')}</span>
-    <span class="alert-txt"><span class="alert-title">La caja está cerrada</span><span class="alert-sub">${posCfg().requireCash ? 'Ábrela para poder cobrar' : 'Ábrela con tu fondo para llevar el control del efectivo'}</span></span>
+    <span class="alert-txt"><span class="alert-title">La caja está cerrada</span><span class="alert-sub">${puede ? 'Se abre en tu primera venta del día, o ábrela aquí con tu fondo' : 'Pídele al Dueño o al Administrador que la abra para poder vender'}</span></span>
     <span class="acc-chev">${icon('chevronRight')}</span>
   </button>`;
 }
 function cashSaleBannerHTML(){
-  if(!posCfg().requireCash || cashCurrent()) return '';
-  return `<button class="alert-card danger" onclick="${can('manejarCaja') ? 'openCashOpen()' : "goTo('cash')"}" style="margin:12px 0 4px;">
+  const s = cashCurrent();
+  if(s && !cashIsStale(s)) return '';
+  const puede = can('manejarCaja');
+  const sub = s ? (puede ? 'Haz su corte y abre la de hoy para poder vender' : 'Pídele al Dueño o al Administrador que haga el corte')
+                : (!puede ? 'Pídele al Dueño o al Administrador que la abra para poder vender'
+                  : (docMode() === 'ticket' ? 'Toca aquí, o agrega tu primer producto y te pedimos el fondo' : 'Toca aquí para abrirla; al cobrar con ticket también te la pedimos'));
+  return `<button class="alert-card ${s ? 'danger' : ''}" onclick="cashGate(null)" style="margin:12px 0 4px;">
     <span class="alert-ico">${icon('cashbox')}</span>
-    <span class="alert-txt"><span class="alert-title">La caja está cerrada</span><span class="alert-sub">Ábrela para poder cobrar</span></span>
+    <span class="alert-txt"><span class="alert-title">${s ? 'Falta cerrar la caja ' + cashDayName(s.openedAt) : 'Abre la caja para vender'}</span><span class="alert-sub">${sub}</span></span>
     <span class="acc-chev">${icon('chevronRight')}</span>
   </button>`;
 }
@@ -19026,13 +19183,12 @@ function homeAlertsHTML(){
   return h;
 }
 function homeToolsHTML(){
+  /* Solo lo que no está en el menú de abajo, y con el mismo nombre de su sección */
   const t = [];
-  if(can('manejarCaja') || cashCurrent()) t.push(['cash', 'cashbox', 'Caja', cashCurrent() ? 'Abierta' : 'Cerrada', "cashTab='caja'; goTo('cash')"]);
-  t.push(['customers', 'users', 'Clientes', DB.getCustomers().length ? DB.getCustomers().length + ' registrados' : 'Fiado y compras', "goTo('customers')"]);
-  if(can('registrarGastos') || can('verGanancias')) t.push(['gastos', 'wallet', 'Gastos', 'Registra tus pagos', "cashTab='gastos'; goTo('cash')"]);
-  t.push(['inv', 'boxes', 'Inventario', lowStockProducts().length ? lowStockProducts().length + ' por surtir' : 'Existencias', "productsTab='inventario'; goTo('products')"]);
-  t.push(['reports', 'document', 'Reportes', 'Por fechas y Excel', "goTo('reports')"]);
-  if(isOwner()) t.push(['data', 'database', 'Respaldo', 'Tus datos seguros', 'openDataSheet()']);
+  if(can('manejarCaja') || can('registrarGastos') || cashCurrent()) t.push(['cash', 'cashbox', 'Caja y gastos', cashCurrent() ? (cashIsStale(cashCurrent()) ? 'Falta el corte' : 'Caja abierta') : 'Caja cerrada', "cashTab='caja'; goTo('cash')"]);
+  const debe = typeof totalReceivable === 'function' ? totalReceivable() : 0;
+  t.push(['customers', 'users', 'Clientes y fiado', debe > 0.004 ? 'Te deben ' + formatMoney(debe) : 'Fiado y abonos', "goTo('customers')"]);
+  if(isOwner()) t.push(['data', 'database', 'Datos y respaldo', 'Respaldo y Excel', 'openDataSheet()']);
   return `
     <div class="section-title">Herramientas</div>
     <div class="tool-grid">${t.map(x => `
