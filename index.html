@@ -3775,17 +3775,25 @@ function askConfirm(o, onOk, onCancel){
   o = o || {};
   let layer = document.getElementById('confirm-layer');
   if(!layer){ layer = document.createElement('div'); layer.id = 'confirm-layer'; document.body.appendChild(layer); }
-  const close = () => { layer.innerHTML = ''; document.removeEventListener('keydown', onKey, true); };
+  /* Si ya había otra confirmación abierta se cierra bien. Antes su Enter
+     se quedaba escuchando y un solo Enter confirmaba las dos (acción doble). */
+  if(typeof askConfirm._close === 'function') askConfirm._close();
+  let done = false;
+  const close = () => { layer.innerHTML = ''; document.removeEventListener('keydown', onKey, true); if(askConfirm._close === close) askConfirm._close = null; };
   const onKey = e => {
     if(e.key === 'Escape'){ e.stopPropagation(); e.preventDefault(); close(); if(onCancel) onCancel(); }
     if(e.key === 'Enter' && !(e.target && /TEXTAREA/.test(e.target.tagName))){ e.stopPropagation(); e.preventDefault(); yes(); }
   };
   const yes = () => {
+    if(done) return;
     if(o.validate && o.validate(layer) === false) return;
+    done = true;
     const snap = layer.querySelector('.conf-card');
     close();
+    shieldClicks();
     if(onOk) onOk(snap);
   };
+  askConfirm._close = close;
   layer.innerHTML = `<div class="modal-overlay modal-center conf-overlay" id="confOverlay">
       <div class="modal-sheet modal-card conf-card" role="alertdialog" aria-modal="true">
         ${o.icon ? `<span class="conf-ico ${o.danger ? 'danger' : ''}">${o.icon}</span>` : ''}
@@ -3805,6 +3813,18 @@ function askConfirm(o, onOk, onCancel){
   document.addEventListener('keydown', onKey, true);
   setTimeout(() => { const f = layer.querySelector('input:not([type=checkbox]), textarea'); if(f) f.focus(); }, 60);
 }
+
+/* ---------- Anti doble clic ----------
+   Después de una acción importante (cobrar, confirmar, cancelar, devolver,
+   guardar un gasto o una entrada) la hoja cambia y el segundo toque de un
+   doble clic caía sobre el botón nuevo que quedaba debajo del dedo.
+   Durante un instante se ignoran esos toques. */
+let clickShieldUntil = 0;
+function shieldClicks(ms){ clickShieldUntil = Date.now() + (ms || 450); }
+document.addEventListener('click', e => {
+  /* Solo toques reales: las descargas y selectores de archivo que abre el código no se bloquean */
+  if(e.isTrusted && Date.now() < clickShieldUntil){ e.preventDefault(); e.stopPropagation(); }
+}, true);
 
 /* =========================================================
    ICONOGRAFÍA — íconos de línea SVG (sin emojis)
@@ -4239,6 +4259,17 @@ function initDB(){
     if(p.sizesOn === undefined){ p.sizesOn = false; changed = true; }
     if(p.sizeUnit === undefined || !SIZE_UNITS[p.sizeUnit]){ p.sizeUnit = 'litro'; changed = true; }
     if(!Array.isArray(p.sizes)){ p.sizes = []; changed = true; }
+    // Cuánto descuenta cada tamaño. Los tamaños guardados antes de existir
+    // este dato descontaban 1 entero (un "Medio litro" restaba un litro):
+    // se calcula igual que al guardar, pero solo si el nombre dice la medida
+    // (medio, 1/4, 500 ml, 2 litros, 1 kg…). Y los que quedaron redondeados a
+    // 2 decimales (355 ml restaba 0.36) se corrigen a 3 (0.355).
+    p.sizes.forEach(z => {
+      if(!z || typeof z !== 'object') return;
+      const q = parseSizeQty(z.label);
+      if(z.unitQty == null){ if(sizeLabelHasMeasure(z.label)){ z.unitQty = q; changed = true; } }
+      else if(z.unitQty !== q && Math.abs(Number(z.unitQty) - q) < 0.006){ z.unitQty = q; changed = true; }
+    });
   });
   if(changed) DB.saveProducts(list);
 
@@ -4324,8 +4355,9 @@ function deductStock(uso, inventario){
   return { alertas, cambio };
 }
 function inCartQty(productId){
-  // Suma todas las líneas del carrito de este producto, sin importar
-  // el tamaño elegido (medio litro, litro, etc.).
+  // Cuántas PIEZAS/unidades hay en el carrito de este producto (sirve para
+  // el mayoreo). OJO: con tamaños no es lo que se descuenta del inventario
+  // (2 × 2 litros = 2 piezas pero 4 L); para existencias usa cartStockUse().
   return r3(cart.filter(c => c.productId === productId).reduce((a,c) => a + c.qty, 0));
 }
 /** ¿Aplica el precio de mayoreo a esta línea? (desde N piezas del mismo producto) */
@@ -4365,7 +4397,7 @@ function cartAmountForProduct(productId){
 function freeStock(p){
   const st = stockInfo(p);
   if(!st.control) return Infinity;
-  return Math.max(0, st.stock - inCartQty(p.id));
+  return Math.max(0, r3(st.stock - cartStockUse(p.id)));
 }
 function lowStockProducts(){
   return DB.getProducts().filter(p => {
@@ -4885,10 +4917,11 @@ function renderSale(){
         const sized = hasSizes(p);
         const frac = isFracProduct(p);
         const qty = inCartQty(p.id);
+        const usado = cartStockUse(p.id);   // lo que de verdad se descontará (con tamaños: 0.5 L, 2 L…)
         const st = stockInfo(p);
         const agotado = st.level === 'out';
         const step = frac ? productStep(p) : 1;
-        const sinMas = !sized && st.control && (st.stock - qty) < step - 1e-9;   // ya no quedan libres
+        const sinMas = !sized && st.control && (st.stock - usado) < step - 1e-9;   // ya no quedan libres
         const tapAction = sized ? `openSizePicker('${p.id}')` : (frac ? `openQtyPad('${p.id}')` : `addToCart('${p.id}')`);
         const wp = Number(p.wholesalePrice), wm = Number(p.wholesaleMin);
         return `<div class="product-card ${qty > 0 ? 'in-cart' : ''} ${agotado ? 'is-out' : ''}">
@@ -4909,7 +4942,7 @@ function renderSale(){
           ${sized ? `
             <div class="pc-pricebar" onclick="openSizePicker('${p.id}')" style="cursor:pointer;">
               ${qty > 0
-                ? `<div class="pc-qty-total">${fmtNum(qty)} · ${formatMoney(cartAmountForProduct(p.id))}</div>`
+                ? `<div class="pc-qty-total">${st.control ? fmtStock(p, usado) : fmtNum(qty)} · ${formatMoney(cartAmountForProduct(p.id))}</div>`
                 : `<div class="pc-price">Desde ${formatMoney(Math.min.apply(null, p.sizes.map(s => s.price)))}</div>`}
             </div>
           ` : qty > 0 ? `
@@ -5061,7 +5094,7 @@ function addToCart(productId, qtyAdd, opts){
     return;
   }
   // Ya está todo lo disponible dentro del carrito.
-  if(st.control && inCartQty(productId) + qtyAdd > st.stock + 1e-9){
+  if(st.control && cartStockUse(productId) + qtyAdd > st.stock + 1e-9){
     vibrate(40);
     toast('Solo te quedan ' + fmtStock(p, st.stock), {
       icon: icon('alert'), variant:'toast-danger toast-top',
@@ -5075,7 +5108,7 @@ function addToCart(productId, qtyAdd, opts){
   const item = cart.find(c => c.productId === productId && !c.sizeId && !c.note && !c.disc && c.manualPrice == null);
   if(item){ item.qty = r3(item.qty + qtyAdd); } else { cart.push({ productId, qty:qtyAdd }); }
 
-  const restan = st.control ? r3(st.stock - inCartQty(productId)) : null;
+  const restan = st.control ? r3(st.stock - cartStockUse(productId)) : null;
   const pocas  = st.control && restan <= st.min;
 
   vibrate(25);
@@ -5097,7 +5130,7 @@ function changeQtyFromGrid(productId, delta){
   const step = isFracProduct(p) ? productStep(p) : 1;
   const lines = cart.filter(c => c.productId === productId);
   const item = lines.find(c => !c.sizeId && !c.note && !c.disc && c.manualPrice == null) || lines[lines.length - 1];
-  if(delta > 0 && st.control && inCartQty(productId) + step > st.stock + 1e-9){
+  if(delta > 0 && st.control && cartStockUse(productId) + step > st.stock + 1e-9){
     vibrate(40);
     toast(st.stock <= 0 ? 'Se acabó este producto' : 'Solo te quedan ' + fmtStock(p, st.stock), {
       icon: icon('alert'), variant:'toast-danger toast-top',
@@ -5108,7 +5141,7 @@ function changeQtyFromGrid(productId, delta){
   if(!item && delta > 0 && !saleStartGate(() => changeQtyFromGrid(productId, delta))) return;
   if(item){
     item.qty = r3(item.qty + delta * step);
-    if(item.qty < step / 2){ cart = cart.filter(c => c !== item); }
+    if(item.qty < step / 2){ cart = cart.filter(c => c !== item); cartLinkCheck(); }
   } else if(delta > 0){
     cart.push({ productId, qty:step });
   }
@@ -5174,7 +5207,7 @@ function qpSave(){
   if(!(q > 0)){ toast('Escribe una cantidad mayor a 0'); return; }
   const st = stockInfo(p);
   const ya = cart.find(c => c.productId === p.id && !c.sizeId && !c.note && !c.disc && c.manualPrice == null);
-  const otros = r3(inCartQty(p.id) - (ya ? ya.qty : 0));
+  const otros = r3(cartStockUse(p.id) - (ya ? lineStockUse(p, ya) : 0));
   if(st.control && otros + q > st.stock + 1e-9){
     vibrate(40);
     toast('Solo te quedan ' + fmtStock(p, st.stock), { icon:icon('alert'), variant:'toast-danger', subtitle:p.name });
@@ -5195,6 +5228,7 @@ function qpSave(){
 }
 function qpRemove(){
   cart = cart.filter(c => !(c.productId === qtyPad.productId && !c.sizeId && !c.note && !c.disc && c.manualPrice == null));
+  cartLinkCheck();
   qtyPad = null; closeModal(); render();
 }
 
@@ -5231,6 +5265,8 @@ function openSizePicker(productId){
   const p = findProduct(productId);
   if(!p || !p.sizesOn || !p.sizes || !p.sizes.length) return;
   const unitWord = sizeUnitOf(p.sizeUnit).many;
+  const st = stockInfo(p);
+  const usado = cartStockUse(productId);
   const html = `
     <div class="sheet-header">
       <h2>¿Cuántos ${unitWord}?</h2>
@@ -5240,6 +5276,8 @@ function openSizePicker(productId){
     <div class="size-picker-list">
       ${p.sizes.map(s => {
         const qty = cartQtyForSize(productId, s.id);
+        /* Cada tamaño descuenta lo que mide: un "2 litros" más necesita 2 L libres */
+        const sinMas = st.control && usado + lineStockUse(p, { sizeId:s.id, qty:1 }) > st.stock + 1e-9;
         return `
         <div class="size-picker-row">
           <div class="size-picker-info">
@@ -5249,7 +5287,7 @@ function openSizePicker(productId){
           <div class="qty-control mini">
             <button class="qty-btn" onclick="changeSizeQty('${productId}','${s.id}', -1)">−</button>
             <span class="qty-val">${qty}</span>
-            <button class="qty-btn" onclick="changeSizeQty('${productId}','${s.id}', 1)">+</button>
+            <button class="qty-btn" ${sinMas ? 'disabled style="opacity:.35"' : ''} onclick="changeSizeQty('${productId}','${s.id}', 1)">+</button>
           </div>
         </div>`;
       }).join('')}
@@ -5270,7 +5308,7 @@ function changeSizeQty(productId, sizeId, delta){
   /* Con existencias, cada tamaño descuenta lo que mide (medio kilo = 0.5). */
   const stSz = stockInfo(p);
   if(delta > 0 && stSz.control){
-    const extra = (size.unitQty != null ? size.unitQty : 1);
+    const extra = lineStockUse(p, { sizeId, qty:1 });
     if(cartStockUse(productId) + extra > stSz.stock + 1e-9){
       vibrate(40);
       toast(stSz.stock <= 0 ? 'Se acabó este producto' : 'Solo te quedan ' + fmtStock(p, stSz.stock), { icon:icon('alert'), variant:'toast-danger toast-top', subtitle:p.name, duration:1800 });
@@ -5284,7 +5322,7 @@ function changeSizeQty(productId, sizeId, delta){
     cart.push(item);
   }
   item.qty += delta;
-  if(item.qty <= 0){ cart = cart.filter(c => c !== item); }
+  if(item.qty <= 0){ cart = cart.filter(c => c !== item); cartLinkCheck(); }
   vibrate(10);
   openSizePicker(productId);
   renderBackgroundIfSale();
@@ -5533,7 +5571,7 @@ function cartSheetHTML(step){
       const st = stockInfo(p);
       const stockNote = st.control ? ' · ' + fmtStock(p, st.stock) + ' en existencia' : '';
       const step = c.sizeId ? 1 : (isFracProduct(p) ? productStep(p) : 1);
-      const blockInc = st.control && (c.sizeId ? false : inCartQty(p.id) + step > st.stock + 1e-9);
+      const blockInc = st.control && cartStockUse(p.id) + (c.sizeId ? lineStockUse(p, { sizeId:c.sizeId, qty:1 }) : step) > st.stock + 1e-9;
       const d = lineDiscAmount(c);
       const tags = [];
       if(c.manualPrice != null) tags.push(`<span class="ci-tag">Precio cambiado</span>`);
@@ -5602,14 +5640,23 @@ function changeLineQty(i, dir){
     }
   }
   c.qty = r3(c.qty + dir * step);
-  if(c.qty < step / 2) cart.splice(i, 1);
+  if(c.qty < step / 2){ cart.splice(i, 1); cartLinkCheck(); }
   vibrate(10);
   openCartSheet('cart');
   renderBackgroundIfSale();
 }
+/* Si el carrito de un pedido del Menú Digital se queda vacío, deja de ser
+   ese pedido: lo siguiente que se venda ya no se liga a él. */
+function cartLinkCheck(){
+  if(cart.length || !checkout.menuOrderId) return;
+  const o = MDI.get(checkout.menuOrderId);
+  delete checkout.menuOrderId;
+  if(o && o.status === 'confirmado' && !o.saleId) toast('El carrito ya no es el pedido ' + o.code, { icon:icon('alert'), subtitle:'Para cobrarlo, ábrelo otra vez en Pedidos entrantes' });
+}
 function removeLine(i){
   const c = cart[i]; if(!c) return;
   cart.splice(i, 1);
+  cartLinkCheck();
   if(isCustomId(c.productId) && !cart.some(x => x.productId === c.productId)) delete customItems[c.productId];
   vibrate(10);
   openCartSheet('cart');
@@ -5951,6 +5998,9 @@ function saleItemFromCart(c){
   if(c.note) it.note = c.note;
   if(p && p.sku) it.sku = p.sku;
   if(p && p.custom) it.custom = true;
+  /* Lo que esta línea descuenta del inventario (0.5 L, 2 kg…), para que
+     una cancelación o devolución regrese exactamente lo mismo. */
+  it.stockUse = (p && !p.custom && stockInfo(p).control) ? lineStockUse(p, c) : 0;
   return it;
 }
 
@@ -7696,6 +7746,32 @@ function itemStockUse(p, it){
   }
   return lineStockUse(p, { sizeId, qty:Math.abs(Number(it.qty) || 0) });
 }
+/* Lo que de verdad se descontó al vender. Las ventas nuevas lo guardan en
+   cada artículo (stockUse): así una cancelación o devolución regresa
+   exactamente eso, aunque después se cambien los tamaños o se prenda el
+   conteo del producto. Las ventas anteriores se calculan como antes. */
+function itemStockTaken(p, it){
+  if(it.stockUse != null) return Math.abs(Number(it.stockUse) || 0);
+  return itemStockUse(p, it);
+}
+/** Lo que una venta descontó del inventario, por producto ({ id: cantidad }). */
+function saleStockTaken(sale, inventario){
+  const out = {};
+  (sale.items || []).forEach(it => {
+    const p = inventario.find(x => x.id === it.productId);
+    if(!p || !stockInfo(p).control) return;
+    const q = itemStockTaken(p, it);
+    if(q > 0) out[p.id] = r3((out[p.id] || 0) + q);
+  });
+  return out;
+}
+/** ¿Algún artículo de la venta descontó existencias? */
+function saleTookStock(sale){
+  return (sale.items || []).some(it => {
+    const p = findProduct(it.productId);
+    return p && !p.custom && stockInfo(p).control && itemStockTaken(p, it) > 0;
+  });
+}
 /** Regresa artículos al inventario (cancelaciones y devoluciones). */
 function restockItems(items){
   const inventario = DB.getProducts();
@@ -7703,7 +7779,9 @@ function restockItems(items){
   items.forEach(it => {
     const p = inventario.find(x => x.id === it.productId);
     if(!p || !stockInfo(p).control) return;
-    p.stock = r3(Number(p.stock) + itemStockUse(p, it));
+    const q = itemStockTaken(p, it);
+    if(!(q > 0)) return;
+    p.stock = r3(Number(p.stock) + q);
     cambio = true;
   });
   if(cambio) DB.saveProducts(inventario);
@@ -7724,7 +7802,7 @@ function cancelSale(saleId){
     toast('Esta venta ya tiene devoluciones', { icon:icon('alert'), subtitle:'Para regresar lo demás usa Devolución' });
     return;
   }
-  const conStock = s0.items.some(it => { const p = findProduct(it.productId); return p && !p.custom && stockInfo(p).control; });
+  const conStock = saleTookStock(s0);
   const credito = s0.credit > 0 && s0.customerName;
   askConfirm({
     title:'¿Cancelar la venta ' + orderNumberLabel(s0.number) + '?',
@@ -7740,7 +7818,11 @@ function cancelSale(saleId){
     const restock = conStock && !!(card.querySelector('#cnRestock') || {}).checked;
     const sales = DB.getSales();
     const sale = sales.find(s => s.id === saleId);
-    if(!sale || sale.cancelled) return;
+    if(!sale || sale.cancelled) return;                 /* ya estaba cancelada: no se regresa nada dos veces */
+    if((sale.returns || []).length){                    /* le hicieron una devolución mientras tanto */
+      toast('Esta venta ya tiene devoluciones', { icon:icon('alert'), subtitle:'Para regresar lo demás usa Devolución' });
+      return;
+    }
     const me = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
     sale.cancelled = true;
     sale.cancelledAt = new Date().toISOString();
@@ -7766,6 +7848,14 @@ function deleteSale(saleId){
   const sale = DB.getSales().find(s => s.id === saleId);
   if(!sale) return;
   if(!sale.cancelled){ toast('Primero debes cancelar la venta'); return; }
+  /* Una venta de antes que se canceló con la caja abierta resta su efectivo
+     de esa caja. Si se borra antes del corte, ese dinero "regresaría" a la caja. */
+  const cs = typeof cashCurrent === 'function' ? cashCurrent() : null;
+  if(cs && sale.cancelledAt && new Date(sale.cancelledAt) >= new Date(cs.openedAt) && new Date(sale.date) < new Date(cs.openedAt)
+     && salePayParts(sale).some(p => p.method === 'efectivo')){
+    toast('Primero haz el corte de caja', { icon:icon('alert'), subtitle:'Esta cancelación todavía cuenta en la caja abierta' });
+    return;
+  }
   askConfirm({ title:'¿Eliminar esta venta del historial?', text:'Esta acción no se puede deshacer.', ok:'Eliminar', danger:true, icon:icon('trash') }, () => {
     DB.saveSales(DB.getSales().filter(s => s.id !== saleId));
     toast('Venta eliminada del historial');
@@ -8264,6 +8354,7 @@ function sumarStock(n){
 
 function saveStockForm(productId){
   if(!requirePerm('gestionarProductos', 'No tienes permiso para administrar productos')) return;
+  if(!document.getElementById('sfQty')) return;   /* la hoja ya se guardó y se cerró: no se suma dos veces */
   const products = DB.getProducts();
   const p = products.find(x => x.id === productId);
   if(!p) return;
@@ -8282,6 +8373,7 @@ function saveStockForm(productId){
   if(typeof invContext === 'function') invContext({ type: stockFormMode === 'entrada' ? 'entrada' : (stockFormMode === 'merma' ? 'merma' : 'ajuste'), unitCost, supplier, note });
   DB.saveProducts(products);
   if(typeof invContext === 'function') invContext(null);
+  shieldClicks();
   closeModal();
   const dif = r3(nuevo - antes);
   toast('Existencias actualizadas', { icon:icon('check'), variant:'toast-success', subtitle: p.name + ': ' + fmtStock(p, nuevo) + (dif ? ' (' + (dif > 0 ? '+' : '') + fmtStock(p, dif) + ')' : '') });
@@ -8305,6 +8397,7 @@ function deleteProduct(productId){
   askConfirm({ title:'¿Eliminar "' + escapeHtml(p.name) + '"?', text:'Las ventas donde aparece se quedan en tu historial. Si solo quieres dejar de venderlo por un tiempo, mejor apágalo con el interruptor.', ok:'Eliminar producto', danger:true, icon:icon('trash') }, () => {
     DB.saveProducts(DB.getProducts().filter(x => x.id !== productId));
     cart = cart.filter(c => c.productId !== productId);
+    cartLinkCheck();
     dismissDemoHint();   // ya tocó su catálogo: el aviso de ejemplo se va
     toast('Producto eliminado');
     render();
@@ -8743,6 +8836,12 @@ function sizePlaceholder(unit, i){
    fracciones (1/2), números con ml/g/litros/kilos, o un número suelto.
    Si no reconoce nada, asume 1 (un litro/kilo completo) para no romper
    el cálculo; por eso conviene nombrar los tamaños de forma clara. */
+/* ¿El nombre del tamaño dice claramente cuánto mide? (medio, cuarto, 1/2,
+   500 ml, 250 g, 2 litros, 1 kg, 50 cm…) */
+function sizeLabelHasMeasure(label){
+  const s = String(label || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return /\b(medi[oa]|cuarto|tres cuartos)\b|\d+\s*\/\s*\d+|\d\s*(ml|gr?|gramos|cm|centimetros?|litros?|lts?|l|kilos?|kgs?|kg|metros?|mts?|m)\b/.test(s);
+}
 function parseSizeQty(label){
   if(!label) return 1;
   let s = label.toLowerCase().trim()
@@ -8756,23 +8855,23 @@ function parseSizeQty(label){
   const fracMatch = s.match(/(\d+)\s*\/\s*(\d+)/);
   if(fracMatch){
     const num = parseFloat(fracMatch[1]), den = parseFloat(fracMatch[2]);
-    if(den) return round2(num / den);
+    if(den) return r3(num / den);
   }
 
   const mlMatch = s.match(/(\d+(?:[.,]\d+)?)\s*ml\b/);
-  if(mlMatch) return round2(parseFloat(mlMatch[1].replace(',', '.')) / 1000);
+  if(mlMatch) return r3(parseFloat(mlMatch[1].replace(',', '.')) / 1000);
 
   const gMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:gr|g|gramos)\b/);
-  if(gMatch) return round2(parseFloat(gMatch[1].replace(',', '.')) / 1000);
+  if(gMatch) return r3(parseFloat(gMatch[1].replace(',', '.')) / 1000);
 
   const cmMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:cm|centimetros?)\b/);
-  if(cmMatch) return round2(parseFloat(cmMatch[1].replace(',', '.')) / 100);
+  if(cmMatch) return r3(parseFloat(cmMatch[1].replace(',', '.')) / 100);
 
   const numMatch = s.match(/(\d+(?:[.,]\d+)?)\s*(?:litros?|lts?|l\b|kilos?|kgs?|kg\b|metros?|mts?\b|m\b)/);
-  if(numMatch) return round2(parseFloat(numMatch[1].replace(',', '.')));
+  if(numMatch) return r3(parseFloat(numMatch[1].replace(',', '.')));
 
   const anyNum = s.match(/(\d+(?:[.,]\d+)?)/);
-  if(anyNum) return round2(parseFloat(anyNum[1].replace(',', '.')));
+  if(anyNum) return r3(parseFloat(anyNum[1].replace(',', '.')));
 
   if(/\blitro\b|\bkilo\b|\bkg\b|\bl\b|\bmetro\b|\bm\b/.test(s)) return 1;
 
@@ -10699,7 +10798,7 @@ function doDeleteAccount(){
   }
   closeModal();
   currentView = 'home';
-  cart = [];
+  cart = []; delete checkout.menuOrderId;
   authState = Object.assign(authState, { screen:'welcome', mode:'signup', phone:'', terms:false, code:'' });
   showAuth('welcome');
   toast('Cuenta eliminada');
@@ -11040,7 +11139,7 @@ function enterAsUser(u){
   openShiftFor(u);
   hideAuth();
   closeModal();
-  cart = [];
+  cart = []; delete checkout.menuOrderId;
   currentView = 'home';
   paintChrome();
   render();
@@ -12614,9 +12713,9 @@ function dmAddLine(p, qty, sizeId, note){
   note = (note || '').trim();
   const size = sizeId ? (p.sizes || []).find(s => s.id === sizeId) : null;
   const ex = dm.cart.find(l => l.productId === p.id && (l.sizeId || null) === (sizeId || null) && l.note === note);
-  if(ex) ex.qty = round2(ex.qty + qty);
+  if(ex) ex.qty = r3(ex.qty + qty);
   else dm.cart.push({ productId:p.id, sizeId:sizeId || null, sizeLabel:size ? size.label : null,
-                      unit:size ? 'pieza' : productUnit(p).id, qty:round2(qty), price:size ? size.price : p.price, note });
+                      unit:size ? 'pieza' : productUnit(p).id, qty:r3(qty), price:size ? size.price : p.price, note });
 }
 function dmStepCard(pid, dir){
   const p = dmFind(pid); if(!p) return;
@@ -12630,7 +12729,7 @@ function dmStepCard(pid, dir){
     const l = lines.find(x => !x.note && !x.sizeId) || lines[lines.length - 1];
     if(!l) return;
     const s = l.sizeId ? 1 : productStep(p);
-    l.qty = round2(l.qty - s);
+    l.qty = r3(l.qty - s);
     if(l.qty < s - 1e-9) dm.cart.splice(dm.cart.indexOf(l), 1);
   }
   dmRefreshCards();
@@ -12640,7 +12739,7 @@ function dmStepLine(i, dir){
   const p = dmFind(l.productId);
   const s = l.sizeId ? 1 : productStep(p);
   if(dir > 0 && p && dmStockUse(p.id) + dmUseOf(p, l.sizeId, s) > dmMaxFor(p) + 1e-9){ dmToast('Ya no hay más existencias'); return; }
-  l.qty = round2(l.qty + dir * s);
+  l.qty = r3(l.qty + dir * s);
   if(l.qty < s - 1e-9) dm.cart.splice(i, 1);
   dmRefreshCards();
   if(!dm.cart.length){ dmCloseSheet(); return; }
@@ -12657,7 +12756,7 @@ function dmCardBar(p, paused){
       <div class="dm-q">
         <button onclick="dmStepCard('${p.id}',-1)" aria-label="Quitar">−</button>
         <span>${dmQtyText(p, q)}</span>
-        <button onclick="dmStepCard('${p.id}',1)" aria-label="Agregar" ${q + productStep(p) > dmMaxFor(p) + 1e-9 ? 'disabled' : ''}>+</button>
+        <button onclick="dmStepCard('${p.id}',1)" aria-label="Agregar" ${dmStockUse(p.id) + productStep(p) > dmMaxFor(p) + 1e-9 ? 'disabled' : ''}>+</button>
       </div>
       <div class="dm-qty-total">${formatMoney(dmAmountOf(p.id))}</div>
     </div>`;
@@ -12918,7 +13017,7 @@ function dmProductHTML(){
 function dmPickSize(id){ dm.pd.sizeId = id; dmOpenSheet('product'); }
 function dmPdQty(dir){
   const p = dmFind(dm.pd.id); const s = productStep(p);
-  dm.pd.qty = Math.max(s, round2(dm.pd.qty + dir * s));
+  dm.pd.qty = Math.max(s, r3(dm.pd.qty + dir * s));
   dmOpenSheet('product');
 }
 function dmAddFromSheet(){
@@ -13497,7 +13596,9 @@ function mdiDecode(s){
 /* Guarda un pedido que llega. Si ya existía (mismo id o folio) no se duplica. */
 function mdiReceive(o, source){
   const list = MDI.all();
-  const ex = list.find(x => x.id === o.id || (x.code === o.code && Math.abs(Date.parse(x.createdAt) - Date.parse(o.createdAt)) < 60000));
+  /* Mismo id, o mismo folio con los mismos productos (el mismo mensaje pegado
+     otra vez más tarde): es el mismo pedido y no se duplica. */
+  const ex = list.find(x => x.id === o.id || (x.code === o.code && (Math.abs(Date.parse(x.createdAt) - Date.parse(o.createdAt)) < 60000 || mdiLinesEqual(x.original || [], o.original || []))));
   if(ex) return { order: ex, isNew:false };
   o.source = source || o.source || 'menu';
   o.receivedAt = new Date().toISOString();
@@ -13634,7 +13735,7 @@ function mdiSectionHTML(){
   const ventasHoy = visibleSales().filter(s => s.origin === 'menu' && !s.cancelled && isSameDay(new Date(s.date), new Date()));
   const empty = {
     nuevo: ['No hay pedidos por revisar', 'Cuando un cliente mande su pedido desde tu Menú Digital, aparecerá aquí para que lo confirmes o lo rechaces.'],
-    confirmado: ['Aún no confirmas pedidos', 'Los pedidos que confirmes se guardan en Historial y en Ventas como “Pedido hecho en Menú Digital”.'],
+    confirmado: ['Aún no confirmas pedidos', 'Los pedidos que confirmes quedan aquí por cobrar. Al cobrarlos se guardan en Historial y en Ventas como “Pedido hecho en Menú Digital”.'],
     rechazado: ['Sin pedidos rechazados', 'Aquí verás los pedidos que no pudiste surtir.'],
     cancelado: ['Sin pedidos cancelados', 'Aquí verás los pedidos confirmados que después cancelaste.'],
     todos: ['Aún no llegan pedidos', 'Comparte el link de tu Menú Digital con tus clientes para empezar a recibir pedidos.'],
@@ -13647,7 +13748,7 @@ function mdiSectionHTML(){
     <div class="mdi-today">
       <div><span>Hoy</span><b>${hoy.length}</b><small>pedido${hoy.length === 1 ? '' : 's'}</small></div>
       <div><span>Por revisar</span><b class="${c.nuevo ? 'warn' : ''}">${c.nuevo}</b><small>esperan respuesta</small></div>
-      <div><span>Vendido hoy</span><b>${formatMoney(ventasHoy.reduce((a, s) => a + s.total, 0))}</b><small>${ventasHoy.length} confirmado${ventasHoy.length === 1 ? '' : 's'}</small></div>
+      <div><span>Vendido hoy</span><b>${formatMoney(ventasHoy.reduce((a, s) => a + s.total, 0))}</b><small>${ventasHoy.length} cobrado${ventasHoy.length === 1 ? '' : 's'}</small></div>
     </div>
 
     <div class="mdi-tabs" role="tablist">
@@ -13678,6 +13779,7 @@ function mdiCardHTML(o){
       <span class="mdi-card-top">
         <span class="mdi-code">${escapeHtml(o.code)}</span>
         <span class="mdi-pill ${st.cls}">${st.label}</span>
+        ${o.status === 'confirmado' && !mdiIsPaid(o) ? '<span class="mdi-pill nuevo">Por cobrar</span>' : ''}
         ${mod ? '<span class="mdi-pill mod">Modificado</span>' : ''}
         ${o.waCheck && o.waCheck.ok ? `<span class="mdi-pill wa">${icon('check')} WhatsApp</span>` : ''}
         <span class="mdi-time">${mdiAgo(o.receivedAt || o.createdAt)}</span>
@@ -13769,8 +13871,9 @@ function mdiDetailHTML(o){
       <span>${icon('clock')} ${formatDateTime(o.createdAt)} · ${srcTxt}</span>
     </div>
 
-    ${o.status === 'confirmado' ? `
-      <div class="mdi-banner ok">${icon('check')}<span><b>Pedido confirmado</b>${sale ? 'Se registró como venta ' + orderNumberLabel(sale.number) + ' en Historial y Ventas.' : 'Se registró en Historial y Ventas.'}</span></div>` : ''}
+    ${o.status === 'confirmado' ? (mdiIsPaid(o) ? `
+      <div class="mdi-banner ok">${icon('check')}<span><b>Pedido confirmado y cobrado</b>${sale ? 'Se registró como venta ' + orderNumberLabel(sale.number) + ' en Historial y Ventas.' : 'Se registró en Historial y Ventas.'}</span></div>` : `
+      <div class="mdi-banner warn">${icon('clock')}<span><b>Pedido confirmado · por cobrar</b>Aún no entra a tus ventas, a la caja ni a tus existencias. Cóbralo cuando el cliente pague.</span></div>`) : ''}
     ${o.status === 'rechazado' ? `
       <div class="mdi-banner no">${icon('close')}<span><b>Pedido rechazado</b>${escapeHtml(o.rejectReason || 'Sin motivo')}${o.rejectNote ? ' · ' + escapeHtml(o.rejectNote) : ''}</span></div>` : ''}
     ${o.status === 'cancelado' ? `
@@ -13814,6 +13917,7 @@ function mdiDetailHTML(o){
       </div>
     ` : `
       <div class="mdi-after">
+        ${o.status === 'confirmado' && !mdiIsPaid(o) ? `<button class="btn primary" onclick="mdiCharge('${o.id}')">${icon('card')} Cobrar · ${formatMoney(t.total)}</button>` : ''}
         <button class="btn whatsapp" onclick="mdiNotify('${o.id}')">${icon('whatsapp')} Avisar al cliente</button>
         ${sale && canSeeSale(sale) ? `<button class="btn ghost" onclick="showTicket(DB.getSales().find(s => s.id === '${sale.id}'))">${icon('receipt')} Ver ticket</button>` : ''}
         ${o.status === 'confirmado' && can('cancelarVentas') ? `<button class="btn danger" onclick="mdiCancelOrder('${o.id}')">${icon('close')} Cancelar pedido</button>` : ''}
@@ -13886,6 +13990,7 @@ function mdiRunCompare(id){
 }
 function mdiApplyWhatsapp(id){
   const r = mdiUI.result; if(!r) return;
+  const o0 = MDI.get(id); if(!o0 || o0.status !== 'nuevo') return;
   const nuevas = mdiLinesFromParsed({ lines:r.lines });
   MDI.update(id, o => { o.lines = nuevas; });
   mdiUI.result = null;
@@ -13894,7 +13999,7 @@ function mdiApplyWhatsapp(id){
 }
 
 /* ---------- Editar productos del pedido ---------- */
-function mdiSet(id, key, val){ MDI.update(id, o => { o[key] = val; }); vibrate(8); mdiOpen(id, true); }
+function mdiSet(id, key, val){ MDI.update(id, o => { if(o.status === 'nuevo') o[key] = val; }); vibrate(8); mdiOpen(id, true); }
 function mdiStepLine(id, i, dir){
   const o = MDI.get(id); if(!o || o.status !== 'nuevo') return;
   const l = o.lines[i]; if(!l) return;
@@ -13908,12 +14013,12 @@ function mdiStepLine(id, i, dir){
   mdiRefresh();
 }
 function mdiUseCatalogPrice(id, i){
-  MDI.update(id, o => { const l = o.lines[i]; const p = l && findProduct(l.productId); if(!p) return; l.price = l.sizeId ? (((p.sizes || []).find(s => s.id === l.sizeId) || {}).price || l.price) : p.price; });
+  MDI.update(id, o => { if(o.status !== 'nuevo') return; const l = o.lines[i]; const p = l && findProduct(l.productId); if(!p) return; l.price = l.sizeId ? (((p.sizes || []).find(s => s.id === l.sizeId) || {}).price || l.price) : p.price; });
   mdiRefresh();
 }
 function mdiRestore(id){
   askConfirm({ title:'¿Regresar el pedido a como lo mandó el cliente?', text:'Se pierden los cambios que hiciste.', ok:'Regresar al original', icon:icon('undo') }, () => {
-    MDI.update(id, o => { o.lines = (o.original || []).map(l => Object.assign({}, l)); });
+    MDI.update(id, o => { if(o.status === 'nuevo') o.lines = (o.original || []).map(l => Object.assign({}, l)); });
     mdiRefresh();
   });
 }
@@ -14011,27 +14116,25 @@ function mdiSaveLine(){
   const size = e.sizeId ? p.sizes.find(s => s.id === e.sizeId) : null;
   const line = mdiCleanLine({ productId:p.id, name:p.name, sizeId:size ? size.id : null, sizeLabel:size ? size.label : null,
     unit:size ? 'pieza' : (p.unit || 'pieza'), qty:size ? Math.round(e.qty) || 1 : e.qty, price:e.price, note:e.note });
-  MDI.update(e.id, o => { if(e.i >= 0) o.lines[e.i] = line; else o.lines.push(line); });
+  MDI.update(e.id, o => { if(o.status !== 'nuevo') return; if(e.i >= 0) o.lines[e.i] = line; else o.lines.push(line); });
   mdiLe = null;
   toast(e.i >= 0 ? 'Producto cambiado' : 'Producto agregado', { icon:icon('check'), variant:'toast-success' });
   mdiOpen(e.id);
 }
 function mdiRemoveLine(){
   const e = mdiLe;
-  MDI.update(e.id, o => { o.lines.splice(e.i, 1); });
+  MDI.update(e.id, o => { if(o.status === 'nuevo') o.lines.splice(e.i, 1); });
   mdiLe = null;
   mdiOpen(e.id);
 }
 
-/* ---------- Confirmar: entra a Historial y Ventas ---------- */
-function mdiAttachUser(sale){
-  if(typeof multiUser === 'function' && multiUser()){
-    const me = activeUser(); const sh = currentShift();
-    if(me){ sale.userId = me.id; sale.userName = me.name; sale.userRole = me.role; }
-    if(sh) sale.shiftId = sh.id;
-  }
-  return sale;
-}
+/* ---------- Confirmar ≠ cobrar ----------
+   Confirmar solo acepta el pedido: NO crea la venta, no pone método de
+   pago y no toca la caja ni las existencias. El pedido queda "por cobrar".
+   Cobrarlo lo pasa al carrito y se cobra en la hoja de cobro de siempre
+   (con todas sus revisiones: efectivo, fiado, pago mixto, existencias y
+   caja). Hasta entonces entra a Historial, Ventas, la caja y el inventario. */
+function mdiIsPaid(o){ return !!(o && o.saleId); }
 function mdiConfirm(id){
   const o = MDI.get(id);
   if(!o || o.status !== 'nuevo') return;
@@ -14045,69 +14148,71 @@ function mdiConfirm(id){
     toast('No hay existencias suficientes', { icon:icon('alert'), variant:'toast-danger', subtitle:faltan[0], duration:3000 });
     return;
   }
-  /* Confirmar un pedido es registrar una venta: se necesita la caja del día abierta */
-  if(!cashGate(() => mdiConfirm(id), { ok:'Abrir caja y confirmar', what:'confirmar pedidos', after:() => mdiOpen(id) })) return;
-  const t = mdTotals(o.lines);
-  const sale = mdiAttachUser({
-    id: uid('v'),
-    number: DB.nextSaleNumber(),
-    date: new Date().toISOString(),
-    items: o.lines.map(l => {
-      const p = inventario.find(x => x.id === l.productId);
-      const size = l.sizeId && p && p.sizes ? p.sizes.find(s => s.id === l.sizeId) : null;
-      const factor = size && size.unitQty != null ? size.unitQty : 1;
-      return {
-        productId: l.productId,
-        name: (p ? p.name : l.name) + (l.sizeLabel ? ' · ' + l.sizeLabel : ''),
-        price: l.price,
-        cost: (p && p.cost != null) ? round2(p.cost * factor) : null,
-        qty: l.qty,
-        sizeId: l.sizeId || null,
-        sizeLabel: l.sizeLabel || null,
-        unit: l.sizeLabel ? 'pieza' : (l.unit || 'pieza'),
-        category: p ? p.category : null,
-        note: l.note || ''
-      };
-    }),
-    subtotal: t.subtotal, iva: t.iva, total: t.total,
-    taxMode: taxInfo().mode, taxRate: taxInfo().rate,
-    serviceType: o.service || 'llevar',
-    table: '',
-    paymentMethod: o.payment || 'efectivo',
-    cash: null, change: null,
-    cancelled: false,
-    origin: 'menu',
-    menuOrderId: o.id,
-    menuCode: o.code,
-    customerName: (o.customer && o.customer.name) || '',
-    orderedAt: o.createdAt,
-    menuModified: mdiIsModified(o)
+  const me = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
+  let ok = false;
+  MDI.update(id, x => {
+    if(x.status !== 'nuevo') return;          /* otra pestaña ya lo decidió */
+    x.status = 'confirmado'; x.decidedAt = new Date().toISOString(); x.decidedBy = me ? me.name : '';
+    ok = true;
   });
-  { const cs = cashCurrent(); if(cs) sale.cashId = cs.id; }
-  const sales = DB.getSales(); sales.push(sale); DB.saveSales(sales);
-  /* Lo que se descuenta de existencias, para regresarlo si se cancela. */
-  const tomado = {};
-  Object.keys(uso).forEach(pid => { const p = inventario.find(x => x.id === pid); if(stockInfo(p).control) tomado[pid] = uso[pid]; });
-  const desc = deductStock(uso, inventario);
-  if(typeof invContext === 'function') invContext({ type:'venta', ref:orderNumberLabel(sale.number) + ' · ' + o.code });
-  if(desc.cambio) DB.saveProducts(inventario);
-  if(typeof invContext === 'function') invContext(null);
-  MDI.update(id, x => { x.status = 'confirmado'; x.saleId = sale.id; x.decidedAt = new Date().toISOString(); x.decidedBy = sale.userName || ''; x.stockTaken = tomado; });
+  if(!ok) return;
+  shieldClicks();
   vibrate([15, 60, 15]);
-  toast('Pedido confirmado', { icon:icon('check'), variant:'toast-success', subtitle:'Venta ' + orderNumberLabel(sale.number) + ' · Historial y Ventas', duration:2600 });
-  if(desc.alertas.length) setTimeout(() => toast(desc.alertas.length === 1 ? 'Te queda poco de un producto' : 'Te queda poco de ' + desc.alertas.length + ' productos', { icon:icon('alert'), variant:'toast-danger', subtitle: desc.alertas.map(a => a.name + ' (' + a.txt + ')').join(', ') }), 2700);
+  toast('Pedido confirmado', { icon:icon('check'), variant:'toast-success', subtitle:'Queda por cobrar · cóbralo cuando el cliente pague', duration:2600 });
   mdiUI = { id, compare:false, text:'', result:null };
   mdiOpen(id);
   if(currentView === 'menu' || currentView === 'home') renderBgKeepModal();
   mdiPaintBadge();
 }
 
+/* ---------- Cobrar un pedido confirmado ----------
+   Igual que cobrar una cotización: los productos pasan al carrito y se
+   cobra en la hoja de cobro normal. El carrito lleva el folio del pedido
+   (checkout.menuOrderId) para ligar la venta al pedido al cobrar. */
+function mdiCharge(id){
+  const o = MDI.get(id);
+  if(!o || o.status !== 'confirmado') return;
+  if(mdiIsPaid(o)){ toast('Este pedido ya se cobró', { icon:icon('alert'), subtitle:'Lo encuentras en Historial' }); return; }
+  const prods = DB.getProducts();
+  if(!(o.lines || []).length || o.lines.some(l => !prods.some(p => p.id === l.productId))){ toast('Hay productos que ya no están en tu catálogo', { icon:icon('alert'), variant:'toast-danger' }); return; }
+  /* Cobrar es una venta: se necesita la caja del día abierta */
+  if(!cashGate(() => mdiCharge(id), { ok:'Abrir caja y cobrar', what:'cobrar', after:() => mdiOpen(id) })) return;
+  if(cart.length && checkout.menuOrderId !== id){
+    askConfirm({ title:'Tu carrito tiene productos', text:'¿Cambiarlos por los del pedido ' + escapeHtml(o.code) + '?', ok:'Cambiar', icon:icon('cart') }, () => { cart = []; customItems = {}; checkout = newCheckout(); mdiCharge(id); });
+    return;
+  }
+  customItems = {};
+  checkout = newCheckout();
+  if(SERVICE_TYPES.some(s => s.id === o.service)) checkout.serviceType = o.service;
+  if(basicPayMethods().some(p => p.id === o.payment)) checkout.paymentMethod = o.payment;   /* solo sugerido: se elige al cobrar */
+  checkout.menuOrderId = o.id;
+  cart = o.lines.map(l => {
+    const line = { productId:l.productId, qty:l.qty, unitPrice:l.price };   /* se respeta el precio del pedido */
+    if(l.sizeId){ line.sizeId = l.sizeId; line.sizeLabel = l.sizeLabel; }
+    if(l.note) line.note = l.note;
+    return line;
+  });
+  if(typeof quoteToCharge !== 'undefined') quoteToCharge = null;
+  mdiUI = { id:null, compare:false, text:'', result:null };
+  shieldClicks();
+  closeModal();
+  goTo('sale');
+  openCartSheet('checkout');
+  toast('Cobrando el pedido ' + o.code, { icon:icon('check'), variant:'toast-success toast-top', subtitle:formatMoney(mdTotals(o.lines).total) });
+}
+
 /* ---------- Cancelar un pedido ya confirmado ----------
-   La venta se queda en Historial como cancelada (deja de contar en
-   Ventas) y lo que se descontó de existencias regresa al inventario. */
-function mdiStockToReturn(o, inventario){
+   · Por cobrar: solo cambia a cancelado (no hubo venta, ni dinero, ni
+     existencias que regresar).
+   · Cobrado: la venta se queda en Historial como cancelada (deja de
+     contar en Ventas y en la caja) y lo que se descontó regresa al
+     inventario UNA sola vez. */
+function mdiStockToReturn(o, inventario, sale){
   const out = {};
-  const base = o.stockTaken || stockUseByProduct(o.lines || [], inventario); /* pedidos confirmados antes de guardar stockTaken */
+  if(sale && sale.cancelled) return out;          /* ya se regresó cuando se canceló la venta */
+  let base = o.stockTaken;                        /* pedidos confirmados con la versión anterior */
+  if(!base && sale) base = saleStockTaken(sale, inventario);
+  if(!base) return out;                           /* por cobrar: no se descontó nada */
   Object.keys(base).forEach(pid => {
     const p = inventario.find(x => x.id === pid);
     if(p && stockInfo(p).control && base[pid] > 0) out[pid] = base[pid];
@@ -14120,12 +14225,16 @@ function mdiCancelOrder(id, fromHistory){
   if(!o || o.status !== 'confirmado') return;
   const sales = DB.getSales();
   const sale = o.saleId ? sales.find(s => s.id === o.saleId) : null;
+  if(sale && (sale.returns || []).length){
+    toast('Esta venta ya tiene devoluciones', { icon:icon('alert'), subtitle:'Para regresar lo demás usa Devolución' });
+    return;
+  }
   const inventario = DB.getProducts();
-  const regresa = mdiStockToReturn(o, inventario);
+  const regresa = mdiStockToReturn(o, inventario, sale);
   const hayRegreso = Object.keys(regresa).length > 0;
   askConfirm({
     title:'¿Cancelar el pedido ' + escapeHtml(o.code) + '?',
-    text:(sale ? 'La venta ' + orderNumberLabel(sale.number) + ' se queda en tu historial como cancelada y deja de contar en tus ventas.' : 'Deja de contar en tus ventas.')
+    text:(sale ? 'La venta ' + orderNumberLabel(sale.number) + ' se queda en tu historial como cancelada y deja de contar en tus ventas.' : 'El pedido aún no se cobraba: no hay venta ni dinero que regresar.')
       + (hayRegreso ? ' Lo que se descontó de tus existencias regresa al inventario.' : ''),
     ok:'Cancelar pedido', cancel:'Volver', danger:true, icon:icon('alert')
   }, () => mdiCancelOrderNow(id, fromHistory));
@@ -14135,10 +14244,13 @@ function mdiCancelOrderNow(id, fromHistory){
   if(!o || o.status !== 'confirmado') return;
   const sales = DB.getSales();
   const sale = o.saleId ? sales.find(s => s.id === o.saleId) : null;
+  if(sale && (sale.returns || []).length){ toast('Esta venta ya tiene devoluciones', { icon:icon('alert'), subtitle:'Para regresar lo demás usa Devolución' }); return; }
   const inventario = DB.getProducts();
-  const regresa = mdiStockToReturn(o, inventario);
+  const regresa = mdiStockToReturn(o, inventario, sale);
   const hayRegreso = Object.keys(regresa).length > 0;
   const me = (typeof multiUser === 'function' && multiUser()) ? activeUser() : null;
+  /* Primero se marca el pedido: si esto se llama dos veces, la segunda ya no hace nada */
+  MDI.update(id, x => { x.status = 'cancelado'; x.cancelledAt = new Date().toISOString(); x.cancelledBy = me ? me.name : ''; delete x.stockTaken; });
   if(sale && !sale.cancelled){ sale.cancelled = true; sale.cancelledAt = new Date().toISOString(); sale.cancelledBy = me ? me.name : ''; sale.restocked = hayRegreso; DB.saveSales(sales); }
   if(hayRegreso){
     Object.keys(regresa).forEach(pid => { const p = inventario.find(x => x.id === pid); p.stock = r3(Number(p.stock) + regresa[pid]); });
@@ -14146,9 +14258,9 @@ function mdiCancelOrderNow(id, fromHistory){
     DB.saveProducts(inventario);
     if(typeof invContext === 'function') invContext(null);
   }
-  MDI.update(id, x => { x.status = 'cancelado'; x.cancelledAt = new Date().toISOString(); x.cancelledBy = me ? me.name : ''; delete x.stockTaken; });
+  shieldClicks();
   vibrate([15, 60, 15]);
-  toast('Pedido ' + o.code + ' cancelado', { subtitle:(sale ? 'Venta ' + orderNumberLabel(sale.number) + ' cancelada' : 'Ya no cuenta en tus ventas') + (hayRegreso ? ' · existencias devueltas' : '') });
+  toast('Pedido ' + o.code + ' cancelado', { subtitle:(sale ? 'Venta ' + orderNumberLabel(sale.number) + ' cancelada' : 'No se había cobrado') + (hayRegreso ? ' · existencias devueltas' : '') });
   if(fromHistory){ closeModal(); render(); mdiPaintBadge(); return; }
   mdiUI = { id, compare:false, text:'', result:null };
   mdiOpen(id);
@@ -14181,8 +14293,11 @@ function mdiAskReject(id){
   `, { dismissible:true });
 }
 function mdiReject(id){
+  const o0 = MDI.get(id);
+  if(!o0 || o0.status !== 'nuevo') return;   /* ya confirmado/cobrado (p. ej. en otra pestaña): no se rechaza */
   const note = ((document.getElementById('mdiRejectNote') || {}).value || '').trim().slice(0, 200);
   MDI.update(id, o => { o.status = 'rechazado'; o.rejectReason = mdiRejectReason; o.rejectNote = note; o.decidedAt = new Date().toISOString(); });
+  shieldClicks();
   toast('Pedido rechazado', { subtitle:'Puedes avisarle al cliente por WhatsApp' });
   mdiUI = { id, compare:false, text:'', result:null };
   mdiOpen(id);
@@ -14190,6 +14305,8 @@ function mdiReject(id){
   mdiPaintBadge();
 }
 function mdiReopen(id){
+  const o0 = MDI.get(id);
+  if(!o0 || o0.status !== 'rechazado' || o0.saleId) return;   /* solo los rechazados vuelven a revisarse */
   MDI.update(id, o => { o.status = 'nuevo'; delete o.rejectReason; delete o.rejectNote; delete o.decidedAt; });
   toast('El pedido volvió a “Nuevos”');
   mdiRefresh();
@@ -14478,7 +14595,7 @@ function mdiStatsHTML(){
       <div class="empty-state">
         ${illustration('chartEmpty')}
         <div class="empty-title">Aún no hay pedidos del Menú Digital</div>
-        <div class="empty-text">Cuando confirmes los pedidos que te lleguen por WhatsApp, aquí verás sus ventas, gráficas y estadísticas.</div>
+        <div class="empty-text">Cuando cobres los pedidos que te lleguen por WhatsApp, aquí verás sus ventas, gráficas y estadísticas.</div>
       </div>
       <button class="btn primary block" onclick="goTo('menu')">${icon('menuBook')} Ir al Menú Digital</button>`;
   }
@@ -14748,24 +14865,58 @@ function quoteStatus(q){
 /* ---------- Al tocar "Cobrar" ---------- */
 let quoteToCharge = null;   // cotización que se está cobrando desde Historial
 function muRealCobro(){
+  if(cart.length === 0){ toast('El carrito está vacío'); return; }
+  /* ¿Este carrito es un pedido del Menú Digital? Lo es mientras traiga su folio
+     (se quita solo si el carrito se vacía, se vacía a mano o se cobra). */
+  const mo = checkout.menuOrderId ? MDI.get(checkout.menuOrderId) : null;
+  const esPedido = !!mo;
+  if(checkout.menuOrderId && !esPedido) delete checkout.menuOrderId;
+  if(esPedido && (mo.status !== 'confirmado' || mdiIsPaid(mo))){
+    /* Ya se cobró (o se canceló) en otro lado: no se cobra dos veces sin darse cuenta */
+    delete checkout.menuOrderId;
+    toast(mdiIsPaid(mo) ? 'El pedido ' + mo.code + ' ya se cobró' : 'El pedido ' + mo.code + ' ya no está por cobrar', { icon:icon('alert'), variant:'toast-danger', subtitle:'Revisa el carrito. Si de verdad es otra venta, vuelve a tocar Cobrar.', duration:3600 });
+    return;
+  }
+  const qc = quoteToCharge ? QT.get(quoteToCharge) : null;
+  if(qc && qc.status === 'vendida'){
+    quoteToCharge = null;
+    if(qc.items.every(it => cart.some(c => c.productId === it.productId))){
+      toast('La cotización ' + qc.folio + ' ya se cobró', { icon:icon('alert'), variant:'toast-danger', subtitle:'Revisa el carrito. Si de verdad es otra venta, vuelve a tocar Cobrar.', duration:3600 });
+      return;
+    }
+  }
+  const orderId = esPedido ? mo.id : null;
   const antes = DB.getSales().length;
   _muConfirmarCobro();
   const sales = DB.getSales();
   if(sales.length > antes){
+    shieldClicks();
     const sale = sales[sales.length - 1];
     sale.origin = sale.origin || 'caja';
     const q = quoteToCharge ? QT.get(quoteToCharge) : null;
-    if(q && q.items.every(it => sale.items.some(si => si.productId === it.productId))){
+    if(q && q.status !== 'vendida' && q.items.every(it => sale.items.some(si => si.productId === it.productId))){
       sale.quoteId = q.id; sale.quoteFolio = q.folio;
       if(q.customer && q.customer.name) sale.customerName = q.customer.name;
       QT.update(q.id, x => { x.status = 'vendida'; x.saleId = sale.id; x.soldAt = sale.date; });
     }
     quoteToCharge = null;
+    /* Pedido del Menú Digital: la venta cobrada queda ligada al pedido */
+    const o = orderId ? MDI.get(orderId) : null;
+    if(o && o.status === 'confirmado' && !mdiIsPaid(o)){
+      sale.origin = 'menu';
+      sale.menuOrderId = o.id;
+      sale.menuCode = o.code;
+      sale.orderedAt = o.createdAt;
+      sale.menuModified = mdiIsModified(o);
+      if(!sale.customerName && o.customer && o.customer.name) sale.customerName = o.customer.name;
+      MDI.update(o.id, x => { x.saleId = sale.id; x.paidAt = sale.date; });
+      mdiPaintBadge();
+    }
     DB.saveSales(sales);
     lastTicketSale = sale;
-    /* El ticket ya estaba pintado: se repinta para que diga de qué cotización viene */
+    /* El ticket ya estaba pintado: se repinta para que diga de qué cotización o pedido viene */
     const tp = document.getElementById('ticket-print');
-    if(tp && sale.quoteFolio) tp.innerHTML = ticketHTML(sale);
+    if(tp && (sale.quoteFolio || sale.menuCode)) tp.innerHTML = ticketHTML(sale);
     /* El carrito ya quedó vacío: la pantalla de atrás también */
     if(currentView === 'sale') renderBgKeepModal();
   }
@@ -14775,8 +14926,9 @@ const _muConfirmarCobro = confirmarCobro;
 const COBRO_CASH_GATE = { ok:'Abrir caja y cobrar', what:'cobrar', after:() => openCartSheet('checkout') };
 confirmarCobro = function(){
   if(cart.length === 0){ toast('El carrito está vacío'); return; }
-  /* Servicios: primero se elige Ticket o Cotización (la cotización no pide caja) */
-  if(docMode() === 'ambos' && !quoteToCharge){ openCobroChooser(); return; }
+  /* Servicios: primero se elige Ticket o Cotización (la cotización no pide caja).
+     Un pedido del Menú Digital ya es venta: va directo al cobro. */
+  if(docMode() === 'ambos' && !quoteToCharge && !checkout.menuOrderId){ openCobroChooser(); return; }
   if(!cashGate(muRealCobro, COBRO_CASH_GATE)) return;
   muRealCobro();
 };
@@ -14950,6 +15102,7 @@ window.addEventListener('resize', () => { if(document.getElementById('invPreview
 /* Cobrar: los productos de la cotización pasan al carrito */
 function chargeQuote(id){
   const q = QT.get(id); if(!q) return;
+  if(q.status === 'vendida'){ toast('Esta cotización ya se cobró', { icon:icon('alert'), subtitle:'La encuentras en Historial' }); return; }
   const prods = DB.getProducts();
   const faltan = q.items.filter(it => !isCustomId(it.productId) && !prods.some(p => p.id === it.productId));
   if(faltan.length){ toast('Hay productos que ya no están en tu catálogo', { icon:icon('alert'), variant:'toast-danger', subtitle:faltan.map(f => f.baseName || f.name).join(', ') }); return; }
@@ -16090,6 +16243,9 @@ function payFormHint(b){
 function savePayment(customerId){
   if(!requirePerm('darCredito', 'No tienes permiso para recibir abonos')) return;
   const c = customerById(customerId); if(!c) return;
+  /* Si la hoja ya se guardó, no hay campo: antes una segunda llamada
+     registraba OTRO abono por todo lo que seguía debiendo. */
+  if(!document.getElementById('pfAmount')) return;
   const b = customerBalance(customerId);
   const raw = parseFloat((document.getElementById('pfAmount') || {}).value);
   const amount = round2(raw > 0 ? raw : b);
@@ -16099,6 +16255,7 @@ function savePayment(customerId){
                 note:((document.getElementById('pfNote') || {}).value || '').trim().slice(0, 80),
                 by:meName(), byId:meId(), cashId: cs ? cs.id : null, balanceBefore:b, balanceAfter:round2(b - amount), deviceId:Store.meta().deviceId };
   const list = DB.getPayments(); list.push(pay); DB.savePayments(list);
+  shieldClicks();
   vibrate([15, 60, 15]);
   toast('Abono registrado', { icon:icon('check'), variant:'toast-success', subtitle:c.name + ' · ' + formatMoney(amount) + ' · ahora debe ' + formatMoney(Math.max(0, pay.balanceAfter)) });
   openPaymentDetail(pay.id, true);
@@ -16148,7 +16305,7 @@ function sendPaymentWhatsApp(id){
 function cancelPayment(id){
   if(!requireOwner('Solo el Dueño puede cancelar abonos')) return;
   askConfirm({ title:'¿Cancelar este abono?', text:'El dinero vuelve a quedar como deuda del cliente.', ok:'Cancelar abono', danger:true, icon:icon('alert') }, () => {
-    const list = DB.getPayments(); const p = list.find(x => x.id === id); if(!p) return;
+    const list = DB.getPayments(); const p = list.find(x => x.id === id); if(!p || p.cancelled) return;
     p.cancelled = true; p.cancelledAt = new Date().toISOString(); p.cancelledBy = meName();
     DB.savePayments(list);
     toast('Abono cancelado');
@@ -16647,6 +16804,7 @@ function openCashMove(type){
 }
 function saveCashMove(type){
   if(!requirePerm('manejarCaja', 'No tienes permiso para mover la caja')) return;
+  if(!document.getElementById('cmAmount')) return;   /* ya se guardó */
   const amount = round2(parseFloat((document.getElementById('cmAmount') || {}).value) || 0);
   if(!(amount > 0)){ toast('Escribe la cantidad'); return; }
   const list = DB.getCash(); const sess = list.find(c => !c.closedAt); if(!sess) return;
@@ -16657,6 +16815,7 @@ function saveCashMove(type){
   sess.movements = sess.movements || [];
   sess.movements.push({ id:uid('mv'), type, amount, reason:cashMoveReason, note:((document.getElementById('cmNote') || {}).value || '').trim().slice(0, 80), at:new Date().toISOString(), by:meName(), byId:meId() });
   DB.saveCash(list);
+  shieldClicks();
   vibrate(15);
   closeModal();
   toast(type === 'entrada' ? 'Entrada registrada' : 'Salida registrada', { icon:icon('check'), variant:'toast-success', subtitle:formatMoney(amount) + ' · ' + cashMoveReason });
@@ -16735,6 +16894,7 @@ function cutDiff(expected){
 }
 function saveCashClose(){
   if(!requirePerm('manejarCaja', 'No tienes permiso para cerrar la caja')) return;
+  if(!document.getElementById('ccCounted')) return;   /* ya se cerró */
   const raw = (document.getElementById('ccCounted') || {}).value;
   if(raw === '' || raw == null){ toast('Cuenta el efectivo y escribe cuánto hay'); const e = document.getElementById('ccCounted'); if(e) e.focus(); return; }
   const counted = Math.max(0, round2(parseFloat(raw) || 0));
@@ -16903,6 +17063,7 @@ function expSetMethod(m){
 }
 function saveExpense(){
   if(!requirePerm('registrarGastos', 'No tienes permiso para registrar gastos')) return;
+  if(!expDraft || !document.getElementById('exAmount')) return;   /* este formulario ya se guardó */
   const amount = round2(parseFloat((document.getElementById('exAmount') || {}).value) || 0);
   if(!(amount > 0)){ toast('Escribe cuánto se gastó'); return; }
   const concept = ((document.getElementById('exConcept') || {}).value || '').trim().slice(0, 80);
@@ -16921,6 +17082,7 @@ function saveExpense(){
               by:meName(), byId:meId(), deviceId:Store.meta().deviceId };
   const list = DB.getExpenses(); list.push(e); DB.saveExpenses(list);
   expDraft = null;
+  shieldClicks();
   vibrate(15);
   closeModal();
   toast('Gasto registrado', { icon:icon('check'), variant:'toast-success', subtitle:formatMoney(amount) + (concept ? ' · ' + concept : '') + (fromCash ? ' · de la caja' : '') });
@@ -16950,7 +17112,7 @@ function openExpense(id){
 }
 function deleteExpense(id){
   askConfirm({ title:'¿Borrar este gasto?', text:'Deja de contar en tus reportes y en la caja.', ok:'Borrar', danger:true, icon:icon('trash') }, () => {
-    const list = DB.getExpenses(); const e = list.find(x => x.id === id); if(!e) return;
+    const list = DB.getExpenses(); const e = list.find(x => x.id === id); if(!e || e.cancelled) return;
     e.cancelled = true; e.cancelledAt = new Date().toISOString(); e.cancelledBy = meName();
     DB.saveExpenses(list);
     closeModal(); render();
@@ -16984,7 +17146,8 @@ function parkCurrentSale(){
     ok:'Guardar', icon:icon('pause'),
     extraHTML:`<div class="field"><label for="pkName">¿A nombre de quién o qué mesa?</label><input id="pkName" type="text" maxlength="40" value="${escapeHtml(sug)}" placeholder="${food ? 'Ej. Mesa 4' : 'Ej. Sr. López'}"></div>`
   }, card => {
-    const name = ((card.querySelector('#pkName') || {}).value || '').trim().slice(0, 40) || ('Pedido ' + fmtTime(new Date().toISOString()));
+    if(!cart.length) return;   /* ya se guardó: no se deja una venta en espera vacía */
+    const name = ((((card && card.querySelector('#pkName')) || {}).value) || '').trim().slice(0, 40) || ('Pedido ' + fmtTime(new Date().toISOString()));
     parkNow(name);
     closeModal();
     render();
@@ -17537,6 +17700,7 @@ let retDraft = null;
 function openReturnForm(saleId){
   if(!requirePerm('hacerDevoluciones', 'No tienes permiso para hacer devoluciones')) return;
   const sale = DB.getSales().find(s => s.id === saleId); if(!sale) return;
+  if(sale.cancelled || saleIsReturn(sale)){ retDraft = null; toast(sale.cancelled ? 'Esta venta está cancelada' : 'Esto ya es una devolución', { icon:icon('alert'), subtitle:sale.cancelled ? 'Al cancelarla ya se regresó todo' : '' }); return; }
   const rows = returnableLeft(sale).filter(r => r.left > 0);
   if(!rows.length){ toast('Ya se devolvió todo de esta venta'); return; }
   if(!retDraft || retDraft.saleId !== saleId){
@@ -17545,7 +17709,7 @@ function openReturnForm(saleId){
   }
   const d = retDraft;
   const calc = returnCalc(sale, d.qty);
-  const conStock = rows.some(r => { const p = findProduct(r.it.productId); return p && !p.custom && stockInfo(p).control; });
+  const conStock = rows.some(r => { const p = findProduct(r.it.productId); return p && !p.custom && stockInfo(p).control && itemStockTaken(p, r.it) > 0; });
   const methods = basicPayMethods().concat(sale.customerId ? [{ id:'credito', name:'A su cuenta', emoji:'📒' }] : []);
   openModal(`
     <div class="sheet-header">
@@ -17622,6 +17786,8 @@ function returnCalc(sale, qtyMap){
     base += unit * q;
     const x = Object.assign({}, it, { qty:-q, price:unit, index:Number(k) });
     delete x.listPrice; delete x.disc; delete x.wholesale; delete x.catalogPrice;
+    /* Solo la parte proporcional de lo que se descontó al vender */
+    if(it.stockUse != null){ const tot = Math.abs(Number(it.qty) || 0); x.stockUse = tot ? r3(Math.abs(Number(it.stockUse) || 0) * q / tot) : 0; }
     items.push(x);
   });
   const t = calcTax(round2(base), saleTaxInfo(sale));
@@ -17632,6 +17798,12 @@ function saveReturn(){
   const d = retDraft; if(!d) return;
   const sales = DB.getSales();
   const sale = sales.find(s => s.id === d.saleId); if(!sale) return;
+  /* Se revisa contra la venta guardada (no contra lo que se veía en pantalla):
+     nada de devolver una venta cancelada ni más de lo que queda por devolver. */
+  if(sale.cancelled){ retDraft = null; toast('Esta venta ya está cancelada', { icon:icon('alert'), variant:'toast-danger', subtitle:'Al cancelarla ya se regresó todo' }); closeModal(); render(); return; }
+  const left = returnableLeft(sale);
+  const pasado = Object.keys(d.qty || {}).find(k => !left[k] || d.qty[k] > left[k].left + 1e-9);
+  if(pasado != null){ toast('Ya se devolvió parte de esto', { icon:icon('alert'), variant:'toast-danger', subtitle:'Revisa las cantidades otra vez' }); d.qty = {}; openReturnForm(sale.id); return; }
   const calc = returnCalc(sale, d.qty);
   if(!(calc.total > 0)){ toast('Elige qué productos regresa'); return; }
   if(d.method === 'efectivo'){
@@ -17665,6 +17837,7 @@ function saveReturn(){
     invContext(null);
   }
   retDraft = null;
+  shieldClicks();
   vibrate([15, 60, 15]);
   toast('Devolución ' + folio + ' hecha', { icon:icon('check'), variant:'toast-success', subtitle:formatMoney(calc.total) + ' · ' + refundMethodName(d.method) + (d.restock ? ' · regresó al inventario' : '') });
   showTicket(ret);
@@ -17846,17 +18019,20 @@ function saveInvEntry(){
   const moves = DB.getMoves();
   lines.forEach(l => { for(let i = moves.length - 1; i >= 0 && i >= moves.length - lines.length - 2; i--){ if(moves[i].productId === l.productId && moves[i].type === 'entrada' && moves[i].unitCost == null){ moves[i].unitCost = l.cost; break; } } });
   DB.saveMoves(moves);
-  if(e.asExpense && total > 0 && can('registrarGastos')){
-    const list = DB.getExpenses();
-    list.push({ id:uid('g'), date:new Date().toISOString(), at:new Date().toISOString(), amount:round2(total), concept:'Mercancía' + (e.supplier ? ' · ' + e.supplier.trim() : ''),
-                category:'mercancia', method:'efectivo', fromCash:false, cashId:null, note:lines.length + ' producto(s)', by:meName(), byId:meId(), deviceId:Store.meta().deviceId });
-    DB.saveExpenses(list);
-  }
   invEntry = null;
+  shieldClicks();
   vibrate([15, 60, 15]);
   closeModal();
   toast('Mercancía sumada al inventario', { icon:icon('check'), variant:'toast-success', subtitle:lines.length + ' producto' + (lines.length === 1 ? '' : 's') + (total > 0 ? ' · ' + formatMoney(total) : '') });
   render();
+  /* Como gasto: antes se guardaba siempre como "efectivo" sin preguntar.
+     Ahora se abre el mismo formulario de gasto, ya lleno, para decir cómo
+     se pagó y si el dinero salió de la caja. Solo así se resta de la caja
+     (con la misma revisión de "no hay tanto efectivo"). */
+  if(e.asExpense && total > 0 && can('registrarGastos')){
+    openExpenseForm({ amount:round2(total), concept:('Mercancía' + (e.supplier ? ' · ' + e.supplier.trim() : '')).slice(0, 80),
+                      category:'mercancia', note:lines.length + ' producto(s)', fromCash:false });
+  }
 }
 
 /* =========================================================
